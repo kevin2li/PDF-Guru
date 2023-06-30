@@ -10,12 +10,16 @@ export function ConvertPDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ConvertPDF'](arg1, arg2, arg3, arg4);
 }
 
-export function DecryptPDF(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['DecryptPDF'](arg1, arg2, arg3, arg4);
+export function DecryptPDF(arg1, arg2, arg3) {
+  return window['go']['main']['App']['DecryptPDF'](arg1, arg2, arg3);
 }
 
-export function EncryptPDF(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
-  return window['go']['main']['App']['EncryptPDF'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+export function EncryptPDF(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['EncryptPDF'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function ExtractBookmark(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ExtractBookmark'](arg1, arg2, arg3);
 }
 
 export function Greet(arg1) {
@@ -46,6 +50,14 @@ export function Test() {
   return window['go']['main']['App']['Test']();
 }
 
-export function WatermarkPDF(arg1, arg2, arg3, arg4, arg5) {
-  return window['go']['main']['App']['WatermarkPDF'](arg1, arg2, arg3, arg4, arg5);
+export function TransformBookmark(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['TransformBookmark'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function WatermarkPDF(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
+  return window['go']['main']['App']['WatermarkPDF'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+}
+
+export function WriteBookmark(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['WriteBookmark'](arg1, arg2, arg3, arg4);
 }

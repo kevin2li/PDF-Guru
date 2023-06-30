@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -173,89 +175,6 @@ func (a *App) MergePDF(inFiles []string, outFile string, mode string, sort bool)
 	return nil
 }
 
-func (a *App) WatermarkPDF(inFile string, outFile string, wmFile string, mode string, pagesStr string) error {
-	return nil
-}
-
-func (a *App) EncryptPDF(inFile string, outFile string, algorithm string, userPW string, ownerPW string, key int, perm string) error {
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
-		return err
-	}
-	if algorithm == "AES" {
-		conf := model.NewAESConfiguration(userPW, ownerPW, key)
-		err := api.EncryptFile(inFile, outFile, conf)
-		if err != nil {
-			return err
-		}
-		if perm == "all" {
-			conf.Permissions = model.PermissionsAll
-		} else if perm == "none" {
-			conf.Permissions = model.PermissionsNone
-			
-		}
-		err = api.SetPermissionsFile(outFile, "", conf)
-		if err != nil {
-			return err
-		}
-	} else if algorithm == "RC4" {
-		conf := model.NewRC4Configuration(userPW, ownerPW, key)
-		err := api.EncryptFile(inFile, outFile, conf)
-		if err != nil {
-			return err
-		}
-		if perm == "all" {
-			conf.Permissions = model.PermissionsAll
-		} else if perm == "none" {
-			conf.Permissions = model.PermissionsNone
-		}
-		err = api.SetPermissionsFile(outFile, "", conf)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (a *App) DecryptPDF(inFile string, outFile string, userPW string, ownerPW string) error {
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
-		return err
-	}
-	var lastErr error
-	flag := false
-	// try AES
-	for keyLen := range [3]int{256, 128, 40} {
-		conf := model.NewAESConfiguration(userPW, ownerPW, keyLen)
-		err := api.DecryptFile(inFile, outFile, conf)
-		if err != nil {
-			fmt.Println(err)
-			lastErr = err
-			continue
-		}
-		flag = true
-		return nil
-	}
-
-	// try RC4
-	for keyLen := range [2]int{128, 40} {
-		conf := model.NewRC4Configuration(userPW, ownerPW, keyLen)
-		err := api.DecryptFile(inFile, outFile, conf)
-		if err != nil {
-			fmt.Println(err)
-			lastErr = err
-			continue
-		}
-		flag = true
-		return nil
-	}
-	if !flag {
-		return lastErr
-	}
-	return nil
-}
-
 func (a *App) ConvertPDF(inFile string, outFile string, dstFormat string, pageStr string) error {
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		fmt.Println(err)
@@ -286,5 +205,202 @@ func (a *App) ConvertPDF(inFile string, outFile string, dstFormat string, pageSt
 	}
 	fmt.Println(string(output))
 
+	return nil
+}
+
+func CheckCmdError(cmd *exec.Cmd) error {
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Printf("Error: %v\n", err)
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		log.Printf("Error: %v\n", err)
+		return err
+	}
+	scanner := bufio.NewScanner(stderr)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		log.Printf("Error: %v\n", err)
+	}
+	if err := cmd.Wait(); err != nil {
+		log.Printf("Error: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+func (a *App) EncryptPDF(inFile string, outFile string, upw string, opw string, perm []string) error {
+	fmt.Printf("inFile: %s, outFile: %s, upw: %s, opw: %s, perm: %v\n", inFile, outFile, upw, opw, perm)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"encrypt"}
+	if len(perm) > 0 {
+		args = append(args, "--perm")
+		args = append(args, perm...)
+	}
+	if upw != "" {
+		args = append(args, "--user_password", upw)
+	}
+	if opw != "" {
+		args = append(args, "--owner_password", opw)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) DecryptPDF(inFile string, outFile string, passwd string) error {
+	fmt.Printf("inFile: %s, outFile: %s, passwd: %s\n", inFile, outFile, passwd)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"decrypt"}
+	if passwd != "" {
+		args = append(args, "--password", passwd)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ExtractBookmark(inFile string, outFile string, format string) error {
+	fmt.Printf("inFile: %s, outFile: %s, format: %s\n", inFile, outFile, format)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"bookmark", "extract"}
+	if format != "" {
+		args = append(args, "--format", format)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) WriteBookmark(inFile string, outFile string, tocFile string, offset int) error {
+	fmt.Printf("inFile: %s, outFile: %s, tocFile: %s, offset: %d\n", inFile, outFile, tocFile, offset)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	if _, err := os.Stat(tocFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"bookmark", "add"}
+	if tocFile != "" {
+		args = append(args, "--toc", tocFile)
+	}
+	if offset != 0 {
+		args = append(args, "--offset", fmt.Sprintf("%d", offset))
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, addOffset int, removeDots bool) error {
+	fmt.Printf("inFile: %s, outFile: %s, addIndent: %v, addOffset: %d, removeDots: %v\n", inFile, outFile, addIndent, addOffset, removeDots)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"bookmark", "transform"}
+	if addIndent {
+		args = append(args, "--add_indent")
+	}
+	if addOffset != 0 {
+		args = append(args, "--add_offset", fmt.Sprintf("%d", addOffset))
+	}
+	if removeDots {
+		args = append(args, "--remove_trailing_dots")
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, "--toc", inFile)
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontFamily string, fontSize string, fontColor string, angle int, space int, opacity float32) error {
+	fmt.Printf("inFile: %s, outFile: %s, markText: %s, fontFamily: %s, fontSize: %s, fontColor: %s, angle: %d, space: %d, opacity: %f\n", inFile, outFile, markText, fontFamily, fontSize, fontColor, angle, space, opacity)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"watermark"}
+	if markText != "" {
+		args = append(args, "--mark-text", markText)
+	}
+	if fontFamily != "" {
+		args = append(args, "--font_family", fontFamily)
+	}
+	if fontSize != "" {
+		args = append(args, "--font-size", fontSize)
+	}
+	if fontColor != "" {
+		args = append(args, "--color", fontColor)
+	}
+	if angle != 0 {
+		args = append(args, "--angle", fmt.Sprintf("%d", angle))
+	}
+	if space != 0 {
+		args = append(args, "--space", fmt.Sprintf("%d", space))
+	}
+
+	if opacity != 0 {
+		args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
 	return nil
 }

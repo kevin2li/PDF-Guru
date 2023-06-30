@@ -88,13 +88,10 @@
                     </template>
                     {{ menuRecord['settings'] }}
                 </a-menu-item>
-
             </a-menu>
         </a-col>
         <a-col :span="20">
             <div>
-                <!-- <h1>{{ text }}</h1>
-                <a-button type="primary" @click="hello">Greet</a-button> -->
                 <div style="margin-right: 5vw;margin-top: 0.5em;">
                     <a-typography-title>{{ menuRecord[currentMenu.at(0) || "merge"] }}</a-typography-title>
                     <a-typography-paragraph>
@@ -102,43 +99,122 @@
                     </a-typography-paragraph>
                 </div>
                 <div>
-                    <a-form name="customized_form_controls"
+                    <a-form ref="formRef"
                         style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
                         :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }">
-                        <!-- PDF分割 -->
-                        <a-form-item name="span" label="批大小" v-if="currentMenu.at(0) == 'split'">
-                            <a-input-number v-model:value="formState.span" :min="1" />
+                        <!-- PDF合并 -->
+                        <a-form-item name="merge_path_list" label="输入路径列表" :rules="{ required: true }"
+                            v-if="currentMenu.at(0) == 'merge'">
+                            <a-input v-model:value="formState.merge_path_list[0]" placeholder="待合并pdf文件路径" />
                         </a-form-item>
-                        <a-form-item name="split_mode" label="模式" v-if="currentMenu.at(0) == 'split'">
-                            <a-radio-group v-model:value="formState.split_mode">
-                                <a-radio value="span">span</a-radio>
-                                <a-radio value="bookmark">bookmark</a-radio>
+                        <a-form-item label=" " :colon=false v-for="(item, index) in formState.merge_path_list.slice(1)"
+                            :key="index">
+                            <a-input v-model:value="formState.merge_path_list[index]" style="width: 95%;"
+                                placeholder="待合并pdf文件路径" />
+                            <MinusCircleOutlined @click="removePath(item)" style="margin-left: 1vw;" />
+                        </a-form-item>
+                        <a-form-item name="span" label=" " :colon=false v-if="currentMenu.at(0) == 'merge'">
+                            <a-button type="dashed" block @click="addPath">
+                                <PlusOutlined />
+                                添加路径
+                            </a-button>
+                        </a-form-item>
+                        <a-form-item name="merge_sort" label="排序字段" v-if="currentMenu.at(0) == 'merge'">
+                            <a-radio-group v-model:value="formState.merge_sort">
+                                <a-radio value="hand">添加顺序</a-radio>
+                                <a-radio value="name">文件名</a-radio>
+                                <a-radio value="create">创建时间</a-radio>
+                                <a-radio value="modify">修改时间</a-radio>
                             </a-radio-group>
                         </a-form-item>
-
-                        <!-- PDF合并 -->
-
+                        <a-form-item label="排序方向" v-if="currentMenu.at(0) == 'merge'">
+                            <a-radio-group v-model:value="formState.merge_sort_direction"
+                                v-if="currentMenu.at(0) == 'merge'">
+                                <a-radio value="asc">升序</a-radio>
+                                <a-radio value="desc">降序</a-radio>
+                            </a-radio-group>
+                        </a-form-item>
+                        <!-- PDF拆分 -->
+                        <a-form-item name="split_mode" label="类型" v-if="currentMenu.at(0) == 'split'">
+                            <a-radio-group button-style="solid" v-model:value="formState.split_mode">
+                                <a-radio-button value="span">均匀分块</a-radio-button>
+                                <a-radio-button value="range">自定义范围</a-radio-button>
+                                <a-radio-button value="bookmark">目录</a-radio-button>
+                            </a-radio-group>
+                        </a-form-item>
+                        <a-form-item name="span" label="块大小"
+                            v-if="currentMenu.at(0) == 'split' && formState.split_mode == 'span'">
+                            <a-input-number v-model:value="formState.split_span" :min="1" />
+                        </a-form-item>
+                        <a-form-item name="span" label="页码范围"
+                            v-if="currentMenu.at(0) == 'split' && formState.split_mode == 'range'">
+                            <a-input v-model:value="formState.split_ranges"
+                                placeholder="自定义页码范围,用英文逗号隔开,e.g. 1-10,11-15,16-19" />
+                        </a-form-item>
+                        <a-form-item name="span" label="目录级别"
+                            v-if="currentMenu.at(0) == 'split' && formState.split_mode == 'bookmark'">
+                            <a-select v-model:value="formState.split_bookmark_level" style="width: 200px">
+                                <a-select-option value="1">一级标题</a-select-option>
+                                <a-select-option value="2">二级标题</a-select-option>
+                                <a-select-option value="3">三级标题</a-select-option>
+                            </a-select>
+                        </a-form-item>
 
                         <!-- PDF旋转 -->
-                        <a-form-item name="rotate" label="旋转角度" v-if="currentMenu.at(0) == 'rotate'">
-                            <a-radio-group v-model:value="formState.rotate">
+                        <a-form-item name="rotate" label="操作" v-if="currentMenu.at(0) == 'rotate'">
+                            <a-radio-group button-style="solid" v-model:value="formState.rotate_op">
+                                <a-radio-button value="rotate">旋转</a-radio-button>
+                                <a-radio-button value="flip">翻转</a-radio-button>
+                            </a-radio-group>
+                        </a-form-item>
+                        <a-form-item name="rotate" label="旋转角度"
+                            v-if="currentMenu.at(0) == 'rotate' && formState.rotate_op == 'rotate'">
+                            <a-radio-group v-model:value="formState.rotate_degree">
                                 <a-radio :value="90">顺时针90</a-radio>
                                 <a-radio :value="180">顺时针180</a-radio>
                                 <a-radio :value="270">逆时针90</a-radio>
                             </a-radio-group>
                         </a-form-item>
+                        <a-form-item name="rotate" label="翻转类型"
+                            v-if="currentMenu.at(0) == 'rotate' && formState.rotate_op == 'flip'">
+                            <a-radio-group v-model:value="formState.flip_method">
+                                <a-radio value="horizontal">水平翻转</a-radio>
+                                <a-radio value="vertical">垂直翻转</a-radio>
+                            </a-radio-group>
+                        </a-form-item>
 
                         <!-- PDF书签 -->
-                        <a-form-item name="bookmark_op" label="类型" v-if="currentMenu.at(0) == 'bookmark'">
+                        <a-form-item name="bookmark_op" label="操作" v-if="currentMenu.at(0) == 'bookmark'">
                             <a-radio-group button-style="solid" v-model:value="formState.bookmark_op">
                                 <a-radio-button value="extract">提取书签</a-radio-button>
                                 <a-radio-button value="write">写入书签</a-radio-button>
                                 <a-radio-button value="transform">转换书签</a-radio-button>
+                                <a-radio-button value="ocr" disabled>识别书签</a-radio-button>
                             </a-radio-group>
                         </a-form-item>
-                        <a-form-item name="bookmark_input" label="书签文件" :rules="{ required: true }"
+                        <a-form-item name="bookmark_write_type" label="类型" :rules="{ required: true }"
                             v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write'">
-                            <a-input v-model:value="formState.bookmark_input" placeholder="书签文件路径" />
+                            <a-radio-group v-model:value="formState.bookmark_write_type">
+                                <a-radio value="file">书签文件导入</a-radio>
+                                <a-radio value="page">页码书签</a-radio>
+                            </a-radio-group>
+                        </a-form-item>
+
+                        <a-form-item name="bookmark_file" label="书签文件" :rules="{ required: true }"
+                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write' && formState.bookmark_write_type == 'file'">
+                            <a-input v-model:value="formState.bookmark_file" placeholder="书签文件路径" />
+                        </a-form-item>
+                        <a-form-item name="bookmark_write_offset" label="页码偏移量" :rules="{ required: true }"
+                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write' && formState.bookmark_write_type == 'file'">
+                            <a-input-number v-model:value="formState.bookmark_write_offset" placeholder="页码偏移量" />
+                        </a-form-item>
+                        <a-form-item name="bookmark_write_span" label="间隔页数" :rules="{ required: true }"
+                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write' && formState.bookmark_write_type == 'page'">
+                            <a-input-number v-model:value="formState.bookmark_write_span" placeholder="间隔页数" />
+                        </a-form-item>
+                        <a-form-item name="bookmark_write_format" label="命名格式"
+                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write' && formState.bookmark_write_type == 'page'">
+                            <a-input v-model:value="formState.bookmark_write_format" placeholder="e.g. 第%p页(%p表示页码)" />
                         </a-form-item>
                         <a-form-item name="bookmark_transform_offset" label="页码偏移量" :rules="{ required: true }"
                             v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'transform'">
@@ -152,7 +228,7 @@
                             v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'transform'">
                             <a-switch v-model:checked="formState.bookmark_transform_dots" />
                         </a-form-item>
-                        <a-form-item name="bookmark_extract_format" label="类型"
+                        <a-form-item name="bookmark_extract_format" label="导出格式"
                             v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'extract'">
                             <a-select v-model:value="formState.bookmark_extract_format" style="width: 200px">
                                 <a-select-option value="txt">txt</a-select-option>
@@ -173,8 +249,8 @@
                             <a-input v-model:value="formState.scale_conf" placeholder="缩放参数" />
                         </a-form-item>
                         <!-- PDF转换 -->
-                        <a-form-item name="convert_dest_format" label="目标格式" v-if="currentMenu.at(0) == 'convert'">
-                            <a-select v-model:value="formState.convert_dest_format" style="width: 200px">
+                        <a-form-item name="convert_type" label="转换类型" v-if="currentMenu.at(0) == 'convert'">
+                            <a-select v-model:value="formState.convert_type" style="width: 200px">
                                 <a-select-opt-group label="PDF转其他">
                                     <a-select-option value="pdf2png">pdf转png</a-select-option>
                                     <a-select-option value="pdf2svg">pdf转svg</a-select-option>
@@ -189,43 +265,63 @@
                             </a-select>
                         </a-form-item>
                         <!-- PDF加解密 -->
-                        <a-form-item name="encrypt_op" label="类型" v-if="currentMenu.at(0) == 'encrypt'">
+                        <a-form-item name="encrypt_op" label="类型" v-if="currentMenu.at(0) == 'encrypt'"
+                            style="margin-bottom: 1vh;">
                             <a-radio-group button-style="solid" v-model:value="formState.encrypt_op">
                                 <a-radio-button value="encrypt">加密</a-radio-button>
                                 <a-radio-button value="decrypt">解密</a-radio-button>
                             </a-radio-group>
                         </a-form-item>
-                        <a-form-item name="encrypt_mode" label="算法" v-if="false">
-                            <a-radio-group v-model:value="formState.encrypt_mode">
-                                <a-radio value="RC4">RC4</a-radio>
-                                <a-radio value="AES">AES</a-radio>
-                            </a-radio-group>
-                        </a-form-item>
-                        <a-form-item name="encrypt_key" label="密钥长度" v-if="false">
-                            <a-radio-group v-model:value="formState.encrypt_key">
-                                <a-radio :value="40">40</a-radio>
-                                <a-radio :value="128">128</a-radio>
-                                <a-radio :value="256" v-if="formState.encrypt_mode == 'AES'">256</a-radio>
-                            </a-radio-group>
-                        </a-form-item>
                         <a-form-item name="encrypt_opw" label="所有者密码" v-if="false">
                             <a-input v-model:value="formState.encrypt_opw" placeholder="所有者密码" />
                         </a-form-item>
-                        <a-form-item name="encrypt_upw" label="设置密码" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'encrypt'">
-                            <a-input-password v-model:value="formState.encrypt_upw" placeholder="不少于6位" />
-                        </a-form-item>
-                        <a-form-item name="encrypt_upw_confirm" label="确认密码" :rules="{ required: true }"
+                        <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;"
                             v-if="currentMenu.at(0) == 'encrypt' && formState.encrypt_op == 'encrypt'">
-                            <a-input-password v-model:value="formState.encrypt_upw_confirm" placeholder="再次输入密码" />
-                        </a-form-item>
-                        <a-form-item name="encrypt_perm" label="限制功能"
+                            <a-form-item name="encrypt_opw" label="设置打开密码" :disabled="!formState.encrypt_is_set_upw">
+                                <a-checkbox v-model:checked="formState.encrypt_is_set_upw"></a-checkbox>
+                            </a-form-item>
+                            <a-form-item name="encrypt_upw" label="设置密码"
+                                :rules="[{ required: formState.encrypt_is_set_upw, validator: validatePass, trigger: 'change' }]">
+                                <a-input-password v-model:value="formState.encrypt_upw" placeholder="不少于6位"
+                                    :disabled="!formState.encrypt_is_set_upw" />
+                            </a-form-item>
+                            <a-form-item name="encrypt_upw_confirm" label="确认密码"
+                                :rules="[{ required: formState.encrypt_is_set_upw, validator: validatePassUpwConfirm, trigger: 'change' }]">
+                                <a-input-password v-model:value="formState.encrypt_upw_confirm" placeholder="再次输入密码"
+                                    :disabled="!formState.encrypt_is_set_upw" />
+                            </a-form-item>
+                        </div>
+
+                        <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;"
                             v-if="currentMenu.at(0) == 'encrypt' && formState.encrypt_op == 'encrypt'">
-                            <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate"
-                                @change="onCheckAllChange">全选</a-checkbox>
-                            <a-divider type="vertical" />
-                            <a-checkbox-group v-model:value="formState.encrypt_perm" :options="encrypt_perm_options" />
+                            <a-form-item name="encrypt_opw" label="设置权限密码">
+                                <a-checkbox v-model:checked="formState.encrypt_is_set_opw"></a-checkbox>
+                            </a-form-item>
+                            <a-form-item name="encrypt_opw" label="设置密码"
+                                :rules="[{ required: formState.encrypt_is_set_opw, validator: validatePass, trigger: 'change' }]">
+                                <a-input-password v-model:value="formState.encrypt_opw" placeholder="不少于6位"
+                                    :disabled="!formState.encrypt_is_set_opw" />
+                            </a-form-item>
+                            <a-form-item name="encrypt_opw_confirm" label="确认密码"
+                                :rules="[{ required: formState.encrypt_is_set_opw, validator: validatePassOpwConfirm, trigger: 'change' }]">
+                                <a-input-password v-model:value="formState.encrypt_opw_confirm" placeholder="再次输入密码"
+                                    :disabled="!formState.encrypt_is_set_opw" />
+                            </a-form-item>
+                            <a-form-item name="encrypt_perm" label="限制功能"
+                                :rules="[{ required: formState.encrypt_is_set_opw }]">
+                                <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate"
+                                    :disabled="!formState.encrypt_is_set_opw" @change="onCheckAllChange">全选</a-checkbox>
+                                <a-divider type="vertical" />
+                                <a-checkbox-group v-model:value="formState.encrypt_perm" :options="encrypt_perm_options"
+                                    :disabled="!formState.encrypt_is_set_opw" />
+                            </a-form-item>
+                        </div>
+                        <a-form-item name="encrypt_upw" label="密码"
+                            v-if="currentMenu.at(0) == 'encrypt' && formState.encrypt_op == 'decrypt'"
+                            :rules="[{ required: true }]">
+                            <a-input-password v-model:value="formState.encrypt_upw" placeholder="解密密码" />
                         </a-form-item>
+
                         <!-- PDF水印 -->
                         <a-form-item name="watermark_op" label="水印类型" v-if="currentMenu.at(0) == 'watermark'">
                             <a-radio-group button-style="solid" v-model:value="formState.watermark_op">
@@ -251,7 +347,8 @@
                             <a-input-number v-model:value="formState.watermark_font_size" :min="1" />
                         </a-form-item>
                         <a-form-item name="watermark_font_color" label="颜色" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-input v-model:value="formState.watermark_font_color" placeholder="字体颜色" />
+                            <a-input v-model:value="formState.watermark_font_color" style="width: 90px"
+                                placeholder="字体颜色" />
                         </a-form-item>
                         <a-form-item name="watermark_font_opacity" label="不透明度" v-if="currentMenu.at(0) == 'watermark'">
                             <a-input-number v-model:value="formState.watermark_font_opacity" :min="0" :max="1"
@@ -266,10 +363,11 @@
 
                         <!-- 通用 -->
                         <a-form-item name="page" label="页码范围"
-                            v-if="['rotate', 'reorder', 'watermark', 'crop', 'extract', 'convert', 'scale', 'delete'].includes(currentMenu.at(0) || '')">
+                            v-if="['rotate', 'reorder', 'watermark', 'crop', 'extract', 'scale', 'delete'].includes(currentMenu.at(0) || '') || (currentMenu.at(0) == 'convert' && formState.convert_type.startsWith('pdf'))">
                             <a-input v-model:value="formState.page" placeholder="页码范围, e.g. 1-3,9-10" />
                         </a-form-item>
-                        <a-form-item name="input" label="输入" :rules="[{ required: true, message: '请输入路径!' }]">
+                        <a-form-item name="input" label="输入" :rules="[{ required: true, message: '请输入路径!' }]"
+                            v-if="currentMenu.at(0) != 'merge'">
                             <a-input v-model:value="formState.input" placeholder="输入文件路径" />
                         </a-form-item>
                         <a-form-item name="output" label="输出">
@@ -278,6 +376,7 @@
                         <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                             <a-button type="primary" html-type="submit" @click="onSubmit"
                                 :loading="confirmLoading">确认</a-button>
+                            <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
                         </a-form-item>
                     </a-form>
                 </div>
@@ -287,13 +386,50 @@
 </template>
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
-import { MailOutlined, AppstoreOutlined, SettingOutlined, BarsOutlined, BorderlessTableOutlined, ScissorOutlined, CopyOutlined, BlockOutlined, FileZipOutlined, RotateRightOutlined, LockOutlined, OrderedListOutlined, HighlightOutlined, AimOutlined, ExportOutlined, UploadOutlined, FullscreenOutlined, CloseOutlined } from '@ant-design/icons-vue';
+import {
+    MinusCircleOutlined,
+    PlusOutlined,
+    AppstoreOutlined,
+    SettingOutlined,
+    BarsOutlined,
+    BorderlessTableOutlined,
+    ScissorOutlined,
+    CopyOutlined,
+    BlockOutlined,
+    FileZipOutlined,
+    RotateRightOutlined,
+    LockOutlined,
+    OrderedListOutlined,
+    HighlightOutlined,
+    AimOutlined,
+    ExportOutlined,
+    UploadOutlined,
+    FullscreenOutlined,
+    CloseOutlined
+} from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
-import { MergePDF, ScalePDF, ReorderPDF, CompressPDF, SplitPDF, RotatePDF, EncryptPDF, DecryptPDF, ConvertPDF } from '../../wailsjs/go/main/App';
+import {
+    MergePDF,
+    ScalePDF,
+    ReorderPDF,
+    CompressPDF,
+    SplitPDF,
+    RotatePDF,
+    ConvertPDF,
+    EncryptPDF,
+    DecryptPDF,
+    ExtractBookmark,
+    TransformBookmark,
+    WriteBookmark,
+    WatermarkPDF
+} from '../../wailsjs/go/main/App';
+import type { FormInstance } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
 
 export default defineComponent({
     components: {
-        MailOutlined,
+        MinusCircleOutlined,
+        PlusOutlined,
         AppstoreOutlined,
         SettingOutlined,
         BarsOutlined,
@@ -310,18 +446,19 @@ export default defineComponent({
         ExportOutlined,
         UploadOutlined,
         FullscreenOutlined,
-        CloseOutlined
+        CloseOutlined,
     },
     setup() {
+        const formRef = ref<FormInstance>();
         const menuRecord: Record<string, string> = {
             "merge": "PDF合并",
-            "split": "PDF分割",
+            "split": "PDF拆分",
             "delete": "PDF删除",
             "reorder": "PDF重排",
             "bookmark": "PDF书签",
             "watermark": "PDF水印",
             "scale": "PDF缩放",
-            "rotate": "PDF旋转",
+            "rotate": "PDF旋转/翻转",
             "crop": "PDF裁剪",
             "extract": "PDF提取",
             "compress": "PDF压缩",
@@ -331,7 +468,7 @@ export default defineComponent({
         };
         const menuDesc: Record<string, string> = {
             "merge": "将多个PDF文件合并为一个PDF文件,路径支持使用通配符'*'",
-            "split": "将原始PDF文件按照给定的批大小进行分割",
+            "split": "将原始PDF文件按照给定的块大小进行分割",
             "delete": "将原始PDF文件中的指定页面删除",
             "reorder": "将原始PDF文件按照给定的页码顺序进行重新排列",
             "bookmark": "从原始PDF文件中提取书签信息，或将PDF书签信息写入PDF文件",
@@ -351,19 +488,80 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         const indeterminate = ref<boolean>(false);
         const checkAll = ref<boolean>(false);
-        const formState = reactive({
-            page: "",
+        const formState = reactive<{
+            // 合并
+            merge_path_list: string[],
+            merge_sort: string,
+            merge_sort_direction: string,
+            // 拆分
+            split_mode: string,
+            split_span: number,
+            split_ranges: string,
+            split_bookmark_level: string,
+            // 提取
+            extract_op: string,
+            // 加密
+            encrypt_op: string,
+            encrypt_perm: string[],
+            encrypt_is_set_upw: boolean,
+            encrypt_is_set_opw: boolean,
+            encrypt_upw: string,
+            encrypt_opw: string,
+            encrypt_upw_confirm: string,
+            encrypt_opw_confirm: string,
+            convert_type: string,
+            // 水印
+            watermark_op: string,
+            watermark_font_family: string,
+            watermark_font_size: number,
+            watermark_font_color: string,
+            watermark_font_opacity: number,
+            watermark_rotate: number,
+            watermark_space: number,
+            // 缩放
+            scale_conf: string,
+            // 旋转
+            rotate_op: string,
+            rotate_degree: number,
+            flip_method: string,
+            // 书签
+            bookmark_op: string,
+            bookmark_file: string,
+            bookmark_write_type: string,
+            bookmark_write_format: string,
+            bookmark_write_offset: number,
+            bookmark_write_span: number,
+            bookmark_extract_format: string,
+            bookmark_transform_offset: number,
+            bookmark_transform_indent: boolean,
+            bookmark_transform_dots: boolean,
+            // 通用
+            page: string,
+            input: string,
+            output: string
+        }>({
+            // 合并
+            merge_path_list: [],
+            merge_sort: "hand",
+            merge_sort_direction: "asc",
+            // 拆分
             split_mode: "span",
-            bookmark_op: "extract",
+            split_span: 5,
+            split_ranges: "",
+            split_bookmark_level: "1",
+            // 提取
             extract_op: "text",
+            // 加密
             encrypt_op: "encrypt",
-            encrypt_mode: "AES",
-            encrypt_key: 256,
             encrypt_perm: ["打开"],
+            encrypt_is_set_upw: false,
+            encrypt_is_set_opw: false,
             encrypt_upw: "",
             encrypt_opw: "",
             encrypt_upw_confirm: "",
-            convert_dest_format: "png",
+            encrypt_opw_confirm: "",
+            convert_type: "pdf2png",
+            // 水印
             watermark_op: "text",
             watermark_font_family: "微软雅黑",
             watermark_font_size: 14,
@@ -371,23 +569,67 @@ export default defineComponent({
             watermark_font_opacity: 0.15,
             watermark_rotate: 30,
             watermark_space: 75,
+            // 缩放
             scale_conf: "",
-            rotate: 90,
-            span: 5,
-            bookmark_input: "",
+            // 旋转
+            rotate_op: "rotate",
+            rotate_degree: 90,
+            flip_method: "horizontal",
+            // 书签
+            bookmark_op: "extract",
+            bookmark_file: "",
+            bookmark_write_type: "file",
+            bookmark_write_format: "",
+            bookmark_write_offset: 0,
+            bookmark_write_span: 1,
             bookmark_extract_format: "txt",
             bookmark_transform_offset: 0,
             bookmark_transform_indent: false,
             bookmark_transform_dots: false,
+            // 通用
+            page: "",
             input: "",
             output: ""
         });
+
+        // 加密密码验证
+        let validatePass = async (_rule: Rule, value: string) => {
+            if (value === '') {
+                return Promise.reject('Please input the password');
+            } else {
+                if (value.length < 6) {
+                    return Promise.reject('Password length must be greater than 6');
+                }
+                return Promise.resolve();
+            }
+        };
+        let validatePassUpwConfirm = async (_rule: Rule, value: string) => {
+            if (value === '') {
+                return Promise.reject('Please input the password again');
+            } else if (value !== formState.encrypt_upw) {
+                return Promise.reject("Two inputs don't match!");
+            } else {
+                return Promise.resolve();
+            }
+        };
+        let validatePassOpwConfirm = async (_rule: Rule, value: string) => {
+            if (value === '') {
+                return Promise.reject('Please input the password again');
+            } else if (value !== formState.encrypt_opw) {
+                return Promise.reject("Two inputs don't match!");
+            } else {
+                return Promise.resolve();
+            }
+        };
+        const resetFields = () => {
+            formRef.value?.resetFields();
+        }
         const onSubmit = async () => {
             console.log(formState);
             confirmLoading.value = true;
             switch (currentMenu.value.at(0)) {
                 case "split": {
-                    await SplitPDF(formState.input, formState.split_mode, formState.span, formState.output).then((res: any) => {
+                    await SplitPDF(formState.input, formState.split_mode, formState.split_span, formState.output).then((res: any) => {
                         console.log({ res });
                         if (!res) {
                             message.success('处理成功！');
@@ -439,14 +681,63 @@ export default defineComponent({
                     break;
                 }
                 case "bookmark": {
+                    if (formState.bookmark_op === 'extract') {
+                        await ExtractBookmark(formState.input, formState.output, formState.bookmark_extract_format).then((res: any) => {
+                            console.log({ res });
+                            if (!res) {
+                                message.success('处理成功！');
+                            } else {
+                                message.error('处理失败！');
+                            }
+                        }).catch((err: any) => {
+                            console.log({ err });
+                            Modal.error({
+                                title: '处理失败！',
+                                content: err,
+                            });
+                        })
+                    } else if (formState.bookmark_op === 'write') {
+                        if (formState.bookmark_write_type === 'file') {
+                            await WriteBookmark(formState.input, formState.output, formState.bookmark_file, formState.bookmark_write_offset).then((res: any) => {
+                                console.log({ res });
+                                if (!res) {
+                                    message.success('处理成功！');
+                                } else {
+                                    message.error('处理失败！');
+                                }
+                            }).catch((err: any) => {
+                                console.log({ err });
+                                Modal.error({
+                                    title: '处理失败！',
+                                    content: err,
+                                });
+                            })
+                        } else if (formState.bookmark_write_type === 'page') {
 
+                        }
+                    } else if (formState.bookmark_op === 'transform') {
+                        await TransformBookmark(formState.input, formState.output, formState.bookmark_transform_indent, formState.bookmark_transform_offset, formState.bookmark_transform_dots).then((res: any) => {
+                            console.log({ res });
+                            if (!res) {
+                                message.success('处理成功！');
+                            } else {
+                                message.error('处理失败！');
+                            }
+                        }).catch((err: any) => {
+                            console.log({ err });
+                            Modal.error({
+                                title: '处理失败！',
+                                content: err,
+                            });
+                        })
+                    }
                     break;
                 }
                 case "watermark": {
                     break;
                 }
                 case "rotate": {
-                    await RotatePDF(formState.input, formState.output, formState.rotate, formState.page).then((res: any) => {
+                    await RotatePDF(formState.input, formState.output, formState.rotate_degree, formState.page).then((res: any) => {
                         console.log({ res });
                         if (!res) {
                             message.success('处理成功！');
@@ -506,7 +797,7 @@ export default defineComponent({
                     break;
                 }
                 case "convert": {
-                    await ConvertPDF(formState.input, formState.output, formState.convert_dest_format, formState.page).then((res: any) => {
+                    await ConvertPDF(formState.input, formState.output, formState.convert_type, formState.page).then((res: any) => {
                         console.log({ res });
                         if (!res) {
                             message.success('处理成功！');
@@ -541,36 +832,46 @@ export default defineComponent({
                 }
                 case "encrypt": {
                     if (formState.encrypt_op == "encrypt") {
-                        // await EncryptPDF(formState.input, formState.output, formState.encrypt_mode, formState.encrypt_upw, formState.encrypt_opw, formState.encrypt_key, formState.encrypt_perm).then((res: any) => {
-                        //     console.log({ res });
-                        //     if (!res) {
-                        //         message.success('处理成功！');
-                        //     } else {
-                        //         message.error('处理失败！');
-                        //     }
-                        // }).catch((err: any) => {
-                        //     console.log({ err });
-                        //     Modal.error({
-                        //         title: '处理失败！',
-                        //         content: err,
-                        //     });
-                        // })
+                        let upw = "";
+                        let opw = "";
+                        let perm: string[] = [];
+                        if (formState.encrypt_is_set_upw) {
+                            upw = formState.encrypt_upw;
+                        }
+                        if (formState.encrypt_is_set_opw) {
+                            opw = formState.encrypt_opw;
+                            perm = formState.encrypt_perm;
+                        }
+                        await EncryptPDF(formState.input, formState.output, upw, opw, perm).then((res: any) => {
+                            console.log({ res });
+                            if (!res) {
+                                message.success('处理成功！');
+                            } else {
+                                message.error('处理失败！');
+                            }
+                        }).catch((err: any) => {
+                            console.log({ err });
+                            Modal.error({
+                                title: '处理失败！',
+                                content: err,
+                            });
+                        })
                         console.log({ formState })
                     } else if (formState.encrypt_op == "decrypt") {
-                        // await DecryptPDF(formState.input, formState.output, formState.encrypt_upw, formState.encrypt_opw).then((res: any) => {
-                        //     console.log({ res });
-                        //     if (!res) {
-                        //         message.success('处理成功！');
-                        //     } else {
-                        //         message.error('处理失败！');
-                        //     }
-                        // }).catch((err: any) => {
-                        //     console.log({ err });
-                        //     Modal.error({
-                        //         title: '处理失败！',
-                        //         content: err,
-                        //     });
-                        // })
+                        await DecryptPDF(formState.input, formState.output, formState.encrypt_upw).then((res: any) => {
+                            console.log({ res });
+                            if (!res) {
+                                message.success('处理成功！');
+                            } else {
+                                message.error('处理失败！');
+                            }
+                        }).catch((err: any) => {
+                            console.log({ err });
+                            Modal.error({
+                                title: '处理失败！',
+                                content: err,
+                            });
+                        })
                     }
                     break;
                 }
@@ -578,6 +879,8 @@ export default defineComponent({
 
             confirmLoading.value = false;
         }
+
+        // 加密PDF
         const onCheckAllChange = (e: any) => {
             Object.assign(formState, {
                 encrypt_perm: e.target.checked ? encrypt_perm_options : [],
@@ -593,7 +896,19 @@ export default defineComponent({
         )
         const currentMenu = ref<string[]>(['merge']);
 
+        // 合并PDF
+        const addPath = () => {
+            formState.merge_path_list.push("");
+        }
+        const removePath = (item: string) => {
+            const index = formState.merge_path_list.indexOf(item);
+            if (index != -1) {
+                formState.merge_path_list.splice(index, 1);
+            }
+        }
+
         return {
+            formRef,
             confirmLoading,
             indeterminate,
             checkAll,
@@ -603,27 +918,14 @@ export default defineComponent({
             currentMenu,
             formState,
             onSubmit,
-            onCheckAllChange
+            onCheckAllChange,
+            addPath,
+            removePath,
+            validatePass,
+            validatePassUpwConfirm,
+            validatePassOpwConfirm,
+            resetFields
         };
     },
 });
 </script>
-<style>
-.dynamic-delete-button {
-    cursor: pointer;
-    position: relative;
-    top: 4px;
-    font-size: 24px;
-    color: #999;
-    transition: all 0.3s;
-}
-
-.dynamic-delete-button:hover {
-    color: #777;
-}
-
-.dynamic-delete-button[disabled] {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-</style>

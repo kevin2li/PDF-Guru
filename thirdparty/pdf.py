@@ -14,6 +14,13 @@ def title_preprocess(title: str):
     try:
         title = title.rstrip()
         res = {}
+        # 优先根据缩进匹配
+        if title.startswith("\t"):
+            m = re.match("(\t*)\s*(.+)", title)
+            res['text'] = f"{m.group(2)}".rstrip()
+            res['level'] = len(m.group(1))+1
+            return res
+
         # 匹配：1.1.1 标题
         m = re.match("\s*((\d+\.?)+)\s*(.+)", title)
         if m is not None:
@@ -35,10 +42,9 @@ def title_preprocess(title: str):
             res['level'] = 2
             return res
         
-        # 根据缩进匹配
-        m = re.match("(\t*)\s*(.+)", title)
-        res['text'] = f"{m.group(2)}".rstrip()
-        res['level'] = len(m.group(1))+1
+        # 无匹配
+        res['text'] = title
+        res['level'] = 1
         return res
     except:
         traceback.print_exc()
@@ -84,7 +90,6 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
     indices = [i for i in range(len(diff)) if diff[i] > 1]
     for idx in indices:
         toc[idx][0] = toc[idx+1][0]
-
     doc.set_toc(toc)
     if output_path is None:
         output_path = str(p.parent / f"{p.stem}-toc.pdf")
@@ -146,7 +151,7 @@ def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, p
     }
     for v in perm:
         del full_perm_dict[v]
-    perm = sum(full_perm_dict.values())
+    perm_value = sum(full_perm_dict.values())
     encrypt_meth = fitz.PDF_ENCRYPT_AES_256 # strongest algorithm
     if output_path is None:
         output_path = str(p.parent / f"{p.stem}-encrypt.pdf")
@@ -155,7 +160,7 @@ def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, p
         encryption=encrypt_meth, # set the encryption method
         owner_pw=owner_password, # set the owner password
         user_pw=user_password, # set the user password
-        permissions=perm, # set permissions
+        permissions=perm_value, # set permissions
     )
 
 def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
@@ -210,8 +215,7 @@ def gen_mark(
         angle (int, optional): rotate angle of watermarks. Defaults to 30.
         color (str, optional): text color. Defaults to "#808080".
         opacity (float, optional): opacity of watermarks. Defaults to 0.15.
-        font_height_crop (float, optional): change watermark font height crop float will be parsed to factor; int will be parsed to value default is '1.2', meaning 1.2 times font size
-                       this useful with CJK font, because line height may be higher than size. Defaults to 1.2.
+        font_height_crop (float, optional): change watermark font height crop float will be parsed to factor; int will be parsed to value default is '1.2', meaning 1.2 times font size this useful with CJK font, because line height may be higher than size. Defaults to 1.2.
         font_family (str, optional): font family of text. Defaults to "../assets/青鸟华光简琥珀.ttf".
     """    
     # 字体宽度、高度
@@ -268,9 +272,7 @@ def gen_mark(
         # 在原图上添加大图水印
         if im.mode != 'RGBA':
             im = im.convert('RGBA')
-        im.paste(mark2,  # 大图
-                 (int((im.size[0] - c) / 2), int((im.size[1] - c) / 2)),  # 坐标
-                 mask=mark2.split()[3])
+        im.paste(mark2, (int((im.size[0] - c) / 2), int((im.size[1] - c) / 2)), mask=mark2.split()[3])
         del mark2
         return im
 
@@ -321,14 +323,14 @@ def main():
     encrypt_parser.add_argument("--user_password", type=str, help="用户密码")
     encrypt_parser.add_argument("--owner_password", type=str, help="所有者密码")
     encrypt_parser.add_argument("--perm", type=str, nargs="+", help="权限")
-    encrypt_parser.add_argument("--output", type=str, help="输出文件路径")
+    encrypt_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     encrypt_parser.set_defaults(which='encrypt')
 
     # 解密子命令
     decrypt_parser = sub_parsers.add_parser("decrypt", help="解密", description="解密pdf文件")
     decrypt_parser.add_argument("input_path", type=str, help="pdf文件路径")
     decrypt_parser.add_argument("--password", type=str, help="密码")
-    decrypt_parser.add_argument("--output", type=str, help="输出文件路径")
+    decrypt_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     decrypt_parser.set_defaults(which='decrypt')
     
     # 书签子命令
@@ -341,14 +343,14 @@ def main():
     bookmark_add_parser.add_argument("input_path", type=str, help="pdf文件路径")
     bookmark_add_parser.add_argument("--toc", type=str, required=True, help="目录文件路径")
     bookmark_add_parser.add_argument("--offset", type=int, default=0, help="偏移量, 计算方式: “pdf文件实际页码” - “目录文件标注页码”")
-    bookmark_add_parser.add_argument("--output", type=str, help="输出文件路径")
+    bookmark_add_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_add_parser.set_defaults(bookmark_which='add')
     
     ## 提取书签
     bookmark_extract_parser = bookmark_sub_parsers.add_parser("extract", help="提取书签")
     bookmark_extract_parser.add_argument("input_path", type=str, help="pdf文件路径")
     bookmark_extract_parser.add_argument("--format", type=str, default="txt", choices=['txt', 'json'], help="输出文件格式")
-    bookmark_extract_parser.add_argument("--output", type=str, help="输出文件路径")
+    bookmark_extract_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_extract_parser.set_defaults(bookmark_which='extract')
     
     ## 书签转换
@@ -357,7 +359,7 @@ def main():
     bookmark_transform_parser.add_argument("--add_indent", action="store_true", help="是否添加缩进")
     bookmark_transform_parser.add_argument("--remove_trailing_dots", action="store_true", help="是否删除标题末尾的点号")
     bookmark_transform_parser.add_argument("--add_offset", type=int, default=0, help="页码偏移量")
-    bookmark_transform_parser.add_argument("--output", type=str, help="输出文件路径")
+    bookmark_transform_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_transform_parser.set_defaults(bookmark_which='transform')
 
     # 水印子命令
@@ -372,9 +374,8 @@ def main():
     watermark_parser.add_argument("--opacity", type=float, default=0.15, dest="opacity", help="水印不透明度")
     watermark_parser.add_argument("--font-height-crop", type=str, default="1.2", dest="font_height_crop")
     watermark_parser.add_argument("--quality", type=int, default=80, dest="quality", help="水印图片保存质量")
-    watermark_parser.add_argument("--output", type=str, help="输出文件路径")
+    watermark_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     watermark_parser.set_defaults(which='watermark')
-    
     
     args = parser.parse_args()
     print(args)
