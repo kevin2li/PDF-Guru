@@ -27,6 +27,6 @@ export function Test():Promise<string>;
 
 export function TransformBookmark(arg1:string,arg2:string,arg3:boolean,arg4:number,arg5:boolean):Promise<void>;
 
-export function WatermarkPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:number,arg8:number,arg9:number):Promise<void>;
+export function WatermarkPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:number,arg6:string,arg7:number,arg8:number,arg9:number,arg10:number):Promise<void>;
 
 export function WriteBookmark(arg1:string,arg2:string,arg3:string,arg4:number):Promise<void>;

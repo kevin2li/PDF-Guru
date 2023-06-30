@@ -234,8 +234,7 @@ def gen_mark(
     draw_table.text(xy=(0, 0),
                     text=mark_text,
                     fill=color,
-                    font=ImageFont.truetype(font_family,
-                                            size=size))
+                    font=ImageFont.truetype(font_family, size=size, encoding="utf-8"))
     del draw_table
 
     # 裁剪空白
@@ -391,15 +390,21 @@ def main():
         elif args.bookmark_which == "transform":
             transform_toc_file(args.toc, args.add_indent, args.remove_trailing_dots, args.add_offset, args.output)
     elif args.which == "watermark":
-        if args.font_family is None:
-            args.font_family = str(Path(__file__).parent / "../assets/青鸟华光简琥珀.ttf")
-        if args.mark_text is not None:
-            if args.input_path.endswith(".pdf"):
-                add_mark_to_pdf(args.input_path, args.mark_text, args.quality, args.output, **vars(args))
-            elif args.input_path.endswith(".png") or args.input_path.endswith(".jpg") or args.input_path.endswith(".jpeg"):
-                add_mark_to_image(args.input_path, args.mark_text, args.quality, args.output, **vars(args))
-            else:
-                raise ValueError("不支持的文件格式!")
+        mark_args = {
+            "font_family": args.font_family,
+            "size": args.font_size,
+            "space": args.space,
+            "angle": args.angle,
+            "color": args.color,
+            "opacity": args.opacity,
+            "font_height_crop": "1.2",
+        }
+        if args.input_path.endswith(".pdf"):
+            add_mark_to_pdf(doc_path=args.input_path, output_path=args.output, mark_text=args.mark_text, quality=args.quality, **mark_args)
+        elif args.input_path.endswith(".png") or args.input_path.endswith(".jpg") or args.input_path.endswith(".jpeg"):
+            add_mark_to_image(img_path=args.input_path, output_path=args.output, mark_text=args.mark_text, quality=args.quality, **mark_args)
+        else:
+            raise ValueError("不支持的文件格式!")
 
 if __name__ == "__main__":
     main()

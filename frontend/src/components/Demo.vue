@@ -329,36 +329,70 @@
                                 <a-radio-button value="image" disabled>图片</a-radio-button>
                             </a-radio-group>
                         </a-form-item>
-                        <a-form-item name="watermark_font_family" label="字体" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-select v-model:value="formState.watermark_font_family" style="width: 200px">
-                                <a-select-option value="微软雅黑">微软雅黑</a-select-option>
-                                <a-select-option value="宋体">宋体</a-select-option>
-                                <a-select-option value="黑体">黑体</a-select-option>
-                                <a-select-option value="楷体">楷体</a-select-option>
-                                <a-select-option value="仿宋">仿宋</a-select-option>
-                                <a-select-option value="幼圆">幼圆</a-select-option>
-                                <a-select-option value="华文琥珀">华文琥珀</a-select-option>
-                                <a-select-option value="方正舒体">方正舒体</a-select-option>
-                                <a-select-option value="Arial">Arial</a-select-option>
-                                <a-select-option value="TimesNewRoman">TimesNewRoman</a-select-option>
-                            </a-select>
+                        <a-form-item name="watermark_text" label="水印文本" v-if="currentMenu.at(0) == 'watermark'">
+                            <a-input v-model:value="formState.watermark_text" placeholder="e.g. 这是水印" />
                         </a-form-item>
-                        <a-form-item name="watermark_font_size" label="字号" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-input-number v-model:value="formState.watermark_font_size" :min="1" />
+                        <a-form-item name="watermark_font_size" label="字体属性" v-if="currentMenu.at(0) == 'watermark'">
+                            <a-space size="large">
+                                <a-select v-model:value="formState.watermark_font_family" style="width: 200px">
+                                    <a-select-option value="msyh.ttc">微软雅黑</a-select-option>
+                                    <a-select-option value="simsun.ttc">宋体</a-select-option>
+                                    <a-select-option value="simhei.ttf">黑体</a-select-option>
+                                    <a-select-option value="simkai.ttf">楷体</a-select-option>
+                                    <a-select-option value="simfang.ttf">仿宋</a-select-option>
+                                    <a-select-option value="SIMYOU.TTF">幼圆</a-select-option>
+                                    <a-select-option value="STHUPO.TTF">华文琥珀</a-select-option>
+                                    <a-select-option value="FZSTK.TTF">方正舒体</a-select-option>
+                                    <a-select-option value="STZHONGS.TTF">华文中宋</a-select-option>
+                                    <a-select-option value="arial.ttf">Arial</a-select-option>
+                                    <a-select-option value="times.ttf">TimesNewRoman</a-select-option>
+                                    <a-select-option value="calibri.ttf">Calibri</a-select-option>
+                                    <a-select-option value="consola.ttf">Consola</a-select-option>
+                                </a-select>
+                                <a-tooltip>
+                                    <template #title>字号</template>
+                                    <a-input-number v-model:value="formState.watermark_font_size" :min="1">
+                                        <template #prefix>
+                                            <font-size-outlined />
+                                        </template>
+                                    </a-input-number>
+                                </a-tooltip>
+                                <a-tooltip>
+                                    <template #title>字体颜色</template>
+                                    <a-input v-model:value="formState.watermark_font_color" placeholder="字体颜色"
+                                        :defaultValue="formState.watermark_font_color">
+                                        <template #prefix>
+                                            <font-colors-outlined />
+                                        </template>
+                                    </a-input>
+                                </a-tooltip>
+                            </a-space>
                         </a-form-item>
-                        <a-form-item name="watermark_font_color" label="颜色" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-input v-model:value="formState.watermark_font_color" style="width: 90px"
-                                placeholder="字体颜色" />
-                        </a-form-item>
-                        <a-form-item name="watermark_font_opacity" label="不透明度" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-input-number v-model:value="formState.watermark_font_opacity" :min="0" :max="1"
-                                :step="0.01" />
-                        </a-form-item>
-                        <a-form-item name="watermark_rotate" label="旋转角度" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-input-number v-model:value="formState.watermark_rotate" :min="0" :max="360" />
-                        </a-form-item>
-                        <a-form-item name="watermark_space" label="文字间距" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-input-number v-model:value="formState.watermark_space" :min="0" :max="360" />
+                        <a-form-item name="watermark_font_opacity" label="水印属性" v-if="currentMenu.at(0) == 'watermark'">
+                            <a-space size="large">
+                                <a-input-number v-model:value="formState.watermark_font_opacity" :min="0" :max="1"
+                                    :step="0.01">
+                                    <template #addonBefore>
+                                        不透明度
+                                    </template>
+                                </a-input-number>
+                                <a-input-number v-model:value="formState.watermark_rotate" :min="0" :max="360">
+                                    <template #addonBefore>
+                                        旋转角度
+                                    </template>
+                                </a-input-number>
+                                <a-input-number v-model:value="formState.watermark_space" :min="0" :max="360">
+                                    <template #addonBefore>
+                                        文字间距
+                                    </template>
+                                </a-input-number>
+                                <a-input-number v-model:value="formState.watermark_quaility" :min="0" :max="360">
+                                    <template #addonBefore>
+                                        图片质量
+                                    </template>
+                                </a-input-number>
+                            </a-space>
+
                         </a-form-item>
 
                         <!-- 通用 -->
@@ -405,7 +439,9 @@ import {
     ExportOutlined,
     UploadOutlined,
     FullscreenOutlined,
-    CloseOutlined
+    CloseOutlined,
+    FontColorsOutlined,
+    FontSizeOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import {
@@ -447,6 +483,8 @@ export default defineComponent({
         UploadOutlined,
         FullscreenOutlined,
         CloseOutlined,
+        FontColorsOutlined,
+        FontSizeOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -512,10 +550,12 @@ export default defineComponent({
             convert_type: string,
             // 水印
             watermark_op: string,
+            watermark_text: string,
             watermark_font_family: string,
             watermark_font_size: number,
             watermark_font_color: string,
             watermark_font_opacity: number,
+            watermark_quaility: number,
             watermark_rotate: number,
             watermark_space: number,
             // 缩放
@@ -563,10 +603,12 @@ export default defineComponent({
             convert_type: "pdf2png",
             // 水印
             watermark_op: "text",
+            watermark_text: "",
             watermark_font_family: "微软雅黑",
             watermark_font_size: 14,
             watermark_font_color: "#808080",
             watermark_font_opacity: 0.15,
+            watermark_quaility: 80,
             watermark_rotate: 30,
             watermark_space: 75,
             // 缩放
@@ -734,6 +776,20 @@ export default defineComponent({
                     break;
                 }
                 case "watermark": {
+                    await WatermarkPDF(formState.input, formState.output, formState.watermark_text, formState.watermark_font_family, formState.watermark_font_size, formState.watermark_font_color, formState.watermark_rotate, formState.watermark_space, formState.watermark_font_opacity, formState.watermark_quaility).then((res: any) => {
+                        console.log({ res });
+                        if (!res) {
+                            message.success('处理成功！');
+                        } else {
+                            message.error('处理失败！');
+                        }
+                    }).catch((err: any) => {
+                        console.log({ err });
+                        Modal.error({
+                            title: '处理失败！',
+                            content: err,
+                        });
+                    })
                     break;
                 }
                 case "rotate": {

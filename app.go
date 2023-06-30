@@ -361,11 +361,17 @@ func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, a
 	if err != nil {
 		return err
 	}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Println(string(output))
 	return nil
 }
 
-func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontFamily string, fontSize string, fontColor string, angle int, space int, opacity float32) error {
-	fmt.Printf("inFile: %s, outFile: %s, markText: %s, fontFamily: %s, fontSize: %s, fontColor: %s, angle: %d, space: %d, opacity: %f\n", inFile, outFile, markText, fontFamily, fontSize, fontColor, angle, space, opacity)
+func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontFamily string, fontSize int, fontColor string, angle int, space int, opacity float32, quality int) error {
+	fmt.Printf("inFile: %s, outFile: %s, markText: %s, fontFamily: %s, fontSize: %d, fontColor: %s, angle: %d, space: %d, opacity: %f, quality: %d\n", inFile, outFile, markText, fontFamily, fontSize, fontColor, angle, space, opacity, quality)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		fmt.Println(err)
 		return err
@@ -375,10 +381,10 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 		args = append(args, "--mark-text", markText)
 	}
 	if fontFamily != "" {
-		args = append(args, "--font_family", fontFamily)
+		args = append(args, "--font-family", fontFamily)
 	}
-	if fontSize != "" {
-		args = append(args, "--font-size", fontSize)
+	if fontSize != 0 {
+		args = append(args, "--font-size", fmt.Sprintf("%d", fontSize))
 	}
 	if fontColor != "" {
 		args = append(args, "--color", fontColor)
@@ -393,14 +399,24 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 	if opacity != 0 {
 		args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
 	}
+	if quality != 0 {
+		args = append(args, "--quality", fmt.Sprintf("%d", quality))
+	}
 	if outFile != "" {
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
+	fmt.Println(args)
 	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
+	// output, err := cmd.CombinedOutput()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return err
+	// }
+	// fmt.Println(string(output))
 	return nil
 }
