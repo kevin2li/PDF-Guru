@@ -108,8 +108,8 @@ def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", output
     p = Path(doc_path)
     toc = []
     for i in range(0, doc.page_count, gap):
-        toc.append([1, format.replace("%p", i+1), i+1])
-    toc.append([1, format.replace("%p", doc.page_count), doc.page_count])
+        toc.append([1, format.replace("%p", str(i+1)), i+1])
+    toc.append([1, format.replace("%p", str(doc.page_count)), doc.page_count])
     doc.set_toc(toc)
     if output_path is None:
         output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
@@ -224,7 +224,7 @@ def main():
     ### 文件书签
     bookmark_add_parser.add_argument("input_path", type=str, help="pdf文件路径")
     bookmark_add_parser.add_argument("--method", type=str, choices=['file', 'gap'], default="file", help="添加方式")
-    bookmark_add_parser.add_argument("--toc", type=str, required=True, help="目录文件路径")
+    bookmark_add_parser.add_argument("--toc", type=str, help="目录文件路径")
     bookmark_add_parser.add_argument("--offset", type=int, default=0, help="偏移量, 计算方式: “pdf文件实际页码” - “目录文件标注页码”")
     bookmark_add_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_add_parser.set_defaults(bookmark_which='add')
@@ -374,13 +374,13 @@ def create_wartmark(content:str,
     c.save()
 
 if __name__ == "__main__":
-    # main()
+    main()
     # test()
     # embed()
-    create_wartmark(content='关注carl_奕然，学习更多有趣的python知识',
-                 filename='小鱼watermarkDemo6',
-                 width=2*200,
-                 height=200,
-                 font='simkai',
-                 fontsize=35,
-                 text_fill_alpha=0.3) 
+    # create_wartmark(content='关注carl_奕然，学习更多有趣的python知识',
+                #  filename='小鱼watermarkDemo6',
+                #  width=2*200,
+                #  height=200,
+                #  font='simkai',
+                #  fontsize=35,
+                #  text_fill_alpha=0.3) 

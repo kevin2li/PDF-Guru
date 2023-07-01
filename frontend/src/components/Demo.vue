@@ -162,7 +162,12 @@
                                 </a-select>
                             </a-form-item>
                         </div>
-
+                        <!-- PDF删除 -->
+                        <div v-if="currentMenu.at(0) == 'delete'">
+                            <a-form-item name="page" label="页码范围">
+                                <a-input v-model:value="formState.page" placeholder="待删除的页码范围, e.g. 1-10" />
+                            </a-form-item>
+                        </div>
                         <!-- PDF旋转 -->
                         <div v-if="currentMenu.at(0) == 'rotate'">
                             <a-form-item name="rotate" label="操作">
@@ -179,10 +184,13 @@
                                 </a-radio-group>
                             </a-form-item>
                             <a-form-item name="rotate" label="翻转类型" v-if="formState.rotate_op == 'flip'">
-                                <a-radio-group v-model:value="formState.flip_method">
+                                <a-radio-group v-model:value="formState.rotate_flip_method">
                                     <a-radio value="horizontal">水平翻转</a-radio>
                                     <a-radio value="vertical">垂直翻转</a-radio>
                                 </a-radio-group>
+                            </a-form-item>
+                            <a-form-item name="page" label="页码范围">
+                                <a-input v-model:value="formState.page" placeholder="应用的页码范围, e.g. 1-10" />
                             </a-form-item>
                         </div>
 
@@ -193,52 +201,68 @@
                                     <a-radio-button value="extract">提取书签</a-radio-button>
                                     <a-radio-button value="write">写入书签</a-radio-button>
                                     <a-radio-button value="transform">转换书签</a-radio-button>
-                                    <a-radio-button value="ocr" disabled>识别书签</a-radio-button>
+                                    <a-radio-button value="recognize">识别书签</a-radio-button>
                                 </a-radio-group>
                             </a-form-item>
-                            <a-form-item name="bookmark_write_type" label="类型" :rules="{ required: true }"
-                                v-if="formState.bookmark_op == 'write'">
-                                <a-radio-group v-model:value="formState.bookmark_write_type">
-                                    <a-radio value="file">书签文件导入</a-radio>
-                                    <a-radio value="page">页码书签</a-radio>
-                                </a-radio-group>
-                            </a-form-item>
-
-                            <a-form-item name="bookmark_file" label="书签文件" :rules="{ required: true }"
-                                v-if="formState.bookmark_op == 'write' && formState.bookmark_write_type == 'file'">
-                                <a-input v-model:value="formState.bookmark_file" placeholder="书签文件路径" />
-                            </a-form-item>
-                            <a-form-item name="bookmark_write_offset" label="页码偏移量" :rules="{ required: true }"
-                                v-if="formState.bookmark_op == 'write' && formState.bookmark_write_type == 'file'">
-                                <a-input-number v-model:value="formState.bookmark_write_offset" placeholder="页码偏移量" />
-                            </a-form-item>
-                            <a-form-item name="bookmark_write_gap" label="间隔页数" :rules="{ required: true }"
-                                v-if="formState.bookmark_op == 'write' && formState.bookmark_write_type == 'page'">
-                                <a-input-number v-model:value="formState.bookmark_write_gap" placeholder="间隔页数" />
-                            </a-form-item>
-                            <a-form-item name="bookmark_write_format" label="命名格式"
-                                v-if="formState.bookmark_op == 'write' && formState.bookmark_write_type == 'page'">
-                                <a-input v-model:value="formState.bookmark_write_format" placeholder="e.g. 第%p页(%p表示页码)" />
-                            </a-form-item>
-                            <a-form-item name="bookmark_transform_offset" label="页码偏移量" :rules="{ required: true }"
-                                v-if="formState.bookmark_op == 'transform'">
-                                <a-input-number v-model:value="formState.bookmark_transform_offset" placeholder="页码偏移量" />
-                            </a-form-item>
-                            <a-form-item name="bookmark_transform_indent" label="增加缩进" :rules="{ required: true }"
-                                v-if="formState.bookmark_op == 'transform'">
-                                <a-switch v-model:checked="formState.bookmark_transform_indent" />
-                            </a-form-item>
-                            <a-form-item name="bookmark_transform_dots" label="删除尾部点" :rules="{ required: true }"
-                                v-if="formState.bookmark_op == 'transform'">
-                                <a-switch v-model:checked="formState.bookmark_transform_dots" />
-                            </a-form-item>
-                            <a-form-item name="bookmark_extract_format" label="导出格式"
-                                v-if="formState.bookmark_op == 'extract'">
-                                <a-select v-model:value="formState.bookmark_extract_format" style="width: 200px">
-                                    <a-select-option value="txt">txt</a-select-option>
-                                    <a-select-option value="json">json</a-select-option>
-                                </a-select>
-                            </a-form-item>
+                            <div v-if="formState.bookmark_op == 'extract'">
+                                <a-form-item name="bookmark_extract_format" label="导出格式">
+                                    <a-select v-model:value="formState.bookmark_extract_format" style="width: 200px">
+                                        <a-select-option value="txt">txt</a-select-option>
+                                        <a-select-option value="json">json</a-select-option>
+                                    </a-select>
+                                </a-form-item>
+                            </div>
+                            <div v-if="formState.bookmark_op == 'write'">
+                                <a-form-item name="bookmark_write_type" label="类型" :rules="{ required: true }">
+                                    <a-radio-group v-model:value="formState.bookmark_write_type">
+                                        <a-radio value="file">书签文件导入</a-radio>
+                                        <a-radio value="page">页码书签</a-radio>
+                                    </a-radio-group>
+                                </a-form-item>
+                                <a-form-item name="bookmark_file" label="书签文件" :rules="{ required: true }"
+                                    v-if="formState.bookmark_write_type == 'file'">
+                                    <a-input v-model:value="formState.bookmark_file" placeholder="书签文件路径" />
+                                </a-form-item>
+                                <a-form-item name="bookmark_write_offset" label="页码偏移量" :rules="{ required: true }"
+                                    v-if="formState.bookmark_write_type == 'file'">
+                                    <a-input-number v-model:value="formState.bookmark_write_offset" placeholder="页码偏移量" />
+                                </a-form-item>
+                                <a-form-item name="bookmark_write_gap" label="间隔页数" :rules="{ required: true }"
+                                    v-if="formState.bookmark_write_type == 'page'">
+                                    <a-input-number v-model:value="formState.bookmark_write_gap" placeholder="间隔页数" />
+                                </a-form-item>
+                                <a-form-item name="bookmark_write_format" label="命名格式"
+                                    v-if="formState.bookmark_write_type == 'page'">
+                                    <a-input v-model:value="formState.bookmark_write_format"
+                                        placeholder="e.g. 第%p页(%p表示页码)" />
+                                </a-form-item>
+                            </div>
+                            <div v-if="formState.bookmark_op == 'transform'">
+                                <a-form-item name="bookmark_transform_offset" label="页码偏移量" :rules="{ required: true }">
+                                    <a-input-number v-model:value="formState.bookmark_transform_offset"
+                                        placeholder="页码偏移量" />
+                                </a-form-item>
+                                <a-form-item name="bookmark_transform_indent" label="增加缩进" :rules="{ required: true }">
+                                    <a-switch v-model:checked="formState.bookmark_transform_indent" />
+                                </a-form-item>
+                                <a-form-item name="bookmark_transform_dots" label="删除尾部点" :rules="{ required: true }">
+                                    <a-switch v-model:checked="formState.bookmark_transform_dots" />
+                                </a-form-item>
+                            </div>
+                            <div v-if="formState.bookmark_op == 'recognize'">
+                                <a-form-item name="bookmark_ocr_lang" label="语言">
+                                    <a-select v-model:value="formState.bookmark_ocr_lang" style="width: 200px">
+                                        <a-select-option value="ch">简体中文</a-select-option>
+                                        <a-select-option value="en">英文</a-select-option>
+                                    </a-select>
+                                </a-form-item>
+                                <a-form-item name="bookmark_ocr_double_column" label="双栏">
+                                    <a-switch v-model:checked="formState.bookmark_ocr_double_column" />
+                                </a-form-item>
+                                <a-form-item name="bookmark_ocr_range" label="目录页码范围">
+                                    <a-input v-model:value="formState.page" placeholder="e.g. 1-10,11-15,16-19" />
+                                </a-form-item>
+                            </div>
                         </div>
                         <!-- PDF裁剪/分割 -->
                         <div v-if="currentMenu.at(0) == 'crop'">
@@ -333,36 +357,54 @@
                                     添加垂直分割线
                                 </a-button>
                             </a-form-item>
+                            <a-form-item name="page" label="页码范围">
+                                <a-input v-model:value="formState.page" placeholder="应用的页码范围, e.g. 1-10" />
+                            </a-form-item>
                         </div>
 
                         <!-- PDF提取 -->
-                        <a-form-item name="extract_op" label="提取类型" v-if="currentMenu.at(0) == 'extract'">
-                            <a-radio-group button-style="solid" v-model:value="formState.extract_op">
-                                <a-radio-button value="text">文本</a-radio-button>
-                                <a-radio-button value="image">图片</a-radio-button>
-                                <a-radio-button value="table">表格</a-radio-button>
-                            </a-radio-group>
-                        </a-form-item>
+                        <div v-if="currentMenu.at(0) == 'extract'">
+                            <a-form-item name="extract_op" label="提取类型">
+                                <a-radio-group button-style="solid" v-model:value="formState.extract_op">
+                                    <a-radio-button value="text">文本</a-radio-button>
+                                    <a-radio-button value="image">图片</a-radio-button>
+                                    <a-radio-button value="table">表格</a-radio-button>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item name="page" label="页码范围">
+                                <a-input v-model:value="formState.page" placeholder="应用的页码范围, e.g. 1-10" />
+                            </a-form-item>
+                        </div>
                         <!-- PDF缩放 -->
-                        <a-form-item name="scale_conf" label="缩放参数" v-if="currentMenu.at(0) == 'scale'">
-                            <a-input v-model:value="formState.scale_conf" placeholder="缩放参数" />
-                        </a-form-item>
+                        <div v-if="currentMenu.at(0) == 'scale'">
+                            <a-form-item name="scale_conf" label="缩放参数">
+                                <a-input v-model:value="formState.scale_conf" placeholder="缩放参数" />
+                            </a-form-item>
+                            <a-form-item name="page" label="页码范围">
+                                <a-input v-model:value="formState.page" placeholder="应用的页码范围, e.g. 1-10" />
+                            </a-form-item>
+                        </div>
                         <!-- PDF转换 -->
-                        <a-form-item name="convert_type" label="转换类型" v-if="currentMenu.at(0) == 'convert'">
-                            <a-select v-model:value="formState.convert_type" style="width: 200px">
-                                <a-select-opt-group label="PDF转其他">
-                                    <a-select-option value="pdf2png">pdf转png</a-select-option>
-                                    <a-select-option value="pdf2svg">pdf转svg</a-select-option>
-                                    <a-select-option value="pdf2html">pdf转html</a-select-option>
-                                    <a-select-option value="pdf2word">pdf转word</a-select-option>
-                                </a-select-opt-group>
-                                <a-select-opt-group label="其他转PDF">
-                                    <a-select-option value="png2pdf">png转pdf</a-select-option>
-                                    <a-select-option value="svg2pdf">svg转pdf</a-select-option>
-                                    <a-select-option value="word2pdf">word转pdf</a-select-option>
-                                </a-select-opt-group>
-                            </a-select>
-                        </a-form-item>
+                        <div v-if="currentMenu.at(0) == 'convert'">
+                            <a-form-item name="convert_type" label="转换类型">
+                                <a-select v-model:value="formState.convert_type" style="width: 200px">
+                                    <a-select-opt-group label="PDF转其他">
+                                        <a-select-option value="pdf2png">pdf转png</a-select-option>
+                                        <a-select-option value="pdf2svg">pdf转svg</a-select-option>
+                                        <a-select-option value="pdf2html">pdf转html</a-select-option>
+                                        <a-select-option value="pdf2word">pdf转word</a-select-option>
+                                    </a-select-opt-group>
+                                    <a-select-opt-group label="其他转PDF">
+                                        <a-select-option value="png2pdf">png转pdf</a-select-option>
+                                        <a-select-option value="svg2pdf">svg转pdf</a-select-option>
+                                        <a-select-option value="word2pdf">word转pdf</a-select-option>
+                                    </a-select-opt-group>
+                                </a-select>
+                            </a-form-item>
+                            <a-form-item name="page" label="页码范围" v-if="formState.convert_type.startsWith('pdf')">
+                                <a-input v-model:value="formState.page" placeholder="应用的页码范围, e.g. 1-3,9-10" />
+                            </a-form-item>
+                        </div>
                         <!-- PDF加解密 -->
                         <div v-if="currentMenu.at(0) == 'encrypt'">
                             <a-form-item name="encrypt_op" label="类型" style="margin-bottom: 1vh;">
@@ -502,6 +544,9 @@
                                     </a-space>
                                 </a-form-item>
                             </div>
+                            <a-form-item name="page" label="页码范围">
+                                <a-input v-model:value="formState.page" placeholder="应用的页码范围, e.g. 1-10" />
+                            </a-form-item>
                         </div>
 
                         <!-- OCR识别 -->
@@ -516,15 +561,11 @@
                                 <a-checkbox v-model:checked="formState.ocr_double_column"></a-checkbox>
                             </a-form-item>
                             <a-form-item name="page" label="页码范围">
-                                <a-input v-model:value="formState.page" placeholder="页码范围, e.g. 1-3,9-10" />
+                                <a-input v-model:value="formState.page" placeholder="应用的页码范围, e.g. 1-10" />
                             </a-form-item>
                         </div>
                         <!-- 通用 -->
                         <div v-if="currentMenu.at(0) != 'settings'">
-                            <a-form-item name="page" label="页码范围"
-                                v-if="['rotate', 'reorder', 'watermark', 'crop', 'extract', 'scale', 'delete'].includes(currentMenu.at(0) || '') || (currentMenu.at(0) == 'convert' && formState.convert_type.startsWith('pdf'))">
-                                <a-input v-model:value="formState.page" placeholder="页码范围, e.g. 1-3,9-10" />
-                            </a-form-item>
                             <a-form-item name="input" label="输入" :rules="[{ required: true, message: '请输入路径!' }]"
                                 v-if="currentMenu.at(0) != 'merge'">
                                 <a-input v-model:value="formState.input" placeholder="输入文件路径" />
@@ -689,7 +730,7 @@ export default defineComponent({
             // 旋转
             rotate_op: string,
             rotate_degree: number,
-            flip_method: string,
+            rotate_flip_method: string,
             // 书签
             bookmark_op: string,
             bookmark_file: string,
@@ -701,6 +742,9 @@ export default defineComponent({
             bookmark_transform_offset: number,
             bookmark_transform_indent: boolean,
             bookmark_transform_dots: boolean,
+            bookmark_ocr_lang: string,
+            bookmark_ocr_double_column: boolean,
+
             // ocr
             ocr_lang: string,
             ocr_double_column: boolean,
@@ -758,7 +802,7 @@ export default defineComponent({
             // 旋转
             rotate_op: "rotate",
             rotate_degree: 90,
-            flip_method: "horizontal",
+            rotate_flip_method: "horizontal",
             // 书签
             bookmark_op: "extract",
             bookmark_file: "",
@@ -770,6 +814,8 @@ export default defineComponent({
             bookmark_transform_offset: 0,
             bookmark_transform_indent: false,
             bookmark_transform_dots: false,
+            bookmark_ocr_lang: "ch",
+            bookmark_ocr_double_column: false,
             // ocr
             ocr_lang: "ch",
             ocr_double_column: false,
@@ -811,160 +857,71 @@ export default defineComponent({
         const resetFields = () => {
             formRef.value?.resetFields();
         }
+        async function handleOps(func: any, args: any[]) {
+            await func(...args).then((res: any) => {
+                console.log({ res });
+                if (!res) {
+                    message.success('处理成功！');
+                } else {
+                    message.error('处理失败！');
+                }
+            }).catch((err: any) => {
+                console.log({ err });
+                Modal.error({
+                    title: '处理失败！',
+                    content: err,
+                });
+            });
+        }
         const onSubmit = async () => {
             console.log(formState);
             confirmLoading.value = true;
             switch (currentMenu.value.at(0)) {
                 case "split": {
-                    await SplitPDF(formState.input, formState.split_mode, formState.split_span, formState.output).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(SplitPDF, [formState.input, formState.split_mode, formState.split_span, formState.output]);
                     break;
                 }
                 case "merge": {
                     const inFiles = formState.input.split(";").map((item: string) => item.trim());
-                    await MergePDF(inFiles, formState.output, "create", false).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(MergePDF, [inFiles, formState.output, "create", false]);
                     break;
                 }
                 case "reorder": {
-                    await ReorderPDF(formState.input, formState.output, formState.page).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(ReorderPDF, [formState.input, formState.output, formState.page]);
                     break;
                 }
                 case "bookmark": {
-                    if (formState.bookmark_op === 'extract') {
-                        await ExtractBookmark(formState.input, formState.output, formState.bookmark_extract_format).then((res: any) => {
-                            console.log({ res });
-                            if (!res) {
-                                message.success('处理成功！');
-                            } else {
-                                message.error('处理失败！');
-                            }
-                        }).catch((err: any) => {
-                            console.log({ err });
-                            Modal.error({
-                                title: '处理失败！',
-                                content: err,
-                            });
-                        })
-                    } else if (formState.bookmark_op === 'write') {
-                        if (formState.bookmark_write_type === 'file') {
-                            await WriteBookmarkByFile(formState.input, formState.output, formState.bookmark_file, formState.bookmark_write_offset).then((res: any) => {
-                                console.log({ res });
-                                if (!res) {
-                                    message.success('处理成功！');
-                                } else {
-                                    message.error('处理失败！');
-                                }
-                            }).catch((err: any) => {
-                                console.log({ err });
-                                Modal.error({
-                                    title: '处理失败！',
-                                    content: err,
-                                });
-                            })
-                        } else if (formState.bookmark_write_type === 'page') {
-                            await WriteBookmarkByGap(formState.input, formState.output, formState.bookmark_write_gap, formState.bookmark_write_format).then((res: any) => {
-                                console.log({ res });
-                                if (!res) {
-                                    message.success('处理成功！');
-                                } else {
-                                    message.error('处理失败！');
-                                }
-                            }).catch((err: any) => {
-                                console.log({ err });
-                                Modal.error({
-                                    title: '处理失败！',
-                                    content: err,
-                                });
-                            })
+                    switch (formState.bookmark_op) {
+                        case "extract": {
+                            await handleOps(ExtractBookmark, [formState.input, formState.output, formState.bookmark_extract_format]);
+                            break;
                         }
-                    } else if (formState.bookmark_op === 'transform') {
-                        await TransformBookmark(formState.input, formState.output, formState.bookmark_transform_indent, formState.bookmark_transform_offset, formState.bookmark_transform_dots).then((res: any) => {
-                            console.log({ res });
-                            if (!res) {
-                                message.success('处理成功！');
-                            } else {
-                                message.error('处理失败！');
+                        case "write": {
+                            switch (formState.bookmark_write_type) {
+                                case "file": {
+                                    await handleOps(WriteBookmarkByFile, [formState.input, formState.output, formState.bookmark_file, formState.bookmark_write_offset]);
+                                    break;
+                                }
+                                case "page": {
+                                    await handleOps(WriteBookmarkByGap, [formState.input, formState.output, formState.bookmark_write_gap, formState.bookmark_write_format]);
+                                    break;
+                                }
                             }
-                        }).catch((err: any) => {
-                            console.log({ err });
-                            Modal.error({
-                                title: '处理失败！',
-                                content: err,
-                            });
-                        })
+                            break;
+                        }
+                        case "transform": {
+                            await handleOps(TransformBookmark, [formState.input, formState.output, formState.bookmark_transform_indent, formState.bookmark_transform_offset, formState.bookmark_transform_dots]);
+                            break;
+                        }
                     }
                     break;
                 }
                 case "watermark": {
-                    await WatermarkPDF(formState.input, formState.output, formState.watermark_text, formState.watermark_font_family, formState.watermark_font_size, formState.watermark_font_color, formState.watermark_rotate, formState.watermark_space, formState.watermark_font_opacity, formState.watermark_quaility).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(WatermarkPDF, [formState.input, formState.output, formState.watermark_text, formState.watermark_font_family, formState.watermark_font_size, formState.watermark_font_color, formState.watermark_rotate, formState.watermark_space, formState.watermark_font_opacity, formState.watermark_quaility]);
                     break;
                 }
                 case "rotate": {
-                    await RotatePDF(formState.input, formState.output, formState.rotate_degree, formState.page).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(RotatePDF, [formState.input, formState.output, formState.rotate_degree, formState.page]);
                     break;
                 }
                 case "crop": {
@@ -974,140 +931,48 @@ export default defineComponent({
                     let pageStr = formState.page.split(",").map(item => {
                         return "!" + item.trim();
                     }).join(",");
-                    await ReorderPDF(formState.input, formState.output, pageStr).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(ReorderPDF, [formState.input, formState.output, pageStr]);
                     break;
                 }
                 case "extract": {
                     break;
                 }
                 case "compress": {
-                    await CompressPDF(formState.input, formState.output).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(CompressPDF, [formState.input, formState.output]);
                     break;
                 }
                 case "convert": {
-                    await ConvertPDF(formState.input, formState.output, formState.convert_type, formState.page).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(ConvertPDF, [formState.input, formState.output, formState.convert_type, formState.page]);
                     break;
                 }
                 case "scale": {
-                    await ScalePDF(formState.input, formState.output, formState.scale_conf, formState.page).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(ScalePDF, [formState.input, formState.output, formState.scale_conf, formState.page]);
                     break;
                 }
                 case "encrypt": {
-                    if (formState.encrypt_op == "encrypt") {
-                        let upw = "";
-                        let opw = "";
-                        let perm: string[] = [];
-                        if (formState.encrypt_is_set_upw) {
-                            upw = formState.encrypt_upw;
-                        }
-                        if (formState.encrypt_is_set_opw) {
-                            opw = formState.encrypt_opw;
-                            perm = formState.encrypt_perm;
-                        }
-                        await EncryptPDF(formState.input, formState.output, upw, opw, perm).then((res: any) => {
-                            console.log({ res });
-                            if (!res) {
-                                message.success('处理成功！');
-                            } else {
-                                message.error('处理失败！');
+                    switch (formState.encrypt_op) {
+                        case "encrypt": {
+                            let upw = "", opw = "", perm: string[] = [];
+                            if (formState.encrypt_is_set_upw) { upw = formState.encrypt_upw; }
+                            if (formState.encrypt_is_set_opw) {
+                                opw = formState.encrypt_opw;
+                                perm = formState.encrypt_perm;
                             }
-                        }).catch((err: any) => {
-                            console.log({ err });
-                            Modal.error({
-                                title: '处理失败！',
-                                content: err,
-                            });
-                        })
-                        console.log({ formState })
-                    } else if (formState.encrypt_op == "decrypt") {
-                        await DecryptPDF(formState.input, formState.output, formState.encrypt_upw).then((res: any) => {
-                            console.log({ res });
-                            if (!res) {
-                                message.success('处理成功！');
-                            } else {
-                                message.error('处理失败！');
-                            }
-                        }).catch((err: any) => {
-                            console.log({ err });
-                            Modal.error({
-                                title: '处理失败！',
-                                content: err,
-                            });
-                        })
+                            await handleOps(EncryptPDF, [formState.input, formState.output, upw, opw, perm]);
+                            break;
+                        }
+                        case "decrypt": {
+                            await handleOps(DecryptPDF, [formState.input, formState.output, formState.encrypt_upw]);
+                            break;
+                        }
                     }
                     break;
                 }
                 case "ocr": {
-                    await OCR(formState.input, formState.output, formState.page, formState.ocr_lang, formState.ocr_double_column).then((res: any) => {
-                        console.log({ res });
-                        if (!res) {
-                            message.success('处理成功！');
-                        } else {
-                            message.error('处理失败！');
-                        }
-                    }).catch((err: any) => {
-                        console.log({ err });
-                        Modal.error({
-                            title: '处理失败！',
-                            content: err,
-                        });
-                    })
+                    await handleOps(OCR, [formState.input, formState.output, formState.page, formState.ocr_lang, formState.ocr_double_column]);
                     break;
                 }
             }
-
             confirmLoading.value = false;
         }
 
