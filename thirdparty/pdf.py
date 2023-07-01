@@ -1,4 +1,5 @@
 import argparse
+import copy
 import json
 import math
 import re
@@ -15,6 +16,122 @@ from reportlab.pdfgen import canvas
 
 pdfmetrics.registerFont(TTFont('msyh','msyh.ttc'))
 pdfmetrics.registerFont(TTFont('simkai','simkai.ttf'))
+
+def parse_range(page_range: str, page_count: int, is_multi_range: bool = False):
+    # e.g.: "1-3,5-6,7-10", "1,4-5", "3-N", "even", "odd"
+    page_range = page_range.strip()
+    roi_indices = []
+    if page_range in ["all", ""]:
+        roi_indices = list(range(page_count))
+        return roi_indices
+    if page_range == "even":
+        roi_indices = list(range(0, page_count, 2))
+        return roi_indices
+    elif page_range == "odd":
+        roi_indices = list(range(1, page_count, 2))
+        return roi_indices
+    else:
+        parts = page_range.split(",")
+        neg_count = sum([p.startswith("!") for p in parts])
+        pos_count = len(parts) - neg_count
+        if neg_count > 0 and pos_count > 0:
+            raise ValueError("page_range格式错误：不能同时使用正向选择和反向选择语法")
+        if pos_count > 0:
+            for part in parts:
+                if re.match("!?\d+-(\d+|N)", part) is None:
+                    raise ValueError("page_range格式错误!")            
+                out = part.split("-")
+                if len(out) == 1:
+                    roi_indices.append(int(out[0])-1)
+                elif len(out) == 2:
+                    if out[1] == "N":
+                        roi_indices.append(list(range(int(out[0])-1, page_count)))
+                    else:
+                        roi_indices.append(list(range(int(out[0])-1, int(out[1]))))
+            if is_multi_range:
+                return roi_indices
+            roi_indices = [i for v in roi_indices for i in v]
+            roi_indices = list(set(roi_indices)).sort()
+        if neg_count > 0:
+            for part in parts:
+                out = part[1:].split("-")
+                if len(out) == 1:
+                    roi_indices.append(int(out[0])-1)
+                elif len(out) == 2:
+                    if out[1] == "N":
+                        roi_indices.append(list(range(int(out[0])-1, page_count)))
+                    else:
+                        roi_indices.append(list(range(int(out[0])-1, int(out[1]))))
+            if is_multi_range:
+                return roi_indices
+            roi_indices = [i for v in roi_indices for i in v]
+            roi_indices = list(set(range(page_count)) - set(roi_indices)).sort()
+    return roi_indices
+
+def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None):
+    doc: fitz.Document = fitz.open(doc_path)
+    p = Path(doc_path)
+    roi_indices = parse_range(page_range, doc.page_count)
+    if output_path is None:
+        output_dir = p.parent
+    doc.select(roi_indices)
+    doc.save(str(output_dir / f"{p.stem}-切片.pdf"))
+
+def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
+    doc: fitz.Document = fitz.open(doc_path)
+    p = Path(doc_path)
+    if output_path is None:
+        output_dir = p.parent
+    for i in range(0, doc.page_count, chunk_size):
+        tmp_doc = copy.deepcopy(doc)
+        tmp_doc.select(range(i, min(i+chunk_size, doc.page_count)))
+        tmp_doc.save(str(output_dir / f"{p.stem}-{i+1}-{min(i+chunk_size, doc.page_count)}.pdf"))
+
+def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str = None):
+    doc: fitz.Document = fitz.open(doc_path)
+    p = Path(doc_path)
+    indices_list = parse_range(page_range, doc.page_count, is_multi_range=True)
+    if output_path is None:
+        output_dir = p.parent
+    for i, indices in enumerate(indices_list):
+        tmp_doc = copy.deepcopy(doc)
+        tmp_doc.select(indices)
+        tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"))
+
+def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
+    doc: fitz.Document = fitz.open(doc_path)
+    p = Path(doc_path)
+    toc = doc.get_toc(simple=False)
+    if output_path is None:
+        output_dir = p.parent
+    roi_toc = [p for p in toc if p[0] == level]
+    for i, p in enumerate(roi_toc):
+        tmp_doc = copy.deepcopy(doc)
+        tmp_doc.select(range(p[-1], roi_toc[i+1][-1] if i < len(roi_toc)-1 else doc.page_count))
+        tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"))
+
+def merge_pdf(doc_path_list: List[str], output_path: str = None):
+    doc: fitz.Document = fitz.open()
+    for doc_path in doc_path_list:
+        doc_temp = fitz.open(doc_path)
+        doc.insert_pdf(doc_temp)
+    if output_path is None:
+        p = Path(doc_path_list[0])
+        output_path = str(p.parent / f"合并.pdf")
+    doc.save(output_path)
+
+def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: str = None):
+    doc: fitz.Document = fitz.open(doc_path)
+    roi_indices = parse_range(page_range)
+    for page_index in roi_indices:
+        page = doc[page_index]
+        page.set_rotation(angle)
+        
+    if output_path is None:
+        p = Path(doc_path)
+        output_path = str(p.parent / f"{p.stem}-旋转.pdf")
+    doc.save(output_path)
+
 
 def title_preprocess(title: str):
     """提取标题层级和标题内容

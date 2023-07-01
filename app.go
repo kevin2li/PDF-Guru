@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
@@ -34,18 +33,29 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
-}
-
-func (a *App) Test() string {
-	formatted := time.Now().Format("2006-01-02 15:04:05")
-	return fmt.Sprintf("当前时间:  %s", formatted)
+func (a *App) CheckFileExists(path string) error {
+	fmt.Printf("check path exists: %s\n", path)
+	if strings.Contains(path, "*") {
+		matches, err := filepath.Glob(path)
+		if err != nil {
+			return err
+		}
+		if len(matches) == 0 {
+			return errors.New("未匹配到任何文件")
+		}
+		return nil
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return errors.New("路径不存在!")
+	}
+	if info, err := os.Stat(path); err == nil && info.IsDir() {
+		return errors.New("路径是目录!")
+	}
+	return nil
 }
 
 func (a *App) SplitPDF(inFile string, mode string, span int, outDir string) error {
-	fmt.Println("inFile: ", inFile)
+	fmt.Printf("inFile: %s, mode: %s, span: %d, outDir: %s\n", inFile, mode, span, outDir)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		fmt.Println(err)
 		return err
@@ -80,6 +90,12 @@ func (a *App) RotatePDF(inFile string, outFile string, rotation int, pagesStr st
 		return err
 	}
 	conf := model.NewDefaultConfiguration()
+	if outFile == "" {
+		parent := filepath.Dir(inFile)
+		parts := strings.Split(filepath.Base(inFile), ".")
+		filename := strings.Join(parts[:len(parts)-1], ".")
+		outFile = filepath.Join(parent, filename+"_旋转.pdf")
+	}
 	err = api.RotateFile(inFile, outFile, rotation, pages, conf)
 	if err != nil {
 		return err
@@ -101,6 +117,12 @@ func (a *App) ScalePDF(inFile string, outFile string, description string, pagesS
 		return err
 	}
 	conf := model.NewDefaultConfiguration()
+	if outFile == "" {
+		parent := filepath.Dir(inFile)
+		parts := strings.Split(filepath.Base(inFile), ".")
+		filename := strings.Join(parts[:len(parts)-1], ".")
+		outFile = filepath.Join(parent, filename+"_缩放.pdf")
+	}
 	err = api.ResizeFile(inFile, outFile, pages, resizeConf, conf)
 	if err != nil {
 		return err
@@ -109,15 +131,22 @@ func (a *App) ScalePDF(inFile string, outFile string, description string, pagesS
 }
 
 func (a *App) ReorderPDF(inFile string, outFile string, pagesStr string) error {
+	fmt.Printf("inFile: %s, outFile: %s, pagesStr: %s\n", inFile, outFile, pagesStr)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		fmt.Println(err)
 		return err
 	}
 	pages, err := api.ParsePageSelection(pagesStr)
+	log.Printf("pages: %v\n", pages)
 	if err != nil {
 		return err
 	}
-
+	if outFile == "" {
+		parent := filepath.Dir(inFile)
+		parts := strings.Split(filepath.Base(inFile), ".")
+		filename := strings.Join(parts[:len(parts)-1], ".")
+		outFile = filepath.Join(parent, filename+"_处理.pdf")
+	}
 	conf := model.NewDefaultConfiguration()
 	err = api.CollectFile(inFile, outFile, pages, conf)
 	if err != nil {
@@ -132,6 +161,12 @@ func (a *App) CompressPDF(inFile string, outFile string) error {
 		return err
 	}
 	conf := model.NewDefaultConfiguration()
+	if outFile == "" {
+		parent := filepath.Dir(inFile)
+		parts := strings.Split(filepath.Base(inFile), ".")
+		filename := strings.Join(parts[:len(parts)-1], ".")
+		outFile = filepath.Join(parent, filename+"_压缩.pdf")
+	}
 	err := api.OptimizeFile(inFile, outFile, conf)
 	if err != nil {
 		return err
