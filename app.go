@@ -307,7 +307,7 @@ func (a *App) ExtractBookmark(inFile string, outFile string, format string) erro
 	return nil
 }
 
-func (a *App) WriteBookmark(inFile string, outFile string, tocFile string, offset int) error {
+func (a *App) WriteBookmarkByFile(inFile string, outFile string, tocFile string, offset int) error {
 	fmt.Printf("inFile: %s, outFile: %s, tocFile: %s, offset: %d\n", inFile, outFile, tocFile, offset)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		fmt.Println(err)
@@ -323,6 +323,29 @@ func (a *App) WriteBookmark(inFile string, outFile string, tocFile string, offse
 	}
 	if offset != 0 {
 		args = append(args, "--offset", fmt.Sprintf("%d", offset))
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format string) error {
+	fmt.Printf("inFile: %s, outFile: %s, gap: %d\n", inFile, outFile, gap)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"bookmark", "add", "--method", "gap"}
+	args = append(args, "--gap", fmt.Sprintf("%d", gap))
+	if format != "" {
+		args = append(args, "--format", format)
 	}
 	if outFile != "" {
 		args = append(args, "-o", outFile)
@@ -383,25 +406,14 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 	if fontFamily != "" {
 		args = append(args, "--font-family", fontFamily)
 	}
-	if fontSize != 0 {
-		args = append(args, "--font-size", fmt.Sprintf("%d", fontSize))
-	}
 	if fontColor != "" {
 		args = append(args, "--color", fontColor)
 	}
-	if angle != 0 {
-		args = append(args, "--angle", fmt.Sprintf("%d", angle))
-	}
-	if space != 0 {
-		args = append(args, "--space", fmt.Sprintf("%d", space))
-	}
-
-	if opacity != 0 {
-		args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
-	}
-	if quality != 0 {
-		args = append(args, "--quality", fmt.Sprintf("%d", quality))
-	}
+	args = append(args, "--font-size", fmt.Sprintf("%d", fontSize))
+	args = append(args, "--angle", fmt.Sprintf("%d", angle))
+	args = append(args, "--space", fmt.Sprintf("%d", space))
+	args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	args = append(args, "--quality", fmt.Sprintf("%d", quality))
 	if outFile != "" {
 		args = append(args, "-o", outFile)
 	}
@@ -418,5 +430,33 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 	// 	return err
 	// }
 	// fmt.Println(string(output))
+	return nil
+}
+
+func (a *App) OCR(inFile string, outFile string, pages string, lang string, doubleColumn bool) error {
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\ocr.py", "ocr"}
+	if lang != "" {
+		args = append(args, "--lang", lang)
+	}
+	if doubleColumn {
+		args = append(args, "--use-double-column")
+	}
+	if pages != "" {
+		args = append(args, "--range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command("C:\\Users\\kevin\\miniconda3\\envs\\ocr\\python.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
 	return nil
 }

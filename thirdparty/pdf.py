@@ -1,12 +1,20 @@
+import argparse
 import json
+import math
 import re
 import traceback
 from pathlib import Path
-import argparse
-from typing import List
+from typing import List, Tuple, Union
+
 import fitz
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFont, ImageOps
-import math
+from reportlab.lib import units
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
+
+pdfmetrics.registerFont(TTFont('msyh','msyh.ttc'))
+pdfmetrics.registerFont(TTFont('simkai','simkai.ttf'))
 
 def title_preprocess(title: str):
     """提取标题层级和标题内容
@@ -95,6 +103,18 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
         output_path = str(p.parent / f"{p.stem}-toc.pdf")
     doc.save(output_path)
 
+def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", output_path: str = None):
+    doc: fitz.Document = fitz.open(doc_path)
+    p = Path(doc_path)
+    toc = []
+    for i in range(0, doc.page_count, gap):
+        toc.append([1, format.replace("%p", i+1), i+1])
+    toc.append([1, format.replace("%p", doc.page_count), doc.page_count])
+    doc.set_toc(toc)
+    if output_path is None:
+        output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
+    doc.save(output_path)
+
 def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
     doc: fitz.Document = fitz.open(doc_path)
     p = Path(doc_path)
@@ -174,144 +194,6 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
         output_path = str(p.parent / f"{p.stem}-decrypt.pdf")
     doc.save(output_path)
 
-def set_opacity(im, opacity):
-    '''
-    设置水印透明度
-    '''
-    assert opacity >= 0 and opacity <= 1
-
-    alpha = im.split()[3]
-    alpha = ImageEnhance.Brightness(alpha).enhance(opacity)
-    im.putalpha(alpha)
-    return im
-
-def crop_image(im):
-    '''裁剪图片边缘空白'''
-    bg = Image.new(mode='RGBA', size=im.size)
-    diff = ImageChops.difference(im, bg)
-    del bg
-    bbox = diff.getbbox()
-    if bbox:
-        return im.crop(bbox)
-    return im
-
-
-def gen_mark(
-    mark_text       : str,
-    font_family     : str,
-    size            : int = 50,
-    space           : int = 75,
-    angle           : int = 30,
-    color           : str = "#808080",
-    opacity         : float=0.15,
-    font_height_crop: str="1.2",
-    ): 
-    """生成水印图片，返回添加水印的函数
-
-    Args:
-        mark_text (str): 水印文本
-        size (int, optional): font size of text. Defaults to 50.
-        space (int, optional): space between watermarks. Defaults to 75.
-        angle (int, optional): rotate angle of watermarks. Defaults to 30.
-        color (str, optional): text color. Defaults to "#808080".
-        opacity (float, optional): opacity of watermarks. Defaults to 0.15.
-        font_height_crop (float, optional): change watermark font height crop float will be parsed to factor; int will be parsed to value default is '1.2', meaning 1.2 times font size this useful with CJK font, because line height may be higher than size. Defaults to 1.2.
-        font_family (str, optional): font family of text. Defaults to "../assets/青鸟华光简琥珀.ttf".
-    """    
-    # 字体宽度、高度
-    is_height_crop_float = '.' in font_height_crop  # not good but work
-    width = len(mark_text) * size
-    if is_height_crop_float:
-        height = round(size * float(font_height_crop))
-    else:
-        height = int(font_height_crop)
-
-    # 创建水印图片(宽度、高度)
-    mark = Image.new(mode='RGBA', size=(width, height))
-
-    # 生成文字
-    draw_table = ImageDraw.Draw(im=mark)
-    draw_table.text(xy=(0, 0),
-                    text=mark_text,
-                    fill=color,
-                    font=ImageFont.truetype(font_family, size=size, encoding="utf-8"))
-    del draw_table
-
-    # 裁剪空白
-    mark = crop_image(mark)
-
-    # 透明度
-    set_opacity(mark, opacity)
-
-    def mark_im(im):
-        ''' 在im图片上添加水印 im为打开的原图'''
-
-        # 计算斜边长度
-        c = int(math.sqrt(im.size[0] * im.size[0] + im.size[1] * im.size[1]))
-
-        # 以斜边长度为宽高创建大图（旋转后大图才足以覆盖原图）
-        mark2 = Image.new(mode='RGBA', size=(c, c))
-
-        # 在大图上生成水印文字，此处mark为上面生成的水印图片
-        y, idx = 0, 0
-        while y < c:
-            # 制造x坐标错位
-            x = -int((mark.size[0] + space) * 0.5 * idx)
-            idx = (idx + 1) % 2
-
-            while x < c:
-                # 在该位置粘贴mark水印图片
-                mark2.paste(mark, (x, y))
-                x = x + mark.size[0] + space
-            y = y + mark.size[1] + space
-
-        # 将大图旋转一定角度
-        mark2 = mark2.rotate(angle)
-
-        # 在原图上添加大图水印
-        if im.mode != 'RGBA':
-            im = im.convert('RGBA')
-        im.paste(mark2, (int((im.size[0] - c) / 2), int((im.size[1] - c) / 2)), mask=mark2.split()[3])
-        del mark2
-        return im
-
-    return mark_im
-
-
-def add_mark_to_image(img_path, mark_text: str, quality: int = 80, output_path: str = None, **mark_args):
-    im = Image.open(img_path)
-    im = ImageOps.exif_transpose(im)
-    mark_func = gen_mark(mark_text, **mark_args)
-    image = mark_func(im)
-    if output_path is None:
-        p = Path(img_path)
-        output_path = p.parent / f"{p.stem}-watermarked{p.suffix}"
-    image.save(output_path, quality=quality)
-
-def add_mark_to_pdf(doc_path: str, mark_text: str, quality: int = 80, output_path: str = None, **mark_args):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    tmp_dir = p.parent / 'tmp'
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    page = doc.load_page(0)
-    blank = Image.new("RGB", (int(page.rect[2]), int(page.rect[3])), (255, 255, 255))
-    blank_savepath = tmp_dir / "blank.png"
-    blank.save(blank_savepath)
-    mark_savepath = tmp_dir / "watermark.png"
-    add_mark_to_image(blank_savepath, mark_text, quality=quality, output_path=mark_savepath, **mark_args)
-
-    for page_index in range(doc.page_count):
-        page = doc[page_index]
-        page.insert_image(
-            page.rect,                  # where to place the image (rect-like)
-            filename=mark_savepath,     # image in a file
-            overlay=False,          # put in foreground
-        )
-    if output_path is None:
-        p = Path(doc_path)
-        output_path = p.parent / f"{p.stem}-watermarked{p.suffix}"
-    doc.save(output_path)
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -339,11 +221,17 @@ def main():
 
     ## 添加书签
     bookmark_add_parser = bookmark_sub_parsers.add_parser("add", help="添加书签")
+    ### 文件书签
     bookmark_add_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    bookmark_add_parser.add_argument("--method", type=str, choices=['file', 'gap'], default="file", help="添加方式")
     bookmark_add_parser.add_argument("--toc", type=str, required=True, help="目录文件路径")
     bookmark_add_parser.add_argument("--offset", type=int, default=0, help="偏移量, 计算方式: “pdf文件实际页码” - “目录文件标注页码”")
     bookmark_add_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_add_parser.set_defaults(bookmark_which='add')
+    
+    ### 页码书签
+    bookmark_add_parser.add_argument("--gap", type=int, default=1, help="页码间隔")
+    bookmark_add_parser.add_argument("--format", type=str, default="第%p页", help="页码格式")
     
     ## 提取书签
     bookmark_extract_parser = bookmark_sub_parsers.add_parser("extract", help="提取书签")
@@ -384,7 +272,10 @@ def main():
         decrypt_pdf(args.input_path, args.password, args.output)
     elif args.which == "bookmark":
         if args.bookmark_which == "add":
-            add_toc_from_file(args.toc, args.input_path, args.offset, args.output)
+            if args.method == "file":
+                add_toc_from_file(args.toc, args.input_path, args.offset, args.output)
+            elif args.method == "gap":
+                add_toc_by_gap(args.input_path, args.gap, args.format, args.output)
         elif args.bookmark_which == "extract":
             extract_toc(args.input_path, args.format, args.output)
         elif args.bookmark_which == "transform":
@@ -400,11 +291,96 @@ def main():
             "font_height_crop": "1.2",
         }
         if args.input_path.endswith(".pdf"):
-            add_mark_to_pdf(doc_path=args.input_path, output_path=args.output, mark_text=args.mark_text, quality=args.quality, **mark_args)
-        elif args.input_path.endswith(".png") or args.input_path.endswith(".jpg") or args.input_path.endswith(".jpeg"):
-            add_mark_to_image(img_path=args.input_path, output_path=args.output, mark_text=args.mark_text, quality=args.quality, **mark_args)
+            # add_mark_to_pdf(doc_path=args.input_path, output_path=args.output, mark_text=args.mark_text, quality=args.quality, **mark_args)
+            pass
         else:
             raise ValueError("不支持的文件格式!")
 
+
+def test():
+    doc = fitz.Document()
+    page = doc.new_page()  # new or existing page via doc[n]
+    p = fitz.Point(50, 72)  # start point of 1st line
+
+    # text = "Some text,\nspread across\nseveral lines."
+    # # the same result is achievable by
+    # # text = ["Some text", "spread across", "several lines."]
+
+    # rc = page.insert_text(p,  # bottom-left of 1st char
+    #                     text,  # the text (honors '\n')
+    #                     fontname = "helv",  # the default font
+    #                     fontsize = 11,  # the default font size
+    #                     rotate = 90,  # also available: 90, 180, 270
+    #                     )
+    # print("%i lines printed on page %i." % (rc, page.number))
+
+    rect = fitz.Rect(100, 100, 200, 200)  # 设置文本框的位置和大小
+    annot = page.new_annot('Text', rect)
+
+    annot.update(fontsize=12, font='Times-Bold', color=(0, 0, 1))  # 设置字体、字号、颜色等属性
+    annot.set_rotation(30)  # 设置旋转角度
+    annot.content = 'Hello, world!'  # 插入文本
+    doc.save("text.pdf")
+    
+
+def embed():
+    doc = fitz.open("text.pdf") # open main document
+    embedded_doc = fitz.open("pdf2-0.pdf") # open document you want to embed
+
+    embedded_data = embedded_doc.tobytes() # get the document byte data as a buffer
+
+    # embed with the file name and the data
+    doc.embfile_add("my-embedded_file.pdf", embedded_data)
+
+    doc.save("document-with-embed.pdf") # save the document
+
+def create_wartmark(content:str,
+                    filename:str,
+                    width: Union[int, float],
+                    height: Union[int, float],
+                    font: str,
+                    fontsize: int,
+                    angle: Union[int, float] = 45,
+                    text_stroke_color_rgb: Tuple[int, int, int] = (0, 0, 0),
+                    text_fill_color_rgb: Tuple[int, int, int] = (0, 0, 0),
+                    text_fill_alpha: Union[int, float] = 1) -> None:
+    #创建PDF文件，指定文件名及尺寸，以像素为单位
+    c = canvas.Canvas(f'{filename}.pdf',pagesize=(width*units.mm,height*units.mm))
+
+    #画布平移保证文字完整性
+    c.translate(0.1*width*units.mm,0.1*height*units.mm)
+
+    #设置旋转角度
+    # c.rotate(angle)
+
+    #设置字体大小
+    c.setFont(font,fontsize)
+
+    #设置字体轮廓彩色
+    c.setStrokeColorRGB(*text_stroke_color_rgb)
+
+    #设置填充色
+    c.setFillColorRGB(*text_fill_color_rgb)
+
+    #设置字体透明度
+    c.setFillAlpha(text_fill_alpha)
+
+    #绘制字体内容
+    c.drawString(0,0,content)
+    # c.setPageRotation(45)
+    c.setCropBox([0, 0, 100*units.mm, 30*units.mm])
+
+    #保存文件
+    c.save()
+
 if __name__ == "__main__":
-    main()
+    # main()
+    # test()
+    # embed()
+    create_wartmark(content='关注carl_奕然，学习更多有趣的python知识',
+                 filename='小鱼watermarkDemo6',
+                 width=2*200,
+                 height=200,
+                 font='simkai',
+                 fontsize=35,
+                 text_fill_alpha=0.3) 

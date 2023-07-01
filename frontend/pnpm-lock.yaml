@@ -8,9 +8,6 @@ dependencies:
   ant-design-vue:
     specifier: ^3.2.20
     version: 3.2.20(vue@3.3.4)
-  mupdf:
-    specifier: ^0.0.5
-    version: 0.0.5
   vue:
     specifier: ^3.2.37
     version: 3.3.4
@@ -584,10 +581,6 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       '@jridgewell/sourcemap-codec': 1.4.15
-
-  /mupdf@0.0.5:
-    resolution: {integrity: sha512-HdCOSobBIPJKQYqXdiALOtBBdNBM/6t6V52d0YmFFkHdiaqX+jd2gw+St0TBN4+SYbGdvanIM7e8ed+vOkQpRA==}
-    dev: false
 
   /nanoid@3.3.6:
     resolution: {integrity: sha512-BGcqMMJuToF7i1rt+2PWSNVnWIkGCU78jBG3RxO/bZlnZPK2Cmi2QaffxGO/2RvWi9sL+FAiRiXMgsyxQ1DIDA==}

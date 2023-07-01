@@ -30,6 +30,10 @@ export function MergePDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['MergePDF'](arg1, arg2, arg3, arg4);
 }
 
+export function OCR(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['OCR'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function ReorderPDF(arg1, arg2, arg3) {
   return window['go']['main']['App']['ReorderPDF'](arg1, arg2, arg3);
 }
@@ -58,6 +62,10 @@ export function WatermarkPDF(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg
   return window['go']['main']['App']['WatermarkPDF'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
-export function WriteBookmark(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['WriteBookmark'](arg1, arg2, arg3, arg4);
+export function WriteBookmarkByFile(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['WriteBookmarkByFile'](arg1, arg2, arg3, arg4);
+}
+
+export function WriteBookmarkByGap(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['WriteBookmarkByGap'](arg1, arg2, arg3, arg4);
 }

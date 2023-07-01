@@ -10,7 +10,7 @@
                 </a-menu-item>
                 <a-menu-item key="split">
                     <template #icon>
-                        <borderless-table-outlined />
+                        <split-cells-outlined />
                     </template>
                     {{ menuRecord['split'] }}
                 </a-menu-item>
@@ -80,7 +80,12 @@
                         <lock-outlined />
                     </template>
                     {{ menuRecord['encrypt'] }}
-
+                </a-menu-item>
+                <a-menu-item key="ocr">
+                    <template #icon>
+                        <eye-outlined />
+                    </template>
+                    {{ menuRecord['ocr'] }}
                 </a-menu-item>
                 <a-menu-item key="settings">
                     <template #icon>
@@ -103,138 +108,232 @@
                         style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
                         :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }">
                         <!-- PDF合并 -->
-                        <a-form-item name="merge_path_list" label="输入路径列表" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'merge'">
-                            <a-input v-model:value="formState.merge_path_list[0]" placeholder="待合并pdf文件路径" />
-                        </a-form-item>
-                        <a-form-item label=" " :colon=false v-for="(item, index) in formState.merge_path_list.slice(1)"
-                            :key="index">
-                            <a-input v-model:value="formState.merge_path_list[index]" style="width: 95%;"
-                                placeholder="待合并pdf文件路径" />
-                            <MinusCircleOutlined @click="removePath(item)" style="margin-left: 1vw;" />
-                        </a-form-item>
-                        <a-form-item name="span" label=" " :colon=false v-if="currentMenu.at(0) == 'merge'">
-                            <a-button type="dashed" block @click="addPath">
-                                <PlusOutlined />
-                                添加路径
-                            </a-button>
-                        </a-form-item>
-                        <a-form-item name="merge_sort" label="排序字段" v-if="currentMenu.at(0) == 'merge'">
-                            <a-radio-group v-model:value="formState.merge_sort">
-                                <a-radio value="hand">添加顺序</a-radio>
-                                <a-radio value="name">文件名</a-radio>
-                                <a-radio value="create">创建时间</a-radio>
-                                <a-radio value="modify">修改时间</a-radio>
-                            </a-radio-group>
-                        </a-form-item>
-                        <a-form-item label="排序方向" v-if="currentMenu.at(0) == 'merge'">
-                            <a-radio-group v-model:value="formState.merge_sort_direction"
-                                v-if="currentMenu.at(0) == 'merge'">
-                                <a-radio value="asc">升序</a-radio>
-                                <a-radio value="desc">降序</a-radio>
-                            </a-radio-group>
-                        </a-form-item>
+                        <div v-if="currentMenu.at(0) == 'merge'">
+                            <a-form-item :label="index === 0 ? '输入路径列表' : ' '" :colon="index === 0 ? true : false"
+                                v-for="(item, index) in formState.merge_path_list" :key="index">
+                                <a-input v-model:value="formState.merge_path_list[index]" style="width: 95%;"
+                                    placeholder="待合并pdf文件路径" />
+                                <MinusCircleOutlined @click="removePath(item)" style="margin-left: 1vw;" />
+                            </a-form-item>
+                            <a-form-item name="span" :label="formState.merge_path_list.length === 0 ? '输入路径列表' : ' '"
+                                :colon="formState.merge_path_list.length === 0 ? true : false">
+                                <a-button type="dashed" block @click="addPath">
+                                    <PlusOutlined />
+                                    添加路径
+                                </a-button>
+                            </a-form-item>
+                            <a-form-item name="merge_sort" label="排序字段">
+                                <a-radio-group v-model:value="formState.merge_sort">
+                                    <a-radio value="hand">添加顺序</a-radio>
+                                    <a-radio value="name">文件名</a-radio>
+                                    <a-radio value="create">创建时间</a-radio>
+                                    <a-radio value="modify">修改时间</a-radio>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item label="排序方向">
+                                <a-radio-group v-model:value="formState.merge_sort_direction"
+                                    v-if="currentMenu.at(0) == 'merge'">
+                                    <a-radio value="asc">升序</a-radio>
+                                    <a-radio value="desc">降序</a-radio>
+                                </a-radio-group>
+                            </a-form-item>
+                        </div>
                         <!-- PDF拆分 -->
-                        <a-form-item name="split_mode" label="类型" v-if="currentMenu.at(0) == 'split'">
-                            <a-radio-group button-style="solid" v-model:value="formState.split_mode">
-                                <a-radio-button value="span">均匀分块</a-radio-button>
-                                <a-radio-button value="range">自定义范围</a-radio-button>
-                                <a-radio-button value="bookmark">目录</a-radio-button>
-                            </a-radio-group>
-                        </a-form-item>
-                        <a-form-item name="span" label="块大小"
-                            v-if="currentMenu.at(0) == 'split' && formState.split_mode == 'span'">
-                            <a-input-number v-model:value="formState.split_span" :min="1" />
-                        </a-form-item>
-                        <a-form-item name="span" label="页码范围"
-                            v-if="currentMenu.at(0) == 'split' && formState.split_mode == 'range'">
-                            <a-input v-model:value="formState.split_ranges"
-                                placeholder="自定义页码范围,用英文逗号隔开,e.g. 1-10,11-15,16-19" />
-                        </a-form-item>
-                        <a-form-item name="span" label="目录级别"
-                            v-if="currentMenu.at(0) == 'split' && formState.split_mode == 'bookmark'">
-                            <a-select v-model:value="formState.split_bookmark_level" style="width: 200px">
-                                <a-select-option value="1">一级标题</a-select-option>
-                                <a-select-option value="2">二级标题</a-select-option>
-                                <a-select-option value="3">三级标题</a-select-option>
-                            </a-select>
-                        </a-form-item>
+                        <div v-if="currentMenu.at(0) == 'split'">
+                            <a-form-item name="split_mode" label="类型">
+                                <a-radio-group button-style="solid" v-model:value="formState.split_mode">
+                                    <a-radio-button value="span">均匀分块</a-radio-button>
+                                    <a-radio-button value="range">自定义范围</a-radio-button>
+                                    <a-radio-button value="bookmark">目录</a-radio-button>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item name="span" label="块大小" v-if="formState.split_mode == 'span'">
+                                <a-input-number v-model:value="formState.split_span" :min="1" />
+                            </a-form-item>
+                            <a-form-item name="span" label="页码范围" v-if="formState.split_mode == 'range'">
+                                <a-input v-model:value="formState.split_ranges"
+                                    placeholder="自定义页码范围,用英文逗号隔开,e.g. 1-10,11-15,16-19" />
+                            </a-form-item>
+                            <a-form-item name="span" label="目录级别" v-if="formState.split_mode == 'bookmark'">
+                                <a-select v-model:value="formState.split_bookmark_level" style="width: 200px">
+                                    <a-select-option value="1">一级标题</a-select-option>
+                                    <a-select-option value="2">二级标题</a-select-option>
+                                    <a-select-option value="3">三级标题</a-select-option>
+                                </a-select>
+                            </a-form-item>
+                        </div>
 
                         <!-- PDF旋转 -->
-                        <a-form-item name="rotate" label="操作" v-if="currentMenu.at(0) == 'rotate'">
-                            <a-radio-group button-style="solid" v-model:value="formState.rotate_op">
-                                <a-radio-button value="rotate">旋转</a-radio-button>
-                                <a-radio-button value="flip">翻转</a-radio-button>
-                            </a-radio-group>
-                        </a-form-item>
-                        <a-form-item name="rotate" label="旋转角度"
-                            v-if="currentMenu.at(0) == 'rotate' && formState.rotate_op == 'rotate'">
-                            <a-radio-group v-model:value="formState.rotate_degree">
-                                <a-radio :value="90">顺时针90</a-radio>
-                                <a-radio :value="180">顺时针180</a-radio>
-                                <a-radio :value="270">逆时针90</a-radio>
-                            </a-radio-group>
-                        </a-form-item>
-                        <a-form-item name="rotate" label="翻转类型"
-                            v-if="currentMenu.at(0) == 'rotate' && formState.rotate_op == 'flip'">
-                            <a-radio-group v-model:value="formState.flip_method">
-                                <a-radio value="horizontal">水平翻转</a-radio>
-                                <a-radio value="vertical">垂直翻转</a-radio>
-                            </a-radio-group>
-                        </a-form-item>
+                        <div v-if="currentMenu.at(0) == 'rotate'">
+                            <a-form-item name="rotate" label="操作">
+                                <a-radio-group button-style="solid" v-model:value="formState.rotate_op">
+                                    <a-radio-button value="rotate">旋转</a-radio-button>
+                                    <a-radio-button value="flip">翻转</a-radio-button>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item name="rotate" label="旋转角度" v-if="formState.rotate_op == 'rotate'">
+                                <a-radio-group v-model:value="formState.rotate_degree">
+                                    <a-radio :value="90">顺时针90</a-radio>
+                                    <a-radio :value="180">顺时针180</a-radio>
+                                    <a-radio :value="270">逆时针90</a-radio>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item name="rotate" label="翻转类型" v-if="formState.rotate_op == 'flip'">
+                                <a-radio-group v-model:value="formState.flip_method">
+                                    <a-radio value="horizontal">水平翻转</a-radio>
+                                    <a-radio value="vertical">垂直翻转</a-radio>
+                                </a-radio-group>
+                            </a-form-item>
+                        </div>
 
                         <!-- PDF书签 -->
-                        <a-form-item name="bookmark_op" label="操作" v-if="currentMenu.at(0) == 'bookmark'">
-                            <a-radio-group button-style="solid" v-model:value="formState.bookmark_op">
-                                <a-radio-button value="extract">提取书签</a-radio-button>
-                                <a-radio-button value="write">写入书签</a-radio-button>
-                                <a-radio-button value="transform">转换书签</a-radio-button>
-                                <a-radio-button value="ocr" disabled>识别书签</a-radio-button>
-                            </a-radio-group>
-                        </a-form-item>
-                        <a-form-item name="bookmark_write_type" label="类型" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write'">
-                            <a-radio-group v-model:value="formState.bookmark_write_type">
-                                <a-radio value="file">书签文件导入</a-radio>
-                                <a-radio value="page">页码书签</a-radio>
-                            </a-radio-group>
-                        </a-form-item>
+                        <div v-if="currentMenu.at(0) == 'bookmark'">
+                            <a-form-item name="bookmark_op" label="操作">
+                                <a-radio-group button-style="solid" v-model:value="formState.bookmark_op">
+                                    <a-radio-button value="extract">提取书签</a-radio-button>
+                                    <a-radio-button value="write">写入书签</a-radio-button>
+                                    <a-radio-button value="transform">转换书签</a-radio-button>
+                                    <a-radio-button value="ocr" disabled>识别书签</a-radio-button>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item name="bookmark_write_type" label="类型" :rules="{ required: true }"
+                                v-if="formState.bookmark_op == 'write'">
+                                <a-radio-group v-model:value="formState.bookmark_write_type">
+                                    <a-radio value="file">书签文件导入</a-radio>
+                                    <a-radio value="page">页码书签</a-radio>
+                                </a-radio-group>
+                            </a-form-item>
 
-                        <a-form-item name="bookmark_file" label="书签文件" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write' && formState.bookmark_write_type == 'file'">
-                            <a-input v-model:value="formState.bookmark_file" placeholder="书签文件路径" />
-                        </a-form-item>
-                        <a-form-item name="bookmark_write_offset" label="页码偏移量" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write' && formState.bookmark_write_type == 'file'">
-                            <a-input-number v-model:value="formState.bookmark_write_offset" placeholder="页码偏移量" />
-                        </a-form-item>
-                        <a-form-item name="bookmark_write_span" label="间隔页数" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write' && formState.bookmark_write_type == 'page'">
-                            <a-input-number v-model:value="formState.bookmark_write_span" placeholder="间隔页数" />
-                        </a-form-item>
-                        <a-form-item name="bookmark_write_format" label="命名格式"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'write' && formState.bookmark_write_type == 'page'">
-                            <a-input v-model:value="formState.bookmark_write_format" placeholder="e.g. 第%p页(%p表示页码)" />
-                        </a-form-item>
-                        <a-form-item name="bookmark_transform_offset" label="页码偏移量" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'transform'">
-                            <a-input-number v-model:value="formState.bookmark_transform_offset" placeholder="页码偏移量" />
-                        </a-form-item>
-                        <a-form-item name="bookmark_transform_indent" label="增加缩进" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'transform'">
-                            <a-switch v-model:checked="formState.bookmark_transform_indent" />
-                        </a-form-item>
-                        <a-form-item name="bookmark_transform_dots" label="删除尾部点" :rules="{ required: true }"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'transform'">
-                            <a-switch v-model:checked="formState.bookmark_transform_dots" />
-                        </a-form-item>
-                        <a-form-item name="bookmark_extract_format" label="导出格式"
-                            v-if="currentMenu.at(0) == 'bookmark' && formState.bookmark_op == 'extract'">
-                            <a-select v-model:value="formState.bookmark_extract_format" style="width: 200px">
-                                <a-select-option value="txt">txt</a-select-option>
-                                <a-select-option value="json">json</a-select-option>
-                            </a-select>
-                        </a-form-item>
+                            <a-form-item name="bookmark_file" label="书签文件" :rules="{ required: true }"
+                                v-if="formState.bookmark_op == 'write' && formState.bookmark_write_type == 'file'">
+                                <a-input v-model:value="formState.bookmark_file" placeholder="书签文件路径" />
+                            </a-form-item>
+                            <a-form-item name="bookmark_write_offset" label="页码偏移量" :rules="{ required: true }"
+                                v-if="formState.bookmark_op == 'write' && formState.bookmark_write_type == 'file'">
+                                <a-input-number v-model:value="formState.bookmark_write_offset" placeholder="页码偏移量" />
+                            </a-form-item>
+                            <a-form-item name="bookmark_write_gap" label="间隔页数" :rules="{ required: true }"
+                                v-if="formState.bookmark_op == 'write' && formState.bookmark_write_type == 'page'">
+                                <a-input-number v-model:value="formState.bookmark_write_gap" placeholder="间隔页数" />
+                            </a-form-item>
+                            <a-form-item name="bookmark_write_format" label="命名格式"
+                                v-if="formState.bookmark_op == 'write' && formState.bookmark_write_type == 'page'">
+                                <a-input v-model:value="formState.bookmark_write_format" placeholder="e.g. 第%p页(%p表示页码)" />
+                            </a-form-item>
+                            <a-form-item name="bookmark_transform_offset" label="页码偏移量" :rules="{ required: true }"
+                                v-if="formState.bookmark_op == 'transform'">
+                                <a-input-number v-model:value="formState.bookmark_transform_offset" placeholder="页码偏移量" />
+                            </a-form-item>
+                            <a-form-item name="bookmark_transform_indent" label="增加缩进" :rules="{ required: true }"
+                                v-if="formState.bookmark_op == 'transform'">
+                                <a-switch v-model:checked="formState.bookmark_transform_indent" />
+                            </a-form-item>
+                            <a-form-item name="bookmark_transform_dots" label="删除尾部点" :rules="{ required: true }"
+                                v-if="formState.bookmark_op == 'transform'">
+                                <a-switch v-model:checked="formState.bookmark_transform_dots" />
+                            </a-form-item>
+                            <a-form-item name="bookmark_extract_format" label="导出格式"
+                                v-if="formState.bookmark_op == 'extract'">
+                                <a-select v-model:value="formState.bookmark_extract_format" style="width: 200px">
+                                    <a-select-option value="txt">txt</a-select-option>
+                                    <a-select-option value="json">json</a-select-option>
+                                </a-select>
+                            </a-form-item>
+                        </div>
+                        <!-- PDF裁剪/分割 -->
+                        <div v-if="currentMenu.at(0) == 'crop'">
+                            <a-form-item name="crop_op" label="操作">
+                                <a-radio-group button-style="solid" v-model:value="formState.crop_op">
+                                    <a-radio-button value="crop">裁剪</a-radio-button>
+                                    <a-radio-button value="split">分割</a-radio-button>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item label="单位" v-if="formState.crop_op == 'crop'">
+                                <a-radio-group v-model:value="formState.crop_unit">
+                                    <a-radio value="cm">厘米</a-radio>
+                                    <a-radio value="mm">毫米</a-radio>
+                                    <a-radio value="px">像素</a-radio>
+                                    <a-radio value="in">英寸</a-radio>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item name="crop_type" label="页边距" v-if="formState.crop_op == 'crop'">
+                                <a-space size="large">
+                                    <a-input-number v-model:value="formState.crop_up" :min="0">
+                                        <template #addonBefore>
+                                            上
+                                        </template>
+                                    </a-input-number>
+                                    <a-input-number v-model:value="formState.crop_left" :min="0">
+                                        <template #addonBefore>
+                                            左
+                                        </template>
+                                    </a-input-number>
+                                    <a-input-number v-model:value="formState.crop_down" :min="0">
+                                        <template #addonBefore>
+                                            下
+                                        </template>
+                                    </a-input-number>
+                                    <a-input-number v-model:value="formState.crop_right" :min="0">
+                                        <template #addonBefore>
+                                            右
+                                        </template>
+                                    </a-input-number>
+                                </a-space>
+                            </a-form-item>
+                            <a-form-item label="分割类型" v-if="formState.crop_op == 'split'">
+                                <a-radio-group v-model:value="formState.crop_split_type">
+                                    <a-radio value="even">均匀分割</a-radio>
+                                    <a-radio value="custom">自定义分割</a-radio>
+                                </a-radio-group>
+                            </a-form-item>
+                            <a-form-item label="网格形状"
+                                v-if="formState.crop_op == 'split' && formState.crop_split_type == 'even'">
+                                <a-space size="large">
+                                    <a-input-number v-model:value="formState.crop_split_rows" :min="1">
+                                        <template #addonBefore>
+                                            行数
+                                        </template>
+                                    </a-input-number>
+                                    <a-input-number v-model:value="formState.crop_split_cols" :min="1">
+                                        <template #addonBefore>
+                                            列数
+                                        </template>
+                                    </a-input-number>
+                                </a-space>
+                            </a-form-item>
+                            <a-form-item :label="index === 0 ? '水平分割线' : ' '" :colon="index === 0 ? true : false"
+                                v-if="formState.crop_op == 'split' && formState.crop_split_type == 'custom'"
+                                v-for="(item, index) in formState.crop_split_h_breakpoints" :key="index">
+                                <a-input-number :min="0" :max="100" :formatter="(value: any) => `${value}%`"
+                                    :parser="(value: any) => value.replace('%', '')" />
+                                <MinusCircleOutlined @click="removeHBreakpoint(item)" style="margin-left: 1vw;" />
+                            </a-form-item>
+                            <a-form-item name="span"
+                                :label="formState.crop_split_h_breakpoints.length === 0 ? '水平分割线' : ' '"
+                                :colon="formState.crop_split_h_breakpoints.length === 0 ? true : false"
+                                v-if="formState.crop_op == 'split' && formState.crop_split_type == 'custom'">
+                                <a-button type="dashed" block @click="addHBreakpoint">
+                                    <PlusOutlined />
+                                    添加水平分割线
+                                </a-button>
+                            </a-form-item>
+                            <a-form-item :label="index === 0 ? '垂直分割线' : ' '" :colon="index === 0 ? true : false"
+                                v-if="formState.crop_op == 'split' && formState.crop_split_type == 'custom'"
+                                v-for="(item, index) in formState.crop_split_v_breakpoints" :key="index">
+                                <a-input-number :min="0" :max="100" :formatter="(value: any) => `${value}%`"
+                                    :parser="(value: any) => value.replace('%', '')" />
+                                <MinusCircleOutlined @click="removeVBreakpoint(item)" style="margin-left: 1vw;" />
+                            </a-form-item>
+                            <a-form-item name="span"
+                                :label="formState.crop_split_v_breakpoints.length === 0 ? '垂直分割线' : ' '"
+                                :colon="formState.crop_split_v_breakpoints.length === 0 ? true : false"
+                                v-if="formState.crop_op == 'split' && formState.crop_split_type == 'custom'">
+                                <a-button type="dashed" block @click="addVBreakpoint">
+                                    <PlusOutlined />
+                                    添加垂直分割线
+                                </a-button>
+                            </a-form-item>
+                        </div>
 
                         <!-- PDF提取 -->
                         <a-form-item name="extract_op" label="提取类型" v-if="currentMenu.at(0) == 'extract'">
@@ -265,153 +364,192 @@
                             </a-select>
                         </a-form-item>
                         <!-- PDF加解密 -->
-                        <a-form-item name="encrypt_op" label="类型" v-if="currentMenu.at(0) == 'encrypt'"
-                            style="margin-bottom: 1vh;">
-                            <a-radio-group button-style="solid" v-model:value="formState.encrypt_op">
-                                <a-radio-button value="encrypt">加密</a-radio-button>
-                                <a-radio-button value="decrypt">解密</a-radio-button>
-                            </a-radio-group>
-                        </a-form-item>
-                        <a-form-item name="encrypt_opw" label="所有者密码" v-if="false">
-                            <a-input v-model:value="formState.encrypt_opw" placeholder="所有者密码" />
-                        </a-form-item>
-                        <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;"
-                            v-if="currentMenu.at(0) == 'encrypt' && formState.encrypt_op == 'encrypt'">
-                            <a-form-item name="encrypt_opw" label="设置打开密码" :disabled="!formState.encrypt_is_set_upw">
-                                <a-checkbox v-model:checked="formState.encrypt_is_set_upw"></a-checkbox>
+                        <div v-if="currentMenu.at(0) == 'encrypt'">
+                            <a-form-item name="encrypt_op" label="类型" style="margin-bottom: 1vh;">
+                                <a-radio-group button-style="solid" v-model:value="formState.encrypt_op">
+                                    <a-radio-button value="encrypt">加密</a-radio-button>
+                                    <a-radio-button value="decrypt">解密</a-radio-button>
+                                </a-radio-group>
                             </a-form-item>
-                            <a-form-item name="encrypt_upw" label="设置密码"
-                                :rules="[{ required: formState.encrypt_is_set_upw, validator: validatePass, trigger: 'change' }]">
-                                <a-input-password v-model:value="formState.encrypt_upw" placeholder="不少于6位"
-                                    :disabled="!formState.encrypt_is_set_upw" />
+                            <a-form-item name="encrypt_opw" label="所有者密码" v-if="false">
+                                <a-input v-model:value="formState.encrypt_opw" placeholder="所有者密码" />
                             </a-form-item>
-                            <a-form-item name="encrypt_upw_confirm" label="确认密码"
-                                :rules="[{ required: formState.encrypt_is_set_upw, validator: validatePassUpwConfirm, trigger: 'change' }]">
-                                <a-input-password v-model:value="formState.encrypt_upw_confirm" placeholder="再次输入密码"
-                                    :disabled="!formState.encrypt_is_set_upw" />
-                            </a-form-item>
-                        </div>
+                            <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;"
+                                v-if="formState.encrypt_op == 'encrypt'">
+                                <a-form-item name="encrypt_opw" label="设置打开密码" :disabled="!formState.encrypt_is_set_upw">
+                                    <a-checkbox v-model:checked="formState.encrypt_is_set_upw"></a-checkbox>
+                                </a-form-item>
+                                <a-form-item name="encrypt_upw" label="设置密码"
+                                    :rules="[{ required: formState.encrypt_is_set_upw, validator: validatePass, trigger: 'change' }]">
+                                    <a-input-password v-model:value="formState.encrypt_upw" placeholder="不少于6位"
+                                        :disabled="!formState.encrypt_is_set_upw" />
+                                </a-form-item>
+                                <a-form-item name="encrypt_upw_confirm" label="确认密码"
+                                    :rules="[{ required: formState.encrypt_is_set_upw, validator: validatePassUpwConfirm, trigger: 'change' }]">
+                                    <a-input-password v-model:value="formState.encrypt_upw_confirm" placeholder="再次输入密码"
+                                        :disabled="!formState.encrypt_is_set_upw" />
+                                </a-form-item>
+                            </div>
 
-                        <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;"
-                            v-if="currentMenu.at(0) == 'encrypt' && formState.encrypt_op == 'encrypt'">
-                            <a-form-item name="encrypt_opw" label="设置权限密码">
-                                <a-checkbox v-model:checked="formState.encrypt_is_set_opw"></a-checkbox>
-                            </a-form-item>
-                            <a-form-item name="encrypt_opw" label="设置密码"
-                                :rules="[{ required: formState.encrypt_is_set_opw, validator: validatePass, trigger: 'change' }]">
-                                <a-input-password v-model:value="formState.encrypt_opw" placeholder="不少于6位"
-                                    :disabled="!formState.encrypt_is_set_opw" />
-                            </a-form-item>
-                            <a-form-item name="encrypt_opw_confirm" label="确认密码"
-                                :rules="[{ required: formState.encrypt_is_set_opw, validator: validatePassOpwConfirm, trigger: 'change' }]">
-                                <a-input-password v-model:value="formState.encrypt_opw_confirm" placeholder="再次输入密码"
-                                    :disabled="!formState.encrypt_is_set_opw" />
-                            </a-form-item>
-                            <a-form-item name="encrypt_perm" label="限制功能"
-                                :rules="[{ required: formState.encrypt_is_set_opw }]">
-                                <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate"
-                                    :disabled="!formState.encrypt_is_set_opw" @change="onCheckAllChange">全选</a-checkbox>
-                                <a-divider type="vertical" />
-                                <a-checkbox-group v-model:value="formState.encrypt_perm" :options="encrypt_perm_options"
-                                    :disabled="!formState.encrypt_is_set_opw" />
+                            <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;"
+                                v-if="formState.encrypt_op == 'encrypt'">
+                                <a-form-item name="encrypt_opw" label="设置权限密码">
+                                    <a-checkbox v-model:checked="formState.encrypt_is_set_opw"></a-checkbox>
+                                </a-form-item>
+                                <a-form-item name="encrypt_opw" label="设置密码"
+                                    :rules="[{ required: formState.encrypt_is_set_opw, validator: validatePass, trigger: 'change' }]">
+                                    <a-input-password v-model:value="formState.encrypt_opw" placeholder="不少于6位"
+                                        :disabled="!formState.encrypt_is_set_opw" />
+                                </a-form-item>
+                                <a-form-item name="encrypt_opw_confirm" label="确认密码"
+                                    :rules="[{ required: formState.encrypt_is_set_opw, validator: validatePassOpwConfirm, trigger: 'change' }]">
+                                    <a-input-password v-model:value="formState.encrypt_opw_confirm" placeholder="再次输入密码"
+                                        :disabled="!formState.encrypt_is_set_opw" />
+                                </a-form-item>
+                                <a-form-item name="encrypt_perm" label="限制功能"
+                                    :rules="[{ required: formState.encrypt_is_set_opw }]">
+                                    <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate"
+                                        :disabled="!formState.encrypt_is_set_opw" @change="onCheckAllChange">全选</a-checkbox>
+                                    <a-divider type="vertical" />
+                                    <a-checkbox-group v-model:value="formState.encrypt_perm" :options="encrypt_perm_options"
+                                        :disabled="!formState.encrypt_is_set_opw" />
+                                </a-form-item>
+                            </div>
+                            <a-form-item name="encrypt_upw" label="密码" v-if="formState.encrypt_op == 'decrypt'"
+                                :rules="[{ required: true }]">
+                                <a-input-password v-model:value="formState.encrypt_upw" placeholder="解密密码" />
                             </a-form-item>
                         </div>
-                        <a-form-item name="encrypt_upw" label="密码"
-                            v-if="currentMenu.at(0) == 'encrypt' && formState.encrypt_op == 'decrypt'"
-                            :rules="[{ required: true }]">
-                            <a-input-password v-model:value="formState.encrypt_upw" placeholder="解密密码" />
-                        </a-form-item>
 
                         <!-- PDF水印 -->
-                        <a-form-item name="watermark_op" label="水印类型" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-radio-group button-style="solid" v-model:value="formState.watermark_op">
-                                <a-radio-button value="text">文本</a-radio-button>
-                                <a-radio-button value="image" disabled>图片</a-radio-button>
-                            </a-radio-group>
-                        </a-form-item>
-                        <a-form-item name="watermark_text" label="水印文本" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-input v-model:value="formState.watermark_text" placeholder="e.g. 这是水印" />
-                        </a-form-item>
-                        <a-form-item name="watermark_font_size" label="字体属性" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-space size="large">
-                                <a-select v-model:value="formState.watermark_font_family" style="width: 200px">
-                                    <a-select-option value="msyh.ttc">微软雅黑</a-select-option>
-                                    <a-select-option value="simsun.ttc">宋体</a-select-option>
-                                    <a-select-option value="simhei.ttf">黑体</a-select-option>
-                                    <a-select-option value="simkai.ttf">楷体</a-select-option>
-                                    <a-select-option value="simfang.ttf">仿宋</a-select-option>
-                                    <a-select-option value="SIMYOU.TTF">幼圆</a-select-option>
-                                    <a-select-option value="STHUPO.TTF">华文琥珀</a-select-option>
-                                    <a-select-option value="FZSTK.TTF">方正舒体</a-select-option>
-                                    <a-select-option value="STZHONGS.TTF">华文中宋</a-select-option>
-                                    <a-select-option value="arial.ttf">Arial</a-select-option>
-                                    <a-select-option value="times.ttf">TimesNewRoman</a-select-option>
-                                    <a-select-option value="calibri.ttf">Calibri</a-select-option>
-                                    <a-select-option value="consola.ttf">Consola</a-select-option>
+                        <div v-if="currentMenu.at(0) == 'watermark'">
+                            <a-form-item name="watermark_op" label="操作">
+                                <a-radio-group button-style="solid" v-model:value="formState.watermark_op">
+                                    <a-radio-button value="add">添加水印</a-radio-button>
+                                    <a-radio-button value="remove">去除水印</a-radio-button>
+                                </a-radio-group>
+                            </a-form-item>
+                            <div v-if="formState.watermark_op === 'add'">
+
+                                <a-form-item name="watermark_type" label="水印类型">
+                                    <a-radio-group v-model:value="formState.watermark_type">
+                                        <a-radio value="text">文本</a-radio>
+                                        <a-radio value="image" disabled>图片</a-radio>
+                                    </a-radio-group>
+                                </a-form-item>
+                                <a-form-item name="watermark_text" label="水印文本">
+                                    <a-input v-model:value="formState.watermark_text" placeholder="e.g. 这是水印" />
+                                </a-form-item>
+                                <a-form-item name="watermark_font_size" label="字体属性">
+                                    <a-space size="large">
+                                        <a-select v-model:value="formState.watermark_font_family" style="width: 200px">
+                                            <a-select-option value="msyh.ttc">微软雅黑</a-select-option>
+                                            <a-select-option value="simsun.ttc">宋体</a-select-option>
+                                            <a-select-option value="simhei.ttf">黑体</a-select-option>
+                                            <a-select-option value="simkai.ttf">楷体</a-select-option>
+                                            <a-select-option value="simfang.ttf">仿宋</a-select-option>
+                                            <a-select-option value="SIMYOU.TTF">幼圆</a-select-option>
+                                            <a-select-option value="STHUPO.TTF">华文琥珀</a-select-option>
+                                            <a-select-option value="FZSTK.TTF">方正舒体</a-select-option>
+                                            <a-select-option value="STZHONGS.TTF">华文中宋</a-select-option>
+                                            <a-select-option value="arial.ttf">Arial</a-select-option>
+                                            <a-select-option value="times.ttf">TimesNewRoman</a-select-option>
+                                            <a-select-option value="calibri.ttf">Calibri</a-select-option>
+                                            <a-select-option value="consola.ttf">Consola</a-select-option>
+                                        </a-select>
+                                        <a-tooltip>
+                                            <template #title>字号</template>
+                                            <a-input-number v-model:value="formState.watermark_font_size" :min="1">
+                                                <template #prefix>
+                                                    <font-size-outlined />
+                                                </template>
+                                            </a-input-number>
+                                        </a-tooltip>
+                                        <a-tooltip>
+                                            <template #title>字体颜色</template>
+                                            <a-input v-model:value="formState.watermark_font_color" placeholder="字体颜色"
+                                                :defaultValue="formState.watermark_font_color">
+                                                <template #prefix>
+                                                    <font-colors-outlined />
+                                                </template>
+                                            </a-input>
+                                        </a-tooltip>
+                                    </a-space>
+                                </a-form-item>
+                                <a-form-item name="watermark_font_opacity" label="水印属性">
+                                    <a-space size="large">
+                                        <a-input-number v-model:value="formState.watermark_font_opacity" :min="0" :max="1"
+                                            :step="0.01">
+                                            <template #addonBefore>
+                                                不透明度
+                                            </template>
+                                        </a-input-number>
+                                        <a-input-number v-model:value="formState.watermark_rotate" :min="0" :max="360">
+                                            <template #addonBefore>
+                                                旋转角度
+                                            </template>
+                                        </a-input-number>
+                                        <a-input-number v-model:value="formState.watermark_space" :min="0" :max="360">
+                                            <template #addonBefore>
+                                                文字间距
+                                            </template>
+                                        </a-input-number>
+                                        <a-input-number v-model:value="formState.watermark_quaility" :min="0" :max="360">
+                                            <template #addonBefore>
+                                                图片质量
+                                            </template>
+                                        </a-input-number>
+                                    </a-space>
+                                </a-form-item>
+                            </div>
+                        </div>
+
+                        <!-- OCR识别 -->
+                        <div v-if="currentMenu.at(0) == 'ocr'">
+                            <a-form-item label="语言">
+                                <a-select v-model:value="formState.ocr_lang" style="width: 200px">
+                                    <a-select-option value="ch">中文简体</a-select-option>
+                                    <a-select-option value="en">英文</a-select-option>
                                 </a-select>
-                                <a-tooltip>
-                                    <template #title>字号</template>
-                                    <a-input-number v-model:value="formState.watermark_font_size" :min="1">
-                                        <template #prefix>
-                                            <font-size-outlined />
-                                        </template>
-                                    </a-input-number>
-                                </a-tooltip>
-                                <a-tooltip>
-                                    <template #title>字体颜色</template>
-                                    <a-input v-model:value="formState.watermark_font_color" placeholder="字体颜色"
-                                        :defaultValue="formState.watermark_font_color">
-                                        <template #prefix>
-                                            <font-colors-outlined />
-                                        </template>
-                                    </a-input>
-                                </a-tooltip>
-                            </a-space>
-                        </a-form-item>
-                        <a-form-item name="watermark_font_opacity" label="水印属性" v-if="currentMenu.at(0) == 'watermark'">
-                            <a-space size="large">
-                                <a-input-number v-model:value="formState.watermark_font_opacity" :min="0" :max="1"
-                                    :step="0.01">
-                                    <template #addonBefore>
-                                        不透明度
-                                    </template>
-                                </a-input-number>
-                                <a-input-number v-model:value="formState.watermark_rotate" :min="0" :max="360">
-                                    <template #addonBefore>
-                                        旋转角度
-                                    </template>
-                                </a-input-number>
-                                <a-input-number v-model:value="formState.watermark_space" :min="0" :max="360">
-                                    <template #addonBefore>
-                                        文字间距
-                                    </template>
-                                </a-input-number>
-                                <a-input-number v-model:value="formState.watermark_quaility" :min="0" :max="360">
-                                    <template #addonBefore>
-                                        图片质量
-                                    </template>
-                                </a-input-number>
-                            </a-space>
-
-                        </a-form-item>
-
+                            </a-form-item>
+                            <a-form-item label="是否双栏">
+                                <a-checkbox v-model:checked="formState.ocr_double_column"></a-checkbox>
+                            </a-form-item>
+                            <a-form-item name="page" label="页码范围">
+                                <a-input v-model:value="formState.page" placeholder="页码范围, e.g. 1-3,9-10" />
+                            </a-form-item>
+                        </div>
                         <!-- 通用 -->
-                        <a-form-item name="page" label="页码范围"
-                            v-if="['rotate', 'reorder', 'watermark', 'crop', 'extract', 'scale', 'delete'].includes(currentMenu.at(0) || '') || (currentMenu.at(0) == 'convert' && formState.convert_type.startsWith('pdf'))">
-                            <a-input v-model:value="formState.page" placeholder="页码范围, e.g. 1-3,9-10" />
-                        </a-form-item>
-                        <a-form-item name="input" label="输入" :rules="[{ required: true, message: '请输入路径!' }]"
-                            v-if="currentMenu.at(0) != 'merge'">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径" />
-                        </a-form-item>
-                        <a-form-item name="output" label="输出">
-                            <a-input v-model:value="formState.output" placeholder="输出目录" />
-                        </a-form-item>
-                        <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
-                            <a-button type="primary" html-type="submit" @click="onSubmit"
-                                :loading="confirmLoading">确认</a-button>
-                            <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
-                        </a-form-item>
+                        <div v-if="currentMenu.at(0) != 'settings'">
+                            <a-form-item name="page" label="页码范围"
+                                v-if="['rotate', 'reorder', 'watermark', 'crop', 'extract', 'scale', 'delete'].includes(currentMenu.at(0) || '') || (currentMenu.at(0) == 'convert' && formState.convert_type.startsWith('pdf'))">
+                                <a-input v-model:value="formState.page" placeholder="页码范围, e.g. 1-3,9-10" />
+                            </a-form-item>
+                            <a-form-item name="input" label="输入" :rules="[{ required: true, message: '请输入路径!' }]"
+                                v-if="currentMenu.at(0) != 'merge'">
+                                <a-input v-model:value="formState.input" placeholder="输入文件路径" />
+                            </a-form-item>
+                            <a-form-item name="output" label="输出">
+                                <a-input v-model:value="formState.output" placeholder="输出目录" />
+                            </a-form-item>
+                            <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
+                                <a-button type="primary" html-type="submit" @click="onSubmit"
+                                    :loading="confirmLoading">确认</a-button>
+                                <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
+                            </a-form-item>
+                        </div>
+                        <div v-if="currentMenu.at(0) == 'settings'">
+                            <a-form-item label="ocr路径">
+                                <a-input v-model:value="formState.output" placeholder="填写ocr路径" disabled></a-input>
+                            </a-form-item>
+                            <a-form-item label="pandoc路径">
+                                <a-input v-model:value="formState.output" placeholder="填写ocr路径" disabled></a-input>
+                            </a-form-item>
+                            <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
+                                <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">修改
+                                </a-button>
+                            </a-form-item>
+                        </div>
                     </a-form>
                 </div>
             </div>
@@ -441,7 +579,9 @@ import {
     FullscreenOutlined,
     CloseOutlined,
     FontColorsOutlined,
-    FontSizeOutlined
+    FontSizeOutlined,
+    EyeOutlined,
+    SplitCellsOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import {
@@ -456,11 +596,14 @@ import {
     DecryptPDF,
     ExtractBookmark,
     TransformBookmark,
-    WriteBookmark,
-    WatermarkPDF
+    WriteBookmarkByFile,
+    WriteBookmarkByGap,
+    WatermarkPDF,
+    OCR
 } from '../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
+import { menuDesc, menuRecord } from "./data";
 
 export default defineComponent({
     components: {
@@ -484,42 +627,12 @@ export default defineComponent({
         FullscreenOutlined,
         CloseOutlined,
         FontColorsOutlined,
-        FontSizeOutlined
+        FontSizeOutlined,
+        EyeOutlined,
+        SplitCellsOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const menuRecord: Record<string, string> = {
-            "merge": "PDF合并",
-            "split": "PDF拆分",
-            "delete": "PDF删除",
-            "reorder": "PDF重排",
-            "bookmark": "PDF书签",
-            "watermark": "PDF水印",
-            "scale": "PDF缩放",
-            "rotate": "PDF旋转/翻转",
-            "crop": "PDF裁剪",
-            "extract": "PDF提取",
-            "compress": "PDF压缩",
-            "convert": "PDF转换",
-            "encrypt": "PDF加解密",
-            "settings": "首选项"
-        };
-        const menuDesc: Record<string, string> = {
-            "merge": "将多个PDF文件合并为一个PDF文件,路径支持使用通配符'*'",
-            "split": "将原始PDF文件按照给定的块大小进行分割",
-            "delete": "将原始PDF文件中的指定页面删除",
-            "reorder": "将原始PDF文件按照给定的页码顺序进行重新排列",
-            "bookmark": "从原始PDF文件中提取书签信息，或将PDF书签信息写入PDF文件",
-            "watermark": "将原始PDF文件按照给定的水印参数添加水印",
-            "scale": "将原始PDF文件按照给定的缩放参数进行缩放",
-            "rotate": "将原始PDF文件按照给定的旋转角度进行旋转",
-            "crop": "将原始PDF文件(的指定页面)按照给定的裁剪参数进行裁剪",
-            "extract": "从原始PDF文件中提取指定的内容，包括文本、图片、表格等",
-            "compress": "通过去除内嵌字体和图片等多余的页面资源来优化原始PDF文件以最大化PDF压缩",
-            "convert": "PDF转换",
-            "encrypt": "对PDF文件进行加密或解密",
-            "settings": "首选项"
-        }
         const encrypt_perm_options = [
             "复制", "注释", "打印", "表单", "插入/删除页面"
         ];
@@ -536,6 +649,18 @@ export default defineComponent({
             split_span: number,
             split_ranges: string,
             split_bookmark_level: string,
+            // 裁剪/分割
+            crop_op: string,
+            crop_unit: string,
+            crop_up: number,
+            crop_left: number,
+            crop_down: number,
+            crop_right: number,
+            crop_split_h_breakpoints: number[],
+            crop_split_v_breakpoints: number[],
+            crop_split_type: string,
+            crop_split_rows: number,
+            crop_split_cols: number,
             // 提取
             extract_op: string,
             // 加密
@@ -550,6 +675,7 @@ export default defineComponent({
             convert_type: string,
             // 水印
             watermark_op: string,
+            watermark_type: string,
             watermark_text: string,
             watermark_font_family: string,
             watermark_font_size: number,
@@ -570,11 +696,14 @@ export default defineComponent({
             bookmark_write_type: string,
             bookmark_write_format: string,
             bookmark_write_offset: number,
-            bookmark_write_span: number,
+            bookmark_write_gap: number,
             bookmark_extract_format: string,
             bookmark_transform_offset: number,
             bookmark_transform_indent: boolean,
             bookmark_transform_dots: boolean,
+            // ocr
+            ocr_lang: string,
+            ocr_double_column: boolean,
             // 通用
             page: string,
             input: string,
@@ -589,6 +718,18 @@ export default defineComponent({
             split_span: 5,
             split_ranges: "",
             split_bookmark_level: "1",
+            // 裁剪/分割
+            crop_op: "crop",
+            crop_unit: "cm",
+            crop_up: 0,
+            crop_left: 0,
+            crop_down: 0,
+            crop_right: 0,
+            crop_split_h_breakpoints: [],
+            crop_split_v_breakpoints: [],
+            crop_split_type: "even",
+            crop_split_rows: 1,
+            crop_split_cols: 1,
             // 提取
             extract_op: "text",
             // 加密
@@ -602,9 +743,10 @@ export default defineComponent({
             encrypt_opw_confirm: "",
             convert_type: "pdf2png",
             // 水印
-            watermark_op: "text",
+            watermark_op: "add",
+            watermark_type: "text",
             watermark_text: "",
-            watermark_font_family: "微软雅黑",
+            watermark_font_family: "msyh.ttc",
             watermark_font_size: 14,
             watermark_font_color: "#808080",
             watermark_font_opacity: 0.15,
@@ -623,11 +765,14 @@ export default defineComponent({
             bookmark_write_type: "file",
             bookmark_write_format: "",
             bookmark_write_offset: 0,
-            bookmark_write_span: 1,
+            bookmark_write_gap: 1,
             bookmark_extract_format: "txt",
             bookmark_transform_offset: 0,
             bookmark_transform_indent: false,
             bookmark_transform_dots: false,
+            // ocr
+            ocr_lang: "ch",
+            ocr_double_column: false,
             // 通用
             page: "",
             input: "",
@@ -740,7 +885,7 @@ export default defineComponent({
                         })
                     } else if (formState.bookmark_op === 'write') {
                         if (formState.bookmark_write_type === 'file') {
-                            await WriteBookmark(formState.input, formState.output, formState.bookmark_file, formState.bookmark_write_offset).then((res: any) => {
+                            await WriteBookmarkByFile(formState.input, formState.output, formState.bookmark_file, formState.bookmark_write_offset).then((res: any) => {
                                 console.log({ res });
                                 if (!res) {
                                     message.success('处理成功！');
@@ -755,7 +900,20 @@ export default defineComponent({
                                 });
                             })
                         } else if (formState.bookmark_write_type === 'page') {
-
+                            await WriteBookmarkByGap(formState.input, formState.output, formState.bookmark_write_gap, formState.bookmark_write_format).then((res: any) => {
+                                console.log({ res });
+                                if (!res) {
+                                    message.success('处理成功！');
+                                } else {
+                                    message.error('处理失败！');
+                                }
+                            }).catch((err: any) => {
+                                console.log({ err });
+                                Modal.error({
+                                    title: '处理失败！',
+                                    content: err,
+                                });
+                            })
                         }
                     } else if (formState.bookmark_op === 'transform') {
                         await TransformBookmark(formState.input, formState.output, formState.bookmark_transform_indent, formState.bookmark_transform_offset, formState.bookmark_transform_dots).then((res: any) => {
@@ -931,6 +1089,23 @@ export default defineComponent({
                     }
                     break;
                 }
+                case "ocr": {
+                    await OCR(formState.input, formState.output, formState.page, formState.ocr_lang, formState.ocr_double_column).then((res: any) => {
+                        console.log({ res });
+                        if (!res) {
+                            message.success('处理成功！');
+                        } else {
+                            message.error('处理失败！');
+                        }
+                    }).catch((err: any) => {
+                        console.log({ err });
+                        Modal.error({
+                            title: '处理失败！',
+                            content: err,
+                        });
+                    })
+                    break;
+                }
             }
 
             confirmLoading.value = false;
@@ -962,6 +1137,25 @@ export default defineComponent({
                 formState.merge_path_list.splice(index, 1);
             }
         }
+        // 分割PDF
+        const addHBreakpoint = () => {
+            formState.crop_split_h_breakpoints.push(0);
+        }
+        const removeHBreakpoint = (item: number) => {
+            const index = formState.crop_split_h_breakpoints.indexOf(item);
+            if (index != -1) {
+                formState.crop_split_h_breakpoints.splice(index, 1);
+            }
+        }
+        const addVBreakpoint = () => {
+            formState.crop_split_v_breakpoints.push(0);
+        }
+        const removeVBreakpoint = (item: number) => {
+            const index = formState.crop_split_v_breakpoints.indexOf(item);
+            if (index != -1) {
+                formState.crop_split_v_breakpoints.splice(index, 1);
+            }
+        }
 
         return {
             formRef,
@@ -980,7 +1174,11 @@ export default defineComponent({
             validatePass,
             validatePassUpwConfirm,
             validatePassOpwConfirm,
-            resetFields
+            resetFields,
+            addHBreakpoint,
+            removeHBreakpoint,
+            addVBreakpoint,
+            removeVBreakpoint
         };
     },
 });
