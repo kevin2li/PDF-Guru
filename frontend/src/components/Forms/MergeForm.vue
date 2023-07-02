@@ -42,7 +42,7 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, toRaw, ref, VueElement } from 'vue';
+import { defineComponent, reactive, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { CheckFileExists, CheckRangeFormat, MergePDF } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
@@ -164,15 +164,14 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         const onSubmit = async () => {
-            try {
-                await formRef.value?.validate();
-                confirmLoading.value = true;
-                await handleOps(MergePDF, [formState.input_path_list, formState.output, "create", false]);
-                confirmLoading.value = false;
-            } catch (err) {
-                console.log({ err });
-                message.error("表单验证失败");
-            }
+            // await formRef.value?.validate().then(async () => {
+            confirmLoading.value = true;
+            await handleOps(MergePDF, [formState.input_path_list, formState.output, formState.sort, formState.sort_direction]);
+            confirmLoading.value = false;
+            // }).catch((err: any) => {
+            //     console.log({ err });
+            //     message.error("表单验证失败");
+            // })
         }
         return { formState, rules, formRef, validateStatus, validateHelp, validateFileExists, confirmLoading, addPath, removePath, resetFields, onSubmit };
     }

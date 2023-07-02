@@ -19,7 +19,7 @@ export function ExtractBookmark(arg1:string,arg2:string,arg3:string):Promise<voi
 
 export function InsertPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string):Promise<void>;
 
-export function MergePDF(arg1:Array<string>,arg2:string,arg3:string,arg4:boolean):Promise<void>;
+export function MergePDF(arg1:Array<string>,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function OCR(arg1:string,arg2:string,arg3:string,arg4:string,arg5:boolean):Promise<void>;
 

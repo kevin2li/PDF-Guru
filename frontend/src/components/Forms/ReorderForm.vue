@@ -23,7 +23,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, ReorderPDF } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { ReorderState } from "../data";
@@ -99,7 +99,7 @@ export default defineComponent({
         };
         const rules: Record<string, Rule[]> = {
             input: [{ required: true, validator: validateFileExists, trigger: 'change' }],
-            page: [{ validator: validateRange, trigger: 'change' }],
+            page: [{ required: true, validator: validateRange, trigger: 'change' }],
         };
         // 重置表单
         const resetFields = () => {
@@ -108,15 +108,14 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         const onSubmit = async () => {
-            try {
-                await formRef.value?.validate();
-                confirmLoading.value = true;
-                // await handleOps(OCR, [formState.input, formState.output, formState.page, formState.lang, formState.double_column]);
-                confirmLoading.value = false;
-            } catch (err) {
-                console.log({ err });
-                message.error("表单验证失败");
-            }
+            // await formRef.value?.validate().then(async () => {
+            confirmLoading.value = true;
+            await handleOps(ReorderPDF, [formState.input, formState.output, formState.page]);
+            confirmLoading.value = false;
+            // }).catch((err: any) => {
+            //     console.log({ err });
+            //     message.error("表单验证失败");
+            // })
         }
         return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
     }

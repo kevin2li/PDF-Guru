@@ -21,16 +21,16 @@
                     <a-input-number v-model:value="formState.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
                 </a-tooltip>
             </a-form-item>
-            <a-form-item name="src_range" hasFeedback :validateStatus="validateStatus.src_range" :help="validateHelp.src_range"
-                label="页码范围" v-if="formState.op == 'replace'">
+            <a-form-item name="src_range" hasFeedback :validateStatus="validateStatus.src_range"
+                :help="validateHelp.src_range" label="页码范围" v-if="formState.op == 'replace'">
                 <a-input v-model:value="formState.src_range" placeholder="被替换的页码范围(留空表示全部), e.g. 1-10" />
             </a-form-item>
-            <a-form-item label="目标PDF路径" name="dst_path" hasFeedback
-                :validateStatus="validateStatus.dst_path" :help="validateHelp.dst_path">
+            <a-form-item label="目标PDF路径" name="dst_path" hasFeedback :validateStatus="validateStatus.dst_path"
+                :help="validateHelp.dst_path">
                 <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
             </a-form-item>
-            <a-form-item name="dst_range" hasFeedback :validateStatus="validateStatus.dst_range" :help="validateHelp.dst_range"
-                label="页码范围">
+            <a-form-item name="dst_range" hasFeedback :validateStatus="validateStatus.dst_range"
+                :help="validateHelp.dst_range" label="页码范围">
                 <a-input v-model:value="formState.dst_range" placeholder="目标PDF的页码范围(留空表示全部), e.g. 1-10" />
             </a-form-item>
             <a-form-item name="output" label="输出">
@@ -46,7 +46,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, RotatePDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, InsertPDF, ReplacePDF } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { InsertState } from "../data";
@@ -86,7 +86,7 @@ export default defineComponent({
             validateStatus[_rule.field] = 'validating';
             if (value === '') {
                 // @ts-ignore
-                validateHelp[_rule.field] = "error";
+                validateStatus[_rule.field] = "error";
                 // @ts-ignore
                 validateHelp[_rule.field] = "请填写路径";
                 return Promise.reject();
@@ -161,23 +161,26 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         const onSubmit = async () => {
-            try {
-                await formRef.value?.validate();
-                confirmLoading.value = true;
-                switch (formState.op) {
-                    case "insert": {
-                        await handleOps(CheckFileExists, [formState.src_path]);
-                        confirmLoading.value = false;
-                        break;
-                    }
-                    case "replace": {
-                        break;
-                    }
-                }                confirmLoading.value = false;
-            } catch (err) {
-                console.log({ err });
-                message.error("表单验证失败");
+            // await formRef.value?.validate().then(async () => {
+            confirmLoading.value = true;
+            switch (formState.op) {
+                case "insert": {
+                    await handleOps(InsertPDF, [formState.src_path, formState.dst_path, formState.src_pos, formState.dst_range, formState.output])
+                    confirmLoading.value = false;
+                    break;
+                }
+                case "replace": {
+                    await handleOps(ReplacePDF, [formState.src_path, formState.dst_path, formState.src_range, formState.dst_range, formState.output])
+                    confirmLoading.value = false;
+                    break;
+                }
             }
+            confirmLoading.value = false;
+            // }).catch((err: any) => {
+            //     console.log({ err });
+            //     message.error("表单验证失败");
+            // })
+
         }
         return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
     }

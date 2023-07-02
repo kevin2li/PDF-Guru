@@ -187,6 +187,7 @@ const menuDesc: Record<string, string> = {
     "merge": "将多个PDF文件合并为一个PDF文件,路径支持使用通配符'*'",
     "split": "将原始PDF文件按照给定的块大小进行分割",
     "delete": "将原始PDF文件中的指定页面删除",
+    "reorder": "根据指定的页码范围重新调整页面顺序",
     "insert": "插入或替换PDF文件的指定页面",
     "bookmark": "从原始PDF文件中提取书签信息，或将PDF书签信息写入PDF文件",
     "watermark": "将原始PDF文件按照给定的水印参数添加水印",

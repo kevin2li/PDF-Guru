@@ -34,6 +34,31 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
+func CheckCmdError(cmd *exec.Cmd) error {
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Printf("Error: %v\n", err)
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		log.Printf("Error: %v\n", err)
+		return err
+	}
+	scanner := bufio.NewScanner(stderr)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		log.Printf("Error: %v\n", err)
+	}
+	if err := cmd.Wait(); err != nil {
+		log.Printf("Error: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+// validate
 func (a *App) CheckFileExists(path string) error {
 	fmt.Printf("check path exists: %s\n", path)
 	path = strings.TrimSpace(path)
@@ -61,12 +86,11 @@ func (a *App) CheckFileExists(path string) error {
 
 func (a *App) CheckRangeFormat(pages string) error {
 	fmt.Printf("check range: %s\n", pages)
-	// trim space
 	pages = strings.TrimSpace(pages)
 	parts := strings.Split(pages, ",")
 	pos_count, neg_count := 0, 0
 	for _, part := range parts {
-		pattern := regexp.MustCompile(`^!?\d+(\-(\d+|N))?$`)
+		pattern := regexp.MustCompile(`^!?(\d+|N)(\-(\d+|N))?$`)
 		part = strings.TrimSpace(part)
 		if !pattern.MatchString(part) {
 			return errors.New("页码格式错误!,示例：1-3,5,6-N")
@@ -83,6 +107,87 @@ func (a *App) CheckRangeFormat(pages string) error {
 	return nil
 }
 
+// Golang method
+func (a *App) CompressPDF(inFile string, outFile string) error {
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	conf := model.NewDefaultConfiguration()
+	if outFile == "" {
+		parent := filepath.Dir(inFile)
+		parts := strings.Split(filepath.Base(inFile), ".")
+		filename := strings.Join(parts[:len(parts)-1], ".")
+		outFile = filepath.Join(parent, filename+"_压缩.pdf")
+	}
+	err := api.OptimizeFile(inFile, outFile, conf)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ScalePDF(inFile string, outFile string, description string, pagesStr string) error {
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	pages, err := api.ParsePageSelection(pagesStr)
+	if err != nil {
+		return err
+	}
+	resizeConf, err := pdfcpu.ParseResizeConfig(description, types.POINTS)
+	if err != nil {
+		return err
+	}
+	conf := model.NewDefaultConfiguration()
+	if outFile == "" {
+		parent := filepath.Dir(inFile)
+		parts := strings.Split(filepath.Base(inFile), ".")
+		filename := strings.Join(parts[:len(parts)-1], ".")
+		outFile = filepath.Join(parent, filename+"_缩放.pdf")
+	}
+	err = api.ResizeFile(inFile, outFile, pages, resizeConf, conf)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertPDF(inFile string, outFile string, dstFormat string, pageStr string) error {
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	if outFile == "" {
+		outFile = filepath.Dir(inFile)
+	}
+	if _, err := os.Stat(outFile); os.IsNotExist(err) {
+		err = os.MkdirAll(outFile, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+	err := os.Chdir(outFile)
+	if err != nil {
+		fmt.Println("切换工作目录错误：", err)
+		return err
+	}
+	fmt.Println(outFile)
+	path, _ := os.Getwd()
+	fmt.Println(path)
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\mutool.exe", "convert", "-F", dstFormat, inFile, pageStr)
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Println(string(output))
+
+	return nil
+}
+
+// Python method
 func (a *App) SplitPDFByChunk(inFile string, chunkSize int, outDir string) error {
 	fmt.Printf("inFile: %s, chunkSize: %d, outDir: %s\n", inFile, chunkSize, outDir)
 	args := []string{"split", "--mode", "chunk"}
@@ -210,51 +315,22 @@ func (a *App) ReplacePDF(inFile1 string, inFile2 string, srcPages string, dstPag
 }
 
 func (a *App) RotatePDF(inFile string, outFile string, rotation int, pagesStr string) error {
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
-		return err
+	fmt.Printf("inFile: %s, outFile: %s, rotation: %d, pagesStr: %s\n", inFile, outFile, rotation, pagesStr)
+	args := []string{"rotate"}
+	if rotation != 0 {
+		args = append(args, "--rotation", fmt.Sprintf("%d", rotation))
 	}
-
-	pages, err := api.ParsePageSelection(pagesStr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "problem with flag selectedPages: %v\n", err)
-		return err
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
 	}
-	conf := model.NewDefaultConfiguration()
-	if outFile == "" {
-		parent := filepath.Dir(inFile)
-		parts := strings.Split(filepath.Base(inFile), ".")
-		filename := strings.Join(parts[:len(parts)-1], ".")
-		outFile = filepath.Join(parent, filename+"_旋转.pdf")
+	if outFile != "" {
+		args = append(args, "-o", outFile)
 	}
-	err = api.RotateFile(inFile, outFile, rotation, pages, conf)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (a *App) ScalePDF(inFile string, outFile string, description string, pagesStr string) error {
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
-		return err
-	}
-	pages, err := api.ParsePageSelection(pagesStr)
-	if err != nil {
-		return err
-	}
-	resizeConf, err := pdfcpu.ParseResizeConfig(description, types.POINTS)
-	if err != nil {
-		return err
-	}
-	conf := model.NewDefaultConfiguration()
-	if outFile == "" {
-		parent := filepath.Dir(inFile)
-		parts := strings.Split(filepath.Base(inFile), ".")
-		filename := strings.Join(parts[:len(parts)-1], ".")
-		outFile = filepath.Join(parent, filename+"_缩放.pdf")
-	}
-	err = api.ResizeFile(inFile, outFile, pages, resizeConf, conf)
+	args = append(args, inFile)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -263,136 +339,44 @@ func (a *App) ScalePDF(inFile string, outFile string, description string, pagesS
 
 func (a *App) ReorderPDF(inFile string, outFile string, pagesStr string) error {
 	fmt.Printf("inFile: %s, outFile: %s, pagesStr: %s\n", inFile, outFile, pagesStr)
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
-		return err
+	args := []string{"reorder"}
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
 	}
-	pages, err := api.ParsePageSelection(pagesStr)
-	log.Printf("pages: %v\n", pages)
-	if err != nil {
-		return err
+	if outFile != "" {
+		args = append(args, "-o", outFile)
 	}
-	if outFile == "" {
-		parent := filepath.Dir(inFile)
-		parts := strings.Split(filepath.Base(inFile), ".")
-		filename := strings.Join(parts[:len(parts)-1], ".")
-		outFile = filepath.Join(parent, filename+"_处理.pdf")
-	}
-	conf := model.NewDefaultConfiguration()
-	err = api.CollectFile(inFile, outFile, pages, conf)
+	args = append(args, inFile)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (a *App) CompressPDF(inFile string, outFile string) error {
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
-		return err
-	}
-	conf := model.NewDefaultConfiguration()
-	if outFile == "" {
-		parent := filepath.Dir(inFile)
-		parts := strings.Split(filepath.Base(inFile), ".")
-		filename := strings.Join(parts[:len(parts)-1], ".")
-		outFile = filepath.Join(parent, filename+"_压缩.pdf")
-	}
-	err := api.OptimizeFile(inFile, outFile, conf)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (a *App) MergePDF(inFiles []string, outFile string, mode string, sort bool) error {
+func (a *App) MergePDF(inFiles []string, outFile string, sortMethod string, sortDirection string) error {
 	if len(inFiles) == 0 {
 		return errors.New("no input files")
 	}
-	filesIn := []string{}
-	for _, inFile := range inFiles {
-		if strings.Contains(inFile, "*") {
-			matches, err := filepath.Glob(inFile)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s", err)
-				os.Exit(1)
-			}
-			filesIn = append(filesIn, matches...)
-			continue
-		}
-		if _, err := os.Stat(inFile); os.IsNotExist(err) {
-			return err
-		}
-		filesIn = append(filesIn, inFile)
-
+	args := []string{"merge"}
+	if sortMethod != "" {
+		args = append(args, "--sort_method", sortMethod)
 	}
-	conf := model.NewDefaultConfiguration()
-	if mode == "create" {
-		err := api.MergeCreateFile(filesIn, outFile, conf)
-		if err != nil {
-			return err
-		}
-	} else if mode == "append" {
-		err := api.MergeAppendFile(filesIn, outFile, conf)
-		if err != nil {
-			return err
-		}
+	if sortDirection != "" {
+		args = append(args, "--sort_direction", sortDirection)
 	}
-	return nil
-}
-
-func (a *App) ConvertPDF(inFile string, outFile string, dstFormat string, pageStr string) error {
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
-		return err
+	if outFile != "" {
+		args = append(args, "-o", outFile)
 	}
-	if outFile == "" {
-		outFile = filepath.Dir(inFile)
-	}
-	if _, err := os.Stat(outFile); os.IsNotExist(err) {
-		err = os.MkdirAll(outFile, os.ModePerm)
-		if err != nil {
-			return err
-		}
-	}
-	err := os.Chdir(outFile)
+	args = append(args, inFiles...)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
 	if err != nil {
-		fmt.Println("切换工作目录错误：", err)
-		return err
-	}
-	fmt.Println(outFile)
-	path, _ := os.Getwd()
-	fmt.Println(path)
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\mutool.exe", "convert", "-F", dstFormat, inFile, pageStr)
-	output, err := cmd.Output()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	fmt.Println(string(output))
-
-	return nil
-}
-
-func CheckCmdError(cmd *exec.Cmd) error {
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Printf("Error: %v\n", err)
-		return err
-	}
-	if err := cmd.Start(); err != nil {
-		log.Printf("Error: %v\n", err)
-		return err
-	}
-	scanner := bufio.NewScanner(stderr)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		log.Printf("Error: %v\n", err)
-	}
-	if err := cmd.Wait(); err != nil {
-		log.Printf("Error: %v\n", err)
 		return err
 	}
 	return nil
@@ -590,12 +574,6 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 	if err != nil {
 		return err
 	}
-	// output, err := cmd.CombinedOutput()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return err
-	// }
-	// fmt.Println(string(output))
 	return nil
 }
 
