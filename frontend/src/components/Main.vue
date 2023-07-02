@@ -207,25 +207,40 @@ export default defineComponent({
         SplitCellsOutlined,
         LoginOutlined,
         // form
+        // 合并
         MergeForm,
+        // 拆分
         SplitForm,
+        // 删除
         DeleteForm,
+        // 重排
         ReorderForm,
+        // 插入/替换
         InsertForm,
+        // 书签
         BookmarkForm,
+        // 缩放
         ScaleForm,
+        // 水印
         WatermarkForm,
+        // 旋转
         RotateForm,
+        // 裁剪/分割
         CropForm,
+        // 提取
         ExtractForm,
+        // 压缩
         CompressForm,
+        // 转换
         ConvertForm,
+        // 加密
         EncryptForm,
+        // OCR
         OcrForm,
+        // 首选项
         PreferencesForm,
     },
     setup() {
-
         return {
             menuRecord,
             menuDesc,

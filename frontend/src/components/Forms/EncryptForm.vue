@@ -12,29 +12,29 @@
                 <a-form-item name="encrypt.is_set_upw" label="设置打开密码" :disabled="!formState.is_set_upw">
                     <a-checkbox v-model:checked="formState.is_set_upw"></a-checkbox>
                 </a-form-item>
-                <a-form-item name="encrypt_upw" label="设置密码" hasFeedback :validateStatus="validateStatus.encrypt_upw">
-                    <a-input-password v-model:value="formState.upw" placeholder="不少于6位" :disabled="!formState.is_set_upw" />
+                <a-form-item name="upw" label="设置密码" hasFeedback :validateStatus="validateStatus.encrypt_upw">
+                    <a-input-password v-model:value="formState.upw" placeholder="不少于6位" allow-clear :disabled="!formState.is_set_upw" />
                 </a-form-item>
-                <a-form-item name="encrypt_upw_confirm" label="确认密码" hasFeedback
+                <a-form-item name="upw_confirm" label="确认密码" hasFeedback
                     :validateStatus="validateStatus.encrypt_upw_confirm">
-                    <a-input-password v-model:value="formState.upw_confirm" placeholder="再次输入密码"
+                    <a-input-password v-model:value="formState.upw_confirm" placeholder="再次输入密码" allow-clear
                         :disabled="!formState.is_set_upw" />
                 </a-form-item>
             </div>
 
             <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;" v-if="formState.op == 'encrypt'">
-                <a-form-item name="encrypt.is_set_opw" label="设置权限密码">
+                <a-form-item name="is_set_opw" label="设置权限密码">
                     <a-checkbox v-model:checked="formState.is_set_opw"></a-checkbox>
                 </a-form-item>
-                <a-form-item name="encrypt_opw" label="设置密码" hasFeedback :validateStatus="validateStatus.encrypt_opw">
-                    <a-input-password v-model:value="formState.opw" placeholder="不少于6位" :disabled="!formState.is_set_opw" />
+                <a-form-item name="opw" label="设置密码" hasFeedback :validateStatus="validateStatus.encrypt_opw">
+                    <a-input-password v-model:value="formState.opw" placeholder="不少于6位" allow-clear :disabled="!formState.is_set_opw" />
                 </a-form-item>
-                <a-form-item name="encrypt_opw_confirm" label="确认密码" hasFeedback
+                <a-form-item name="opw_confirm" label="确认密码" hasFeedback
                     :validateStatus="validateStatus.encrypt_opw_confirm">
-                    <a-input-password v-model:value="formState.opw_confirm" placeholder="再次输入密码"
+                    <a-input-password v-model:value="formState.opw_confirm"  allow-clear placeholder="再次输入密码"
                         :disabled="!formState.is_set_opw" />
                 </a-form-item>
-                <a-form-item name="encrypt.perm" label="限制功能" :rules="[{ required: formState.is_set_opw }]">
+                <a-form-item name="perm" label="限制功能">
                     <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate" :disabled="!formState.is_set_opw"
                         @change="onCheckAllChange">全选</a-checkbox>
                     <a-divider type="vertical" />
@@ -42,7 +42,7 @@
                         :disabled="!formState.is_set_opw" />
                 </a-form-item>
             </div>
-            <a-form-item name="encrypt.upw" label="密码" v-if="formState.op == 'decrypt'" :rules="[{ required: true }]">
+            <a-form-item name="decrypt_pass" label="密码" v-if="formState.op == 'decrypt'" :rules="[{ required: true }]">
                 <a-input-password v-model:value="formState.upw" placeholder="解密密码" />
             </a-form-item>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input">
@@ -112,21 +112,31 @@ export default defineComponent({
                 return Promise.reject("文件不存在");
             });
         };
-        let validatePass = async (_rule: Rule, value: string) => {
-            // @ts-ignore
-            validateStatus[_rule.fullField] = 'validating';
+        let validatePassUpw = async (_rule: Rule, value: string) => {
+            validateStatus["encrypt_upw"] = 'validating';
             if (value === '') {
-                // @ts-ignore
-                validateStatus[_rule.fullField] = 'error';
+                validateStatus["encrypt_upw"] = 'error';
                 return Promise.reject('请输入密码');
             } else {
                 if (value.length < 6) {
-                    // @ts-ignore
-                    validateStatus[_rule.fullField] = 'error';
+                    validateStatus["encrypt_upw"] = 'error';
                     return Promise.reject('密码长度不能少于6位');
                 }
-                // @ts-ignore
-                validateStatus[_rule.fullField] = 'success';
+                validateStatus["encrypt_upw"] = 'success';
+                return Promise.resolve();
+            }
+        };
+        let validatePassOpw = async (_rule: Rule, value: string) => {
+            validateStatus["encrypt_opw"] = 'validating';
+            if (value === '') {
+                validateStatus["encrypt_opw"] = 'error';
+                return Promise.reject('请输入密码');
+            } else {
+                if (value.length < 6) {
+                    validateStatus["encrypt_opw"] = 'error';
+                    return Promise.reject('密码长度不能少于6位');
+                }
+                validateStatus["encrypt_opw"] = 'success';
                 return Promise.resolve();
             }
         };
@@ -159,11 +169,12 @@ export default defineComponent({
         };
 
         const rules: Record<string, Rule[]> = {
-            input: [{ required: true, validator: validateFileExists, trigger: 'change' }],
-            encrypt_upw: [{ required: true, validator: validatePass, trigger: 'change' }],
-            encrypt_upw_confirm: [{ required: true, validator: validatePassUpwConfirm, trigger: 'change' }],
-            encrypt_opw: [{ required: true, validator: validatePass, trigger: 'change' }],
-            encrypt_opw_confirm: [{ required: true, validator: validatePassOpwConfirm, trigger: 'change' }],
+            input: [{ required: true, validator: validateFileExists, trigger: 'change', message: '文件不存在' }],
+            perm: [{ required: true, type: 'array', min: 1, message: '请至少选择一项' }],
+            upw: [{ required: true, validator: validatePassUpw, trigger: 'change' }],
+            upw_confirm: [{ required: true, validator: validatePassUpwConfirm, trigger: 'change' }],
+            opw: [{ required: true, validator: validatePassOpw, trigger: 'change' }],
+            opw_confirm: [{ required: true, validator: validatePassOpwConfirm, trigger: 'change' }],
         };
         // 多选框
         const indeterminate = ref<boolean>(false);

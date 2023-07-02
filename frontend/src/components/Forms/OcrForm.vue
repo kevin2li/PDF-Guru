@@ -11,10 +11,12 @@
             <a-form-item label="是否双栏">
                 <a-checkbox v-model:checked="formState.double_column"></a-checkbox>
             </a-form-item>
-            <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" label="页码范围">
+            <a-form-item name="page" label="页码范围" hasFeedback :validateStatus="validateStatus.page"
+                :help="validateHelp.page">
                 <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
             </a-form-item>
-            <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input">
+            <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
+                :help="validateHelp.input">
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
             </a-form-item>
             <a-form-item name="output" label="输出">
@@ -51,26 +53,41 @@ export default defineComponent({
         const validateStatus = reactive({
             input: "",
             page: "",
+            test: "",
         });
-
+        const validateHelp = reactive({
+            input: "",
+            page: "",
+            test: "",
+        })
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
             if (value === '') {
                 validateStatus.input = 'error';
-                return Promise.reject('请填写路径');
+                validateHelp["input"] = "请填写路径";
+                return Promise.reject();
+            }
+            const legal_suffix = [".pdf", ".png", ".jpg", ".jpeg"];
+            if (!legal_suffix.some((suffix) => value.endsWith(suffix))) {
+                validateStatus.input = 'error';
+                validateHelp["input"] = "仅支持pdf, png, jpg, jpeg格式的文件";
+                return Promise.reject();
             }
             await CheckFileExists(value).then((res: any) => {
                 console.log({ res });
                 if (res) {
                     validateStatus["input"] = 'error';
-                    return Promise.reject(res);
+                    validateHelp["input"] = res;
+                    return Promise.reject();
                 }
                 validateStatus["input"] = 'success';
+                validateHelp["input"] = '';
                 return Promise.resolve();
             }).catch((err: any) => {
                 console.log({ err });
                 validateStatus["input"] = 'error';
-                return Promise.reject("文件不存在");
+                validateHelp["input"] = err;
+                return Promise.reject();
             });
         };
         const validateRange = async (_rule: Rule, value: string) => {
@@ -79,14 +96,17 @@ export default defineComponent({
                 console.log({ res });
                 if (res) {
                     validateStatus["page"] = 'error';
-                    return Promise.reject("页码格式错误");
+                    validateHelp["page"] = res;
+                    return Promise.reject();
                 }
                 validateStatus["page"] = 'success';
+                validateHelp["page"] = res;
                 return Promise.resolve();
             }).catch((err: any) => {
                 console.log({ err });
                 validateStatus["page"] = 'error';
-                return Promise.reject("页码格式错误");
+                validateHelp["page"] = err;
+                return Promise.reject();
             });
         };
         const rules: Record<string, Rule[]> = {
@@ -110,7 +130,7 @@ export default defineComponent({
                 message.error("表单验证失败");
             }
         }
-        return { formState, rules, formRef, validateStatus, confirmLoading, resetFields, onSubmit };
+        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
     }
 })
 </script>
