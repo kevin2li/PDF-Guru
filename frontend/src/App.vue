@@ -1,9 +1,9 @@
 <template>
   <HelloWorld />
-  <Demo />
+  <Main />
 </template>
 
 <script lang="ts" setup>
-import Demo from './components/Demo.vue'
+import Main from './components/Main.vue'
 </script>
 

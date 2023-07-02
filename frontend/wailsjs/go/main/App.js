@@ -6,6 +6,10 @@ export function CheckFileExists(arg1) {
   return window['go']['main']['App']['CheckFileExists'](arg1);
 }
 
+export function CheckRangeFormat(arg1) {
+  return window['go']['main']['App']['CheckRangeFormat'](arg1);
+}
+
 export function CompressPDF(arg1, arg2) {
   return window['go']['main']['App']['CompressPDF'](arg1, arg2);
 }

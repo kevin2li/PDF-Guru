@@ -38,7 +38,7 @@ def parse_range(page_range: str, page_count: int, is_multi_range: bool = False):
             raise ValueError("page_range格式错误：不能同时使用正向选择和反向选择语法")
         if pos_count > 0:
             for part in parts:
-                if re.match("!?\d+-(\d+|N)", part) is None:
+                if re.match("!?\d+-(\d+|N)", part) is None or re.match("!?(\d+|N)", part) is None:
                     raise ValueError("page_range格式错误!")            
                 out = part.split("-")
                 if len(out) == 1:

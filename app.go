@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -50,6 +51,30 @@ func (a *App) CheckFileExists(path string) error {
 	}
 	if info, err := os.Stat(path); err == nil && info.IsDir() {
 		return errors.New("路径是目录!")
+	}
+	return nil
+}
+
+func (a *App) CheckRangeFormat(pages string) error {
+	fmt.Printf("check range: %s\n", pages)
+	// trim space
+	pages = strings.TrimSpace(pages)
+	parts := strings.Split(pages, ",")
+	pos_count, neg_count := 0, 0
+	for _, part := range parts {
+		pattern := regexp.MustCompile(`^!?\d+(\-(\d+|N))?$`)
+		part = strings.TrimSpace(part)
+		if !pattern.MatchString(part) {
+			return errors.New("页码格式错误!")
+		}
+		if part[0] == '!' {
+			neg_count++
+		} else {
+			pos_count++
+		}
+	}
+	if pos_count > 0 && neg_count > 0 {
+		return errors.New("不能同时使用正向选择和反向选择!")
 	}
 	return nil
 }

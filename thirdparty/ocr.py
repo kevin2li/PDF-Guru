@@ -13,6 +13,8 @@ from paddleocr import PaddleOCR, PPStructure, draw_ocr
 from PIL import Image
 from tqdm import tqdm
 
+ocr_engine_ch = PaddleOCR(use_angle_cls=True, lang='ch', show_log=False) # need to run only once to download and load model into memory
+ocr_engine_en = PaddleOCR(use_angle_cls=True, lang='en', show_log=False) # need to run only once to download and load model into memory
 
 def title_preprocess(title: str):
     """提取标题层级和标题内容
@@ -81,7 +83,7 @@ def parse_range(page_range: str, is_multiple: bool = False):
 def center_y(elem):
     return (elem[0][0][1]+elem[0][3][1])/2
 
-def write_ocr_result(ocr_results, output_path: str, offset: int = 5):
+def write_ocr_result(ocr_results, output_path: str, offset: int = 5, mode: str = "w", encoding: str = "utf-8"):
     # 按照 y中点 坐标排序
     sorted_by_y = sorted(ocr_results, key=lambda x: center_y(x))
     results = []
@@ -99,7 +101,7 @@ def write_ocr_result(ocr_results, output_path: str, offset: int = 5):
     # 将最后一行的元素添加到结果列表中
     temp_row = sorted(temp_row, key=lambda x: x[0][0])
     results.append(temp_row)
-    with open(output_path, "w", encoding="utf-8") as f:
+    with open(output_path, mode=mode, encoding=encoding) as f:
         for row in results:
             line = ""
             for item in row:
@@ -109,14 +111,24 @@ def write_ocr_result(ocr_results, output_path: str, offset: int = 5):
             f.write(f"{line}\n")
 
 def ocr_from_image(input_path: str, lang: str = 'ch', output_path: str = None, offset: float = 5., use_double_columns: bool = False, show_log: bool = False):
+    if "*" in input_path:
+        input_path_list = glob.glob(input_path)
+        for input_path in input_path_list:
+            ocr_from_image(input_path, lang, output_path, offset, use_double_columns, show_log)
+        return
     p = Path(input_path)
     if output_path is None:
-        output_dir = p.parent / "ocr_result"
+        output_dir = p.parent / f"OCR识别结果-{p.stem}"
     else:
         output_dir = Path(output_path)
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    ocr_engine = PaddleOCR(use_angle_cls=True, lang=lang, show_log=show_log) # need to run only once to download and load model into memory
+    text_output_path = str(output_dir / f"{p.stem}-ocr.txt")
+    if lang == 'ch':
+        ocr_engine = ocr_engine_ch
+    elif lang == 'en':
+        ocr_engine = ocr_engine_en
+    else:
+        raise ValueError("不支持的语言")
     img = cv2.imread(input_path)
     result = None
     if use_double_columns:
@@ -126,19 +138,22 @@ def ocr_from_image(input_path: str, lang: str = 'ch', output_path: str = None, o
         right_img = img[:, int(mid):]
         left_result = ocr_engine.ocr(left_img, cls=False)[0]
         right_result = ocr_engine.ocr(right_img, cls=False)[0]
-        result = left_result + right_result
+        write_ocr_result(left_result, text_output_path, offset)
+        write_ocr_result(right_result, text_output_path, offset, mode="a")
     else:
         result = ocr_engine.ocr(img, cls=False)[0]
-
-    # 保存识别结果文本
-    text_output_path = str(output_dir / f"{p.stem}-ocr.txt")
-    write_ocr_result(result, text_output_path, offset)
+        write_ocr_result(result, text_output_path, offset)
 
 def ocr_from_pdf(doc_path: str, page_range: str = 'all', lang: str = 'ch', output_path: str = None, offset: float = 5., use_double_columns: bool = False, show_log: bool = False):
+    if "*" in doc_path:
+        doc_path_list = glob.glob(doc_path)
+        for doc_path in doc_path_list:
+            ocr_from_pdf(doc_path, page_range, lang, output_path, offset, use_double_columns, show_log)
+        return
     doc: fitz.Document = fitz.open(doc_path)
     p = Path(doc_path)
     if output_path is None:
-        output_path = p.parent / f"{p.stem}_ocr_result"
+        output_path = p.parent / f"OCR识别结果-{p.stem}"
     else:
         output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -146,11 +161,18 @@ def ocr_from_pdf(doc_path: str, page_range: str = 'all', lang: str = 'ch', outpu
         roi_indices = list(range(len(doc)))
     else:
         roi_indices = parse_range(page_range)
-    ocr_engine = PaddleOCR(use_angle_cls=True, lang=lang, show_log=show_log) # need to run only once to download and load model into memory
+    if lang == 'ch':
+        ocr_engine = ocr_engine_ch
+    elif lang == 'en':
+        ocr_engine = ocr_engine_en
+    else:
+        raise ValueError("不支持的语言")
+
     for page_index in tqdm(roi_indices): # iterate over pdf pages
         page = doc[page_index] # get the page
         pix: fitz.Pixmap = page.get_pixmap()  # render page to an image
         img = np.frombuffer(pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, pix.n))
+        cur_output_path = output_path / f"{page_index+1}-OCR.txt"
         result = None
         if use_double_columns:
             height, width = img.shape[:2]
@@ -159,10 +181,11 @@ def ocr_from_pdf(doc_path: str, page_range: str = 'all', lang: str = 'ch', outpu
             right_img = img[:, int(mid):]
             left_result = ocr_engine.ocr(left_img, cls=False)[0]
             right_result = ocr_engine.ocr(right_img, cls=False)[0]
-            result = left_result + right_result
+            write_ocr_result(left_result, cur_output_path, offset)
+            write_ocr_result(right_result, cur_output_path, offset, mode="a")
         else:
             result = ocr_engine.ocr(img, cls=False)[0]
-        write_ocr_result(result, output_path / f"{page_index}-ocr.txt", offset)
+            write_ocr_result(result, cur_output_path, offset)
 
     path_list = sorted(list(filter(lambda x: x.endswith(".txt"), os.listdir(output_path))), key=lambda x: int(re.search("(\d+)", x).group(1)))
     merged_path = output_path / "合并.txt"

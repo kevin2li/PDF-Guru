@@ -1,90 +1,165 @@
+import { message, Modal } from 'ant-design-vue';
+
+interface MergeState {
+    input_path_list: string[];
+    output: string;
+    sort: string;
+    sort_direction: string;
+}
+
+interface SplitState {
+    input: string;
+    output: string;
+    op: string;
+    span: number;
+    ranges: string;
+    bookmark_level: string;
+}
+
+interface InsertState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
+    src_pos: number;
+    src_path: string;
+    dst_path: string;
+    src_range: string;
+    dst_range: string;
+}
+
+interface CropState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
+    unit: string;
+    up: number;
+    left: number;
+    down: number;
+    right: number;
+    split_h_breakpoints: number[];
+    split_v_breakpoints: number[];
+    split_type: string;
+    split_rows: number;
+    split_cols: number;
+}
+
+interface ExtractState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
+}
+
+interface EncryptState {
+    input: string;
+    output: string;
+    op: string;
+    upw: string;
+    opw: string;
+    perm: string[];
+    is_set_upw: boolean;
+    is_set_opw: boolean;
+    upw_confirm: string;
+    opw_confirm: string;
+}
+
+interface WatermarkState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
+    type: string;
+    text: string;
+    font_family: string;
+    font_size: number;
+    font_color: string;
+    font_opacity: number;
+    quaility: number;
+    rotate: number;
+    space: number;
+}
+
+interface ConvertState {
+    input: string;
+    output: string;
+    page: string;
+    type: string;
+}
+interface CompressState {
+    input: string;
+    output: string;
+}
+
+interface RotateState {
+    input: string;
+    output: string;
+    page: string;
+    degree: number;
+}
+
+interface BookmarkState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
+    extract_format: string;
+    file: string;
+    write_type: string;
+    write_format: string;
+    write_offset: number;
+    write_gap: number;
+    transform_offset: number;
+    transform_indent: boolean;
+    transform_dots: boolean;
+    ocr_lang: string;
+    ocr_double_column: boolean;
+}
+
+interface OcrState {
+    input: string;
+    output: string;
+    page: string;
+    lang: string;
+    double_column: boolean;
+}
+
+interface DeleteState {
+    input: string;
+    output: string;
+    page: string;
+}
+interface ReorderState {
+    input: string;
+    output: string;
+    page: string;
+}
+interface ScaleState {
+    input: string;
+    output: string;
+    page: string;
+    scale_conf: string;
+}
+
+interface PreferencesState {
+    ocr_path: string;
+    pandoc_path: string;
+}
+
 interface FormState {
-    merge: {
-        path_list: string[];
-        sort: string;
-        sort_direction: string;
-    };
-    split: {
-        op: string;
-        span: number;
-        ranges: string;
-        bookmark_level: string;
-    };
-    insert: {
-        op: string;
-        src_pos: number;
-        src_path: string;
-        dst_path: string;
-        src_range: string;
-        dst_range: string;
-    };
-    crop: {
-        op: string;
-        unit: string;
-        up: number;
-        left: number;
-        down: number;
-        right: number;
-        split_h_breakpoints: number[];
-        split_v_breakpoints: number[];
-        split_type: string;
-        split_rows: number;
-        split_cols: number;
-    };
-    extract: {
-        op: string;
-    };
-    encrypt: {
-        op: string;
-        upw: string;
-        opw: string;
-        perm: string[];
-        is_set_upw: boolean;
-        is_set_opw: boolean;
-        upw_confirm: string;
-        opw_confirm: string;
-    };
-    convert: {
-        type: string;
-    };
-    watermark: {
-        op: string;
-        type: string;
-        text: string;
-        font_family: string;
-        font_size: number;
-        font_color: string;
-        font_opacity: number;
-        quaility: number;
-        rotate: number;
-        space: number;
-    };
-    scale: {
-        scale_conf: string;
-    };
-    rotate: {
-        op: string;
-        degree: number;
-        flip_method: string;
-    };
-    bookmark: {
-        op: string;
-        file: string;
-        write_type: string;
-        write_format: string;
-        write_offset: number;
-        write_gap: number;
-        extract_format: string;
-        transform_offset: number;
-        transform_indent: boolean;
-        transform_dots: boolean;
-        ocr_lang: string;
-        ocr_double_column: boolean;
-    };
-    ocr: {
-        lang: string;
-        double_column: boolean;
-    };
+    merge: MergeState;
+    split: SplitState;
+    insert: InsertState;
+    crop: CropState;
+    extract: ExtractState;
+    encrypt: EncryptState;
+    convert: ConvertState;
+    watermark: WatermarkState;
+    scale: ScaleState;
+    rotate: RotateState;
+    bookmark: BookmarkState;
+    ocr: OcrState;
     page: string;
     input: string;
     output: string;
@@ -126,5 +201,22 @@ const menuDesc: Record<string, string> = {
     "settings": "首选项"
 }
 
-export { menuRecord, menuDesc };
-export type { FormState };
+async function handleOps(func: any, args: any[]) {
+    await func(...args).then((res: any) => {
+        console.log({ res });
+        if (!res) {
+            message.success('处理成功！');
+        } else {
+            message.error('处理失败！');
+        }
+    }).catch((err: any) => {
+        console.log({ err });
+        Modal.error({
+            title: '处理失败！',
+            content: err,
+        });
+    });
+}
+
+export { menuRecord, menuDesc, handleOps };
+export type { FormState, InsertState, MergeState, SplitState, DeleteState, CompressState, ReorderState, CropState, ExtractState, EncryptState, WatermarkState, ConvertState, RotateState, BookmarkState, OcrState, ScaleState, PreferencesState };

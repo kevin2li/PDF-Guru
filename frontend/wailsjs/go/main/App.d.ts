@@ -3,6 +3,8 @@
 
 export function CheckFileExists(arg1:string):Promise<void>;
 
+export function CheckRangeFormat(arg1:string):Promise<void>;
+
 export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertPDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
