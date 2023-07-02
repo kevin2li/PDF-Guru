@@ -1,8 +1,8 @@
 import argparse
-import copy
 import json
 import math
 import re
+import sys
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -17,121 +17,219 @@ from reportlab.pdfgen import canvas
 pdfmetrics.registerFont(TTFont('msyh','msyh.ttc'))
 pdfmetrics.registerFont(TTFont('simkai','simkai.ttf'))
 
-def parse_range(page_range: str, page_count: int, is_multi_range: bool = False):
+def parse_range(page_range: str, page_count: int, is_multi_range: bool = False, is_reverse: bool = False):
     # e.g.: "1-3,5-6,7-10", "1,4-5", "3-N", "even", "odd"
     page_range = page_range.strip()
-    roi_indices = []
     if page_range in ["all", ""]:
         roi_indices = list(range(page_count))
         return roi_indices
     if page_range == "even":
         roi_indices = list(range(0, page_count, 2))
         return roi_indices
-    elif page_range == "odd":
+    if page_range == "odd":
         roi_indices = list(range(1, page_count, 2))
         return roi_indices
-    else:
-        parts = page_range.split(",")
-        neg_count = sum([p.startswith("!") for p in parts])
-        pos_count = len(parts) - neg_count
-        if neg_count > 0 and pos_count > 0:
-            raise ValueError("page_range格式错误：不能同时使用正向选择和反向选择语法")
-        if pos_count > 0:
-            for part in parts:
-                if re.match("!?\d+-(\d+|N)", part) is None or re.match("!?(\d+|N)", part) is None:
-                    raise ValueError("page_range格式错误!")            
-                out = part.split("-")
-                if len(out) == 1:
-                    roi_indices.append(int(out[0])-1)
-                elif len(out) == 2:
-                    if out[1] == "N":
-                        roi_indices.append(list(range(int(out[0])-1, page_count)))
-                    else:
-                        roi_indices.append(list(range(int(out[0])-1, int(out[1]))))
-            if is_multi_range:
-                return roi_indices
-            roi_indices = [i for v in roi_indices for i in v]
-            roi_indices = list(set(roi_indices)).sort()
-        if neg_count > 0:
-            for part in parts:
-                out = part[1:].split("-")
-                if len(out) == 1:
-                    roi_indices.append(int(out[0])-1)
-                elif len(out) == 2:
-                    if out[1] == "N":
-                        roi_indices.append(list(range(int(out[0])-1, page_count)))
-                    else:
-                        roi_indices.append(list(range(int(out[0])-1, int(out[1]))))
-            if is_multi_range:
-                return roi_indices
-            roi_indices = [i for v in roi_indices for i in v]
-            roi_indices = list(set(range(page_count)) - set(roi_indices)).sort()
+    
+    roi_indices = []
+    parts = page_range.split(",")
+    neg_count = sum([p.startswith("!") for p in parts])
+    pos_count = len(parts) - neg_count
+    if neg_count > 0 and pos_count > 0:
+        raise ValueError("页码格式错误：不能同时使用正向选择和反向选择语法")
+    if pos_count > 0:
+        for part in parts:
+            part = part.strip()
+            if re.match("^!?\d+(\-(\d+|N))?$", part) is None:
+                raise ValueError("页码格式错误!")
+            out = part.split("-")
+            if len(out) == 1:
+                roi_indices.append([int(out[0])-1])
+            elif len(out) == 2:
+                if out[1] == "N":
+                    roi_indices.append(list(range(int(out[0])-1, page_count)))
+                else:
+                    roi_indices.append(list(range(int(out[0])-1, int(out[1]))))
+        if is_multi_range:
+            return roi_indices
+        roi_indices = [i for v in roi_indices for i in v]
+        roi_indices = list(set(roi_indices))
+        roi_indices.sort()
+    if neg_count > 0:
+        for part in parts:
+            part = part.strip()
+            if re.match("^!?\d+(\-(\d+|N))?$", part) is None:
+                raise ValueError("页码格式错误!")
+            out = part[1:].split("-")
+            if len(out) == 1:
+                roi_indices.append([int(out[0])-1])
+            elif len(out) == 2:
+                if out[1] == "N":
+                    roi_indices.append(list(range(int(out[0])-1, page_count)))
+                else:
+                    roi_indices.append(list(range(int(out[0])-1, int(out[1]))))
+        if is_multi_range:
+            return roi_indices
+        roi_indices = [i for v in roi_indices for i in v]
+        roi_indices = list(set(range(page_count)) - set(roi_indices))
+        roi_indices.sort()
+    if is_reverse:
+        roi_indices = list(set(range(page_count)) - set(roi_indices))
+        roi_indices.sort()
     return roi_indices
 
-def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    roi_indices = parse_range(page_range, doc.page_count)
-    if output_path is None:
-        output_dir = p.parent
-    doc.select(roi_indices)
-    doc.save(str(output_dir / f"{p.stem}-切片.pdf"))
+def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, is_reverse: bool = False):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count, is_reverse)
+        if output_path is None:
+            output_dir = p.parent
+        doc.select(roi_indices)
+        doc.save(str(output_dir / f"{p.stem}-切片.pdf"))
+    except:
+        print("roi_indices: ", roi_indices, file=sys.stderr)
+        raise ValueError(traceback.format_exc())
 
 def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    if output_path is None:
-        output_dir = p.parent
-    for i in range(0, doc.page_count, chunk_size):
-        tmp_doc = copy.deepcopy(doc)
-        tmp_doc.select(range(i, min(i+chunk_size, doc.page_count)))
-        tmp_doc.save(str(output_dir / f"{p.stem}-{i+1}-{min(i+chunk_size, doc.page_count)}.pdf"))
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if output_path is None:
+            output_dir = p.parent
+        else:
+            output_dir = Path(output_path)
+            output_dir.mkdir(parents=True, exist_ok=True)
+        for i in range(0, doc.page_count, chunk_size):
+            savepath = str(output_dir / f"{p.stem}-{i+1}-{min(i+chunk_size, doc.page_count)}.pdf")
+            tmp_doc:fitz.Document = fitz.open()
+            tmp_doc.insert_pdf(doc, from_page=i, to_page=min(i+chunk_size, doc.page_count)-1)
+            tmp_doc.save(savepath)
+    except:
+        raise ValueError(traceback.format_exc())
 
 def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    indices_list = parse_range(page_range, doc.page_count, is_multi_range=True)
-    if output_path is None:
-        output_dir = p.parent
-    for i, indices in enumerate(indices_list):
-        tmp_doc = copy.deepcopy(doc)
-        tmp_doc.select(indices)
-        tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"))
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        indices_list = parse_range(page_range, doc.page_count, is_multi_range=True)
+        if output_path is None:
+            output_dir = p.parent
+        else:
+            output_dir = Path(output_path)
+            output_dir.mkdir(parents=True, exist_ok=True)
+        for i, indices in enumerate(indices_list):
+            tmp_doc: fitz.Document = fitz.open()
+            tmp_doc.insert_pdf(doc, from_page=indices[0], to_page=indices[-1])
+            tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"))
+    except:
+        raise ValueError(traceback.format_exc())
 
 def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    toc = doc.get_toc(simple=False)
-    if output_path is None:
-        output_dir = p.parent
-    roi_toc = [p for p in toc if p[0] == level]
-    for i, p in enumerate(roi_toc):
-        tmp_doc = copy.deepcopy(doc)
-        tmp_doc.select(range(p[-1], roi_toc[i+1][-1] if i < len(roi_toc)-1 else doc.page_count))
-        tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"))
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        toc = doc.get_toc(simple=False)
+        if output_path is None:
+            output_dir = p.parent
+        else:
+            output_dir = Path(output_path)
+            output_dir.mkdir(parents=True, exist_ok=True)
+        roi_toc = [p for p in toc if p[0] == level]
+        for i, p in enumerate(roi_toc):
+            tmp_doc: fitz.Document = fitz.open()
+            tmp_doc.insert_pdf(doc, from_page=p[-1], to_page=roi_toc[i+1][-1] if i < len(roi_toc)-1 else doc.page_count)
+            tmp_doc.save(str(output_dir / f"{p[1]}.pdf"))
+    except:
+        raise ValueError(traceback.format_exc())
+
+def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: Union[int, str], page_range: str = "all", output_path: str = None):
+    try:
+        doc1: fitz.Document = fitz.open(doc_path1)
+        doc2: fitz.Document = fitz.open(doc_path2)
+        assert 1 <= insert_pos <= doc1.page_count, "插入位置超出范围!"
+        doc2.select(parse_range(page_range))
+        n1, n2 = doc1.page_count, doc2.page_count
+        doc1.insert_pdf(doc2)
+        if output_path is None:
+            p = Path(doc_path1)
+            output_path = str(p.parent / f"{p.stem}-插入.pdf")
+        if isinstance(insert_pos, int):
+            adjust_page_seq = f"1-{insert_pos-1},{n1+1}-{n1+n2},{insert_pos}-{n1}"
+            doc1.select(parse_range(adjust_page_seq, doc1.page_count))
+            doc1.save(output_path)
+        elif isinstance(insert_pos, str):
+            insert_pos = insert_pos.strip()
+            m = re.match("\d+(\-\d+)?", insert_pos)
+            if m is not None:
+                parts = insert_pos.split("-")
+                if len(parts) == 2:
+                    p1, p2 = parts
+                    if int(p1) > int(p2):
+                        raise ValueError("插入位置格式错误!")
+                    adjust_page_seq = f"1-{int(p1)-1},{n1+1}-{n1+n2},{int(p2)+1}-{n1}"
+                    doc1.select(parse_range(adjust_page_seq, doc1.page_count))
+                    doc1.save(output_path)
+                elif len(parts) == 1:
+                    p1 = parts[0]
+                    adjust_page_seq = f"1-{int(p1)-1},{n1+1}-{n1+n2},{int(p1)+1}-{n1}"
+                    doc1.select(parse_range(adjust_page_seq, doc1.page_count))
+                    doc1.save(output_path)
+            else:
+                raise ValueError("插入位置格式错误!")
+        else:
+            raise ValueError("插入位置格式错误!")
+    except:
+        
+        raise ValueError(traceback.format_exc())
 
 def merge_pdf(doc_path_list: List[str], output_path: str = None):
-    doc: fitz.Document = fitz.open()
-    for doc_path in doc_path_list:
-        doc_temp = fitz.open(doc_path)
-        doc.insert_pdf(doc_temp)
-    if output_path is None:
-        p = Path(doc_path_list[0])
-        output_path = str(p.parent / f"合并.pdf")
-    doc.save(output_path)
+    try:
+        doc: fitz.Document = fitz.open()
+        for doc_path in doc_path_list:
+            doc_temp = fitz.open(doc_path)
+            doc.insert_pdf(doc_temp)
+        if output_path is None:
+            p = Path(doc_path_list[0])
+            output_path = str(p.parent / f"合并.pdf")
+        doc.save(output_path)
+    except:
+        raise ValueError(traceback.format_exc())
 
 def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    roi_indices = parse_range(page_range)
-    for page_index in roi_indices:
-        page = doc[page_index]
-        page.set_rotation(angle)
-        
-    if output_path is None:
-        p = Path(doc_path)
-        output_path = str(p.parent / f"{p.stem}-旋转.pdf")
-    doc.save(output_path)
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range)
+        for page_index in roi_indices:
+            page = doc[page_index]
+            page.set_rotation(angle)
+            
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-旋转.pdf")
+        doc.save(output_path)
+    except:
+        raise ValueError(traceback.format_exc())
 
+def crop_pdf(doc_path: str, bbox: Tuple[int, int, int, int], page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range)
+        for page_index in roi_indices:
+            page = doc[page_index]
+            page.set_cropbox(fitz.Rect(*bbox))
+            
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
+        doc.save(output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, output_path: str = None):
+    raise NotImplementedError
+
+def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoints: List[float], output_path: str = None):
+    raise NotImplementedError
 
 def title_preprocess(title: str):
     """提取标题层级和标题内容
@@ -172,7 +270,7 @@ def title_preprocess(title: str):
         res['level'] = 1
         return res
     except:
-        traceback.print_exc()
+        
         return {'level': 1, "text": title}
 
 def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: str = None):
@@ -311,10 +409,53 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
         output_path = str(p.parent / f"{p.stem}-decrypt.pdf")
     doc.save(output_path)
 
-
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
+
+    # 拆分子命令
+    split_parser = sub_parsers.add_parser("split", help="拆分", description="拆分pdf文件")
+    split_parser.set_defaults(which='split')
+    split_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    split_parser.add_argument("--mode", type=str, choices=['chunk', 'page', 'toc'], default="chunk", help="拆分模式")
+    split_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    split_parser.add_argument("--chunk_size", type=int, default=10, help="拆分块大小")
+    split_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+    split_parser.add_argument("--toc-level", type=int, default=1, help="目录层级")
+
+    #  删除子命令
+    delete_parser = sub_parsers.add_parser("delete", help="删除", description="删除pdf文件")
+    delete_parser.set_defaults(which='delete')
+    delete_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    delete_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    delete_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 插入子命令
+    insert_parser = sub_parsers.add_parser("insert", help="插入", description="插入pdf文件")
+    insert_parser.set_defaults(which='insert')
+    insert_parser.add_argument("input_path1", type=str, help="被插入的pdf文件路径")
+    insert_parser.add_argument("input_path2", type=str, help="插入pdf文件路径")
+    insert_parser.add_argument("--insert_pos", type=int, default=0, help="插入位置")
+    insert_parser.add_argument("--page_range", type=str, default="all", help="插入pdf的页码范围")
+    insert_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 替换子命令
+    replace_parser = sub_parsers.add_parser("replace", help="替换", description="替换pdf文件")
+    replace_parser.set_defaults(which='replace')
+    replace_parser.add_argument("input_path1", type=str, help="被替换的pdf文件路径")
+    replace_parser.add_argument("input_path2", type=str, help="替换pdf文件路径")
+    replace_parser.add_argument("--src_page_range", type=str, default="all", help="页码范围")
+    replace_parser.add_argument("--dst_page_range", type=str, default="all", help="页码范围")
+    replace_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 旋转子命令
+    rotate_parser = sub_parsers.add_parser("rotate", help="旋转", description="旋转pdf文件")
+    rotate_parser.set_defaults(which='rotate')
+    rotate_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    rotate_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    rotate_parser.add_argument("--angle", type=int, default=90, help="旋转角度")
+    rotate_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
     # 加密子命令
     encrypt_parser = sub_parsers.add_parser("encrypt", help="加密", description="加密pdf文件")
     encrypt_parser.add_argument("input_path", type=str, help="pdf文件路径")
@@ -383,7 +524,20 @@ def main():
     
     args = parser.parse_args()
     print(args)
-    if args.which == "encrypt":
+    if args.which == "split":
+        if args.mode == "chunk":
+            split_pdf_by_chunk(args.input_path, args.chunk_size, args.output)
+        elif args.mode == "page":
+            split_pdf_by_page(args.input_path, args.page_range, args.output)
+        elif args.mode == "toc":
+            split_pdf_by_toc(args.input_path, args.toc_level, args.output)
+    elif args.which == "delete":
+        slice_pdf(args.input_path, args.page_range, args.output, is_reverse=True)
+    elif args.which == 'insert':
+        insert_pdf(args.input_path1, args.input_path2, args.insert_pos, args.page_range, args.output)
+    elif args.which == "replace":
+        insert_pdf(args.input_path1, args.input_path2, args.src_page_range, args.dst_page_range, args.output)
+    elif args.which == "encrypt":
         encrypt_pdf(args.input_path, args.user_password, args.owner_password, args.perm, args.output)
     elif args.which == "decrypt":
         decrypt_pdf(args.input_path, args.password, args.output)
@@ -491,13 +645,5 @@ def create_wartmark(content:str,
     c.save()
 
 if __name__ == "__main__":
-    main()
-    # test()
-    # embed()
-    # create_wartmark(content='关注carl_奕然，学习更多有趣的python知识',
-                #  filename='小鱼watermarkDemo6',
-                #  width=2*200,
-                #  height=200,
-                #  font='simkai',
-                #  fontsize=35,
-                #  text_fill_alpha=0.3) 
+    # main()
+    print(parse_range("1-4", 10, is_reverse=True))

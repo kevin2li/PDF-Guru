@@ -36,7 +36,7 @@ func (a *App) startup(ctx context.Context) {
 
 func (a *App) CheckFileExists(path string) error {
 	fmt.Printf("check path exists: %s\n", path)
-
+	path = strings.TrimSpace(path)
 	if strings.Contains(path, "*") {
 		matches, err := filepath.Glob(path)
 		if err != nil {
@@ -83,26 +83,128 @@ func (a *App) CheckRangeFormat(pages string) error {
 	return nil
 }
 
-func (a *App) SplitPDF(inFile string, mode string, span int, outDir string) error {
-	fmt.Printf("inFile: %s, mode: %s, span: %d, outDir: %s\n", inFile, mode, span, outDir)
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
+func (a *App) SplitPDFByChunk(inFile string, chunkSize int, outDir string) error {
+	fmt.Printf("inFile: %s, chunkSize: %d, outDir: %s\n", inFile, chunkSize, outDir)
+	args := []string{"split", "--mode", "chunk"}
+	args = append(args, "--chunk_size")
+	args = append(args, fmt.Sprintf("%d", chunkSize))
+	if outDir != "" {
+		args = append(args, "--output", outDir)
+	}
+	args = append(args, inFile)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
 		return err
 	}
-	if _, err := os.Stat(outDir); os.IsNotExist(err) {
-		err = os.MkdirAll(outDir, os.ModePerm)
-		if err != nil {
-			return err
-		}
+	return nil
+}
+
+func (a *App) SplitPDFByBookmark(inFile string, tocLevel string, outDir string) error {
+	fmt.Printf("inFile: %s, outDir: %s\n", inFile, outDir)
+	args := []string{"split", "--mode", "toc"}
+	if tocLevel != "" {
+		args = append(args, "--toc-level", tocLevel)
 	}
-	conf := model.NewDefaultConfiguration()
-	if mode == "span" {
-		err := api.SplitFile(inFile, outDir, span, conf)
-		if err != nil {
-			return err
-		}
-	} else if mode == "bookmark" {
-		fmt.Println("bookmark")
+	if outDir != "" {
+		args = append(args, "--output", outDir)
+	}
+	args = append(args, inFile)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) SplitPDFByPage(inFile string, pages string, outDir string) error {
+	fmt.Printf("inFile: %s, pages: %s, outDir: %s\n", inFile, pages, outDir)
+	args := []string{"split", "--mode", "page"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outDir != "" {
+		args = append(args, "--output", outDir)
+	}
+	args = append(args, inFile)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) DeletePDF(inFile string, outFile string, pagesStr string) error {
+	fmt.Printf("inFile: %s, outFile: %s, pagesStr: %s\n", inFile, outFile, pagesStr)
+	args := []string{"delete"}
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Printf("%v\n", args)
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages string, outFile string) error {
+	fmt.Printf("inFile1: %s, inFile2: %s, insertPos: %d, dstPages: %s, outFile: %s\n", inFile1, inFile2, insertPos, dstPages, outFile)
+	args := []string{"insert"}
+	if insertPos != 0 {
+		args = append(args, "--insert_pos", fmt.Sprintf("%d", insertPos))
+	}
+	if dstPages != "" {
+		args = append(args, "--page_range", dstPages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile1)
+	args = append(args, inFile2)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ReplacePDF(inFile1 string, inFile2 string, srcPages string, dstPages string, outFile string) error {
+	fmt.Printf("inFile1: %s, inFile2: %s, srcPages: %s, dstPages: %s, outFile: %s\n", inFile1, inFile2, srcPages, dstPages, outFile)
+	args := []string{"replace"}
+	if srcPages != "" {
+		args = append(args, "--src_page_range", srcPages)
+	}
+	if dstPages != "" {
+		args = append(args, "--dst_page_range", dstPages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile1)
+	args = append(args, inFile2)
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
 	}
 	return nil
 }

@@ -25,9 +25,9 @@
                         <a-radio value="page">页码书签</a-radio>
                     </a-radio-group>
                 </a-form-item>
-                <a-form-item name="bookmark.file" label="书签文件" :rules="{ required: true }"
-                    v-if="formState.write_type == 'file'">
-                    <a-input v-model:value="formState.file" placeholder="书签文件路径" allow-clear />
+                <a-form-item name="bookmark_file" label="书签文件" hasFeedback :validateStatus="validateStatus.bookmark_file"
+                    :help="validateHelp.bookmark_file" v-if="formState.write_type == 'file'">
+                    <a-input v-model:value="formState.bookmark_file" placeholder="书签文件路径" allow-clear />
                 </a-form-item>
                 <a-form-item name="bookmark.write_offset" label="页码偏移量" :rules="{ required: true }"
                     v-if="formState.write_type == 'file'">
@@ -62,16 +62,17 @@
                 <a-form-item name="bookmark.ocr_double_column" label="双栏">
                     <a-switch v-model:checked="formState.ocr_double_column" />
                 </a-form-item>
-                <a-form-item name="bookmark.ocr_range" label="目录页码范围">
-                    <a-input v-model:value="formState.page" hasFeedback :validateStatus="validateStatus.page"
-                        placeholder="e.g. 1-10,11-15,16-19" allow-clear />
+                <a-form-item name="page" label="目录页码范围" hasFeedback :validateStatus="validateStatus.page"
+                    :help="validateHelp.page">
+                    <a-input v-model:value="formState.page" placeholder="e.g. 1-10,11-15,16-19" allow-clear />
                 </a-form-item>
             </div>
-            <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input">
+            <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
+                :help="validateHelp.input">
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
             </a-form-item>
             <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录" allow-clear />
+                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">确认</a-button>
@@ -98,7 +99,7 @@ export default defineComponent({
             output: "",
             page: "",
             op: "extract",
-            file: "",
+            bookmark_file: "",
             write_type: "file",
             write_format: "",
             write_offset: 0,
@@ -114,47 +115,71 @@ export default defineComponent({
         const validateStatus = reactive({
             input: "",
             page: "",
+            bookmark_file: "",
         });
-
+        const validateHelp = reactive({
+            input: "",
+            page: "",
+            bookmark_file: "",
+        })
         const validateFileExists = async (_rule: Rule, value: string) => {
-            validateStatus["input"] = 'validating';
+            console.log(_rule);
+            console.log(value);
+            // @ts-ignore
+            validateStatus[_rule.field] = 'validating';
             if (value === '') {
-                validateStatus.input = 'error';
-                return Promise.reject('请填写路径');
+                // @ts-ignore
+                validateStatus[_rule.field] = 'error';
+                // @ts-ignore
+                validateHelp[_rule.field] = "请填写路径";
+                return Promise.reject();
             }
             await CheckFileExists(value).then((res: any) => {
                 console.log({ res });
                 if (res) {
-                    validateStatus["input"] = 'error';
-                    return Promise.reject(res);
+                    // @ts-ignore
+                    validateStatus[_rule.field] = 'error';
+                    // @ts-ignore
+                    validateHelp[_rule.field] = res;
+                    return Promise.reject();
                 }
-                validateStatus["input"] = 'success';
+                // @ts-ignore
+                validateStatus[_rule.field] = 'success';
+                // @ts-ignore
+                validateHelp[_rule.field] = res;
                 return Promise.resolve();
             }).catch((err: any) => {
                 console.log({ err });
-                validateStatus["input"] = 'error';
+                // @ts-ignore
+                validateStatus[_rule.field] = 'error';
+                // @ts-ignore
+                validateHelp[_rule.field] = err;
                 return Promise.reject("文件不存在");
             });
         };
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';
             await CheckRangeFormat(value).then((res: any) => {
-                console.log({ res });
                 if (res) {
+                    console.log({ res });
                     validateStatus["page"] = 'error';
-                    return Promise.reject("页码格式错误");
+                    validateHelp["page"] = res;
+                    return Promise.reject();
                 }
                 validateStatus["page"] = 'success';
+                validateHelp["page"] = res;
                 return Promise.resolve();
             }).catch((err: any) => {
                 console.log({ err });
                 validateStatus["page"] = 'error';
-                return Promise.reject("页码格式错误");
+                validateHelp["page"] = err;
+                return Promise.reject();
             });
         };
         const rules: Record<string, Rule[]> = {
             input: [{ required: true, validator: validateFileExists, trigger: 'change' }],
             page: [{ validator: validateRange, trigger: 'change' }],
+            bookmark_file: [{ required: true, validator: validateFileExists, trigger: 'change' }],
         };
         // 重置表单
         const resetFields = () => {
@@ -174,7 +199,7 @@ export default defineComponent({
                     case "write": {
                         switch (formState.write_type) {
                             case "file": {
-                                await handleOps(WriteBookmarkByFile, [formState.input, formState.output, formState.file, formState.write_offset]);
+                                await handleOps(WriteBookmarkByFile, [formState.input, formState.output, formState.bookmark_file, formState.write_offset]);
                                 break;
                             }
                             case "page": {
@@ -195,7 +220,7 @@ export default defineComponent({
                 message.error("表单验证失败");
             }
         }
-        return { formState, rules, formRef, validateStatus, confirmLoading, resetFields, onSubmit };
+        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
     }
 })
 </script>

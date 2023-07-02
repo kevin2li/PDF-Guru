@@ -37,6 +37,10 @@ export default defineComponent({
             input: "",
             page: "",
         });
+        const validateHelp = reactive({
+            input: "",
+            page: "",
+        });
 
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
@@ -79,7 +83,7 @@ export default defineComponent({
                 message.error("表单验证失败");
             }
         }
-        return { formState, rules, formRef, validateStatus, confirmLoading, resetFields, onSubmit };
+        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
     }
 })
 </script>

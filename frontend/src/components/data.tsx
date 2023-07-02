@@ -10,9 +10,9 @@ interface MergeState {
 interface SplitState {
     input: string;
     output: string;
+    page: string;
     op: string;
     span: number;
-    ranges: string;
     bookmark_level: string;
 }
 
@@ -105,7 +105,7 @@ interface BookmarkState {
     page: string;
     op: string;
     extract_format: string;
-    file: string;
+    bookmark_file: string;
     write_type: string;
     write_format: string;
     write_offset: number;

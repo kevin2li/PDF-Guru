@@ -20,7 +20,7 @@
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
             </a-form-item>
             <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录" allow-clear />
+                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">确认</a-button>
@@ -53,24 +53,16 @@ export default defineComponent({
         const validateStatus = reactive({
             input: "",
             page: "",
-            test: "",
         });
         const validateHelp = reactive({
             input: "",
             page: "",
-            test: "",
         })
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
             if (value === '') {
                 validateStatus.input = 'error';
                 validateHelp["input"] = "请填写路径";
-                return Promise.reject();
-            }
-            const legal_suffix = [".pdf", ".png", ".jpg", ".jpeg"];
-            if (!legal_suffix.some((suffix) => value.endsWith(suffix))) {
-                validateStatus.input = 'error';
-                validateHelp["input"] = "仅支持pdf, png, jpg, jpeg格式的文件";
                 return Promise.reject();
             }
             await CheckFileExists(value).then((res: any) => {
@@ -89,12 +81,19 @@ export default defineComponent({
                 validateHelp["input"] = err;
                 return Promise.reject();
             });
+            const legal_suffix = [".pdf", ".png", ".jpg", ".jpeg"];
+            if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
+                validateStatus.input = 'error';
+                validateHelp["input"] = "仅支持pdf, png, jpg, jpeg格式的文件";
+                return Promise.reject();
+            }
         };
+
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';
             await CheckRangeFormat(value).then((res: any) => {
-                console.log({ res });
                 if (res) {
+                    console.log({ res });
                     validateStatus["page"] = 'error';
                     validateHelp["page"] = res;
                     return Promise.reject();
@@ -120,15 +119,14 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         const onSubmit = async () => {
-            try {
-                await formRef.value?.validate();
-                confirmLoading.value = true;
-                await handleOps(OCR, [formState.input, formState.output, formState.page, formState.lang, formState.double_column]);
-                confirmLoading.value = false;
-            } catch (err) {
-                console.log({ err });
-                message.error("表单验证失败");
-            }
+            // await formRef.value?.validate().then(async () => {
+            confirmLoading.value = true;
+            await handleOps(OCR, [formState.input, formState.output, formState.page, formState.lang, formState.double_column]);
+            confirmLoading.value = false;
+            // }).catch((err) => {
+            //     console.log({ err });
+            //     message.error("表单验证失败");
+            // });
         }
         return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
     }

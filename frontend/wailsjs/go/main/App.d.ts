@@ -11,9 +11,13 @@ export function ConvertPDF(arg1:string,arg2:string,arg3:string,arg4:string):Prom
 
 export function DecryptPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function DeletePDF(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function EncryptPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>):Promise<void>;
 
 export function ExtractBookmark(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function InsertPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string):Promise<void>;
 
 export function MergePDF(arg1:Array<string>,arg2:string,arg3:string,arg4:boolean):Promise<void>;
 
@@ -21,11 +25,17 @@ export function OCR(arg1:string,arg2:string,arg3:string,arg4:string,arg5:boolean
 
 export function ReorderPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function ReplacePDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
+
 export function RotatePDF(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
 
 export function ScalePDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
-export function SplitPDF(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
+export function SplitPDFByBookmark(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function SplitPDFByChunk(arg1:string,arg2:number,arg3:string):Promise<void>;
+
+export function SplitPDFByPage(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function TransformBookmark(arg1:string,arg2:string,arg3:boolean,arg4:number,arg5:boolean):Promise<void>;
 

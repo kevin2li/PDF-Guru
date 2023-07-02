@@ -22,12 +22,20 @@ export function DecryptPDF(arg1, arg2, arg3) {
   return window['go']['main']['App']['DecryptPDF'](arg1, arg2, arg3);
 }
 
+export function DeletePDF(arg1, arg2, arg3) {
+  return window['go']['main']['App']['DeletePDF'](arg1, arg2, arg3);
+}
+
 export function EncryptPDF(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['EncryptPDF'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function ExtractBookmark(arg1, arg2, arg3) {
   return window['go']['main']['App']['ExtractBookmark'](arg1, arg2, arg3);
+}
+
+export function InsertPDF(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['InsertPDF'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function MergePDF(arg1, arg2, arg3, arg4) {
@@ -42,6 +50,10 @@ export function ReorderPDF(arg1, arg2, arg3) {
   return window['go']['main']['App']['ReorderPDF'](arg1, arg2, arg3);
 }
 
+export function ReplacePDF(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['ReplacePDF'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function RotatePDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['RotatePDF'](arg1, arg2, arg3, arg4);
 }
@@ -50,8 +62,16 @@ export function ScalePDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ScalePDF'](arg1, arg2, arg3, arg4);
 }
 
-export function SplitPDF(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['SplitPDF'](arg1, arg2, arg3, arg4);
+export function SplitPDFByBookmark(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SplitPDFByBookmark'](arg1, arg2, arg3);
+}
+
+export function SplitPDFByChunk(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SplitPDFByChunk'](arg1, arg2, arg3);
+}
+
+export function SplitPDFByPage(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SplitPDFByPage'](arg1, arg2, arg3);
 }
 
 export function TransformBookmark(arg1, arg2, arg3, arg4, arg5) {

@@ -2,9 +2,10 @@
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules">
-            <a-form-item :label="index === 0 ? '输入路径列表' : ' '" :colon="index === 0 ? true : false" name="merge_input"
+            <a-form-item :label="index === 0 ? '输入路径列表' : ' '" :colon="index === 0 ? true : false"
+                :help="validateHelp.input_path_list[index]" :rules="[{ validator: validateFileExists, trigger: 'change' }]"
                 v-for="(item, index) in formState.input_path_list" :key="index">
-                <a-input v-model:value="formState.input_path_list[index]" style="width: 95%;" allow-clear
+                <a-input v-model:value="formState.input_path_list[index]" style="width: 90%;" allow-clear
                     placeholder="待合并pdf文件路径" />
                 <MinusCircleOutlined @click="removePath(item)" style="margin-left: 1vw;" />
             </a-form-item>
@@ -31,7 +32,7 @@
             </a-form-item>
 
             <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录" allow-clear />
+                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">确认</a-button>
@@ -41,7 +42,7 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, watch, ref } from 'vue';
+import { defineComponent, reactive, toRaw, ref, VueElement } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { CheckFileExists, CheckRangeFormat, MergePDF } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
@@ -64,29 +65,58 @@ export default defineComponent({
         });
 
         const validateStatus = reactive({
-            input: "",
+            input_path_list: [],
             page: "",
         });
-
+        const validateHelp = reactive({
+            input_path_list: [],
+            page: "",
+        });
         const validateFileExists = async (_rule: Rule, value: string) => {
-            validateStatus["input"] = 'validating';
+            console.log(_rule);
+            console.log(value);
+            // @ts-ignore
+            // const index = _rule.field.split("_").at(-1);
+            const index = 0;
+            // @ts-ignore
+            validateStatus["input_path_list"][index] = 'validating';
             if (value === '') {
-                validateStatus.input = 'error';
-                return Promise.reject('请填写路径');
+                // @ts-ignore
+                validateStatus["input_path_list"][index] = 'error';
+                // @ts-ignore
+                validateHelp["input_path_list"][index] = '请填写路径';
+                return Promise.reject();
             }
             await CheckFileExists(value).then((res: any) => {
                 console.log({ res });
                 if (res) {
-                    validateStatus["input"] = 'error';
-                    return Promise.reject(res);
+                    // @ts-ignore
+                    validateStatus["input_path_list"][index] = 'error';
+                    // @ts-ignore
+                    validateHelp["input_path_list"][index] = res;
+                    return Promise.reject();
                 }
-                validateStatus["input"] = 'success';
+                // @ts-ignore
+                validateStatus["input_path_list"][index] = 'success';
+                // @ts-ignore
+                validateHelp["input_path_list"][index] = "";
                 return Promise.resolve();
             }).catch((err: any) => {
                 console.log({ err });
-                validateStatus["input"] = 'error';
+                // @ts-ignore
+                validateStatus["input_path_list"][index] = 'error';
+                // @ts-ignore
+                validateHelp["input_path_list"][index] = err;
                 return Promise.reject("文件不存在");
             });
+            const legal_suffix = [".pdf"];
+            if (!legal_suffix.some((suffix) => value.endsWith(suffix))) {
+                // @ts-ignore
+                validateStatus["input_path_list"][index] = 'error';
+                // @ts-ignore
+                validateHelp["input_path_list"][index] = "仅支持pdf格式的文件";
+                return Promise.reject();
+            }
         };
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';
@@ -111,15 +141,24 @@ export default defineComponent({
         // 合并PDF
         const addPath = () => {
             formState.input_path_list.push("");
+            // @ts-ignore
+            validateStatus.input_path_list.push("");
+            // @ts-ignore
+            validateHelp.input_path_list.push("");
         }
         const removePath = (item: string) => {
             const index = formState.input_path_list.indexOf(item);
             if (index != -1) {
                 formState.input_path_list.splice(index, 1);
+                // @ts-ignore
+                validateStatus.input_path_list.splice(index, 1);
+                // @ts-ignore
+                validateHelp.input_path_list.splice(index, 1);
             }
         }
         // 重置表单
         const resetFields = () => {
+            console.log("resetFields");
             formRef.value?.resetFields();
         }
         // 提交表单
@@ -135,7 +174,7 @@ export default defineComponent({
                 message.error("表单验证失败");
             }
         }
-        return { formState, rules, formRef, validateStatus, confirmLoading, addPath, removePath, resetFields, onSubmit };
+        return { formState, rules, formRef, validateStatus, validateHelp, validateFileExists, confirmLoading, addPath, removePath, resetFields, onSubmit };
     }
 })
 </script>

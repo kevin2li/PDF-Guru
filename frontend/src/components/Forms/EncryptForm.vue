@@ -13,7 +13,8 @@
                     <a-checkbox v-model:checked="formState.is_set_upw"></a-checkbox>
                 </a-form-item>
                 <a-form-item name="upw" label="设置密码" hasFeedback :validateStatus="validateStatus.encrypt_upw">
-                    <a-input-password v-model:value="formState.upw" placeholder="不少于6位" allow-clear :disabled="!formState.is_set_upw" />
+                    <a-input-password v-model:value="formState.upw" placeholder="不少于6位" allow-clear
+                        :disabled="!formState.is_set_upw" />
                 </a-form-item>
                 <a-form-item name="upw_confirm" label="确认密码" hasFeedback
                     :validateStatus="validateStatus.encrypt_upw_confirm">
@@ -27,11 +28,12 @@
                     <a-checkbox v-model:checked="formState.is_set_opw"></a-checkbox>
                 </a-form-item>
                 <a-form-item name="opw" label="设置密码" hasFeedback :validateStatus="validateStatus.encrypt_opw">
-                    <a-input-password v-model:value="formState.opw" placeholder="不少于6位" allow-clear :disabled="!formState.is_set_opw" />
+                    <a-input-password v-model:value="formState.opw" placeholder="不少于6位" allow-clear
+                        :disabled="!formState.is_set_opw" />
                 </a-form-item>
                 <a-form-item name="opw_confirm" label="确认密码" hasFeedback
                     :validateStatus="validateStatus.encrypt_opw_confirm">
-                    <a-input-password v-model:value="formState.opw_confirm"  allow-clear placeholder="再次输入密码"
+                    <a-input-password v-model:value="formState.opw_confirm" allow-clear placeholder="再次输入密码"
                         :disabled="!formState.is_set_opw" />
                 </a-form-item>
                 <a-form-item name="perm" label="限制功能">
@@ -43,13 +45,14 @@
                 </a-form-item>
             </div>
             <a-form-item name="decrypt_pass" label="密码" v-if="formState.op == 'decrypt'" :rules="[{ required: true }]">
-                <a-input-password v-model:value="formState.upw" placeholder="解密密码" />
+                <a-input-password v-model:value="formState.upw" placeholder="解密密码" allow-clear />
             </a-form-item>
-            <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input">
+            <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
+                :help="validateHelp.input">
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
             </a-form-item>
             <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录" allow-clear />
+                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">确认</a-button>
@@ -91,26 +94,42 @@ export default defineComponent({
             encrypt_opw: '',
             encrypt_opw_confirm: '',
         });
-
+        const validateHelp = reactive({
+            input: "",
+            encrypt_upw: '',
+            encrypt_upw_confirm: '',
+            encrypt_opw: '',
+            encrypt_opw_confirm: '',
+        })
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
             if (value === '') {
                 validateStatus.input = 'error';
-                return Promise.reject('请填写路径');
+                validateHelp["input"] = "请填写路径";
+                return Promise.reject();
             }
             await CheckFileExists(value).then((res: any) => {
                 console.log({ res });
                 if (res) {
                     validateStatus["input"] = 'error';
-                    return Promise.reject(res);
+                    validateHelp["input"] = res;
+                    return Promise.reject();
                 }
                 validateStatus["input"] = 'success';
+                validateHelp["input"] = '';
                 return Promise.resolve();
             }).catch((err: any) => {
                 console.log({ err });
                 validateStatus["input"] = 'error';
-                return Promise.reject("文件不存在");
+                validateHelp["input"] = err;
+                return Promise.reject();
             });
+            const legal_suffix = [".pdf"];
+            if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
+                validateStatus.input = 'error';
+                validateHelp["input"] = "仅支持pdf格式的文件";
+                return Promise.reject();
+            }
         };
         let validatePassUpw = async (_rule: Rule, value: string) => {
             validateStatus["encrypt_upw"] = 'validating';
@@ -226,7 +245,7 @@ export default defineComponent({
                 message.error("表单验证失败");
             }
         }
-        return { formState, rules, formRef, validateStatus, confirmLoading, checkAll, indeterminate, encrypt_perm_options, onCheckAllChange, resetFields, onSubmit };
+        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, checkAll, indeterminate, encrypt_perm_options, onCheckAllChange, resetFields, onSubmit };
     }
 })
 </script>

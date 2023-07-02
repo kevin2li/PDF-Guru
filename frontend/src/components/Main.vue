@@ -159,7 +159,6 @@ import {
     SplitCellsOutlined,
     LoginOutlined
 } from '@ant-design/icons-vue';
-import { message, Modal } from 'ant-design-vue';
 import { menuDesc, menuRecord } from "./data";
 import MergeForm from "./Forms/MergeForm.vue";
 import SplitForm from "./Forms/SplitForm.vue";
