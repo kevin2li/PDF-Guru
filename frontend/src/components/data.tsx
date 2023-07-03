@@ -161,8 +161,10 @@ interface ScaleState {
 }
 
 interface PreferencesState {
+    pdf_path: string;
     ocr_path: string;
     pandoc_path: string;
+    allow_modify: boolean;
 }
 
 interface FormState {
@@ -219,7 +221,7 @@ const menuDesc: Record<string, string> = {
     "convert": "PDF转换",
     "encrypt": "对PDF文件进行加密或解密",
     "ocr": "对PDF文件或图片(支持png、jpg格式)进行OCR识别",
-    "settings": "首选项"
+    "settings": "对软件功能进行配置"
 }
 
 async function handleOps(func: any, args: any[]) {

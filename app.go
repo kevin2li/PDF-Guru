@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -15,9 +16,6 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pkg/errors"
 )
-
-const pdfExePath string = "C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe"
-const ocrExePath string = "C:\\Users\\kevin\\miniconda3\\envs\\ocr\\python.exe"
 
 // App struct
 type App struct {
@@ -33,6 +31,58 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+}
+
+// My app part
+type MyConfig struct {
+	PdfPath    string `json:"pdf_path"`
+	OcrPath    string `json:"ocr_path"`
+	PandocPath string `json:"pandoc_path"`
+}
+
+func (a *App) SaveConfig(pdfPath string, ocrPath string, pandocPath string) error {
+	var config MyConfig
+	config.PdfPath = pdfPath
+	config.OcrPath = ocrPath
+	config.PandocPath = pandocPath
+	jsonData, err := json.Marshal(config)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	filename := "config.json"
+	err = os.WriteFile(filename, jsonData, 0644)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return err
+	}
+	return nil
+}
+
+func (a *App) LoadConfig() (MyConfig, error) {
+	configPath := "config.json"
+	var config MyConfig
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		path, err := os.Executable()
+		if err != nil {
+			fmt.Println("Error:", err)
+			return config, err
+		}
+		path = filepath.Join(filepath.Dir(path), "pdf.exe")
+		err = a.SaveConfig(path, "", "")
+		if err != nil {
+			return config, err
+		}
+	}
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return config, err
+	}
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		return config, err
+	}
+	return config, nil
 }
 
 func CheckCmdError(cmd *exec.Cmd) error {
@@ -192,8 +242,12 @@ func (a *App) SplitPDFByChunk(inFile string, chunkSize int, outDir string) error
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -212,8 +266,12 @@ func (a *App) SplitPDFByBookmark(inFile string, tocLevel string, outDir string) 
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -232,8 +290,12 @@ func (a *App) SplitPDFByPage(inFile string, pages string, outDir string) error {
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -251,8 +313,12 @@ func (a *App) DeletePDF(inFile string, outFile string, pagesStr string) error {
 	}
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -275,8 +341,12 @@ func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages 
 	args = append(args, inFile2)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -300,8 +370,12 @@ func (a *App) InsertBlankPDF(inFile string, outFile string, insertPos int, paper
 	args = append(args, inFile, "placeholder.pdf")
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -324,8 +398,12 @@ func (a *App) ReplacePDF(inFile1 string, inFile2 string, srcPages string, dstPag
 	args = append(args, inFile2)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -347,8 +425,12 @@ func (a *App) RotatePDF(inFile string, outFile string, rotation int, pagesStr st
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -367,8 +449,12 @@ func (a *App) ReorderPDF(inFile string, outFile string, pagesStr string) error {
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -392,8 +478,12 @@ func (a *App) MergePDF(inFiles []string, outFile string, sortMethod string, sort
 	args = append(args, inFiles...)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -414,8 +504,12 @@ func (a *App) ScalePDFByPaperSize(inFile string, outFile string, paperSize strin
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -434,8 +528,12 @@ func (a *App) ScalePDFByScale(inFile string, outFile string, scale float32, page
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -455,8 +553,12 @@ func (a *App) ScalePDFByDim(inFile string, outFile string, width float32, height
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -487,8 +589,12 @@ func (a *App) EncryptPDF(inFile string, outFile string, upw string, opw string, 
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -509,8 +615,12 @@ func (a *App) DecryptPDF(inFile string, outFile string, passwd string) error {
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -531,8 +641,12 @@ func (a *App) ExtractBookmark(inFile string, outFile string, format string) erro
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -560,8 +674,12 @@ func (a *App) WriteBookmarkByFile(inFile string, outFile string, tocFile string,
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -583,8 +701,12 @@ func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format 
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -611,8 +733,12 @@ func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, a
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, "--toc", inFile)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -651,8 +777,12 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -679,8 +809,12 @@ func (a *App) OCR(inFile string, outFile string, pages string, lang string, doub
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(ocrExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.OcrPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -698,8 +832,12 @@ func (a *App) ExtractTextFromPDF(inFile string, outFile string, pages string) er
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -717,8 +855,12 @@ func (a *App) ExtractImageFromPDF(inFile string, outFile string, pages string) e
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -738,8 +880,12 @@ func (a *App) CutPDFByGrid(inFile string, outFile string, row int, col int, page
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -769,8 +915,12 @@ func (a *App) CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []
 		args = append(args, "-o", outFile)
 	}
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -796,8 +946,12 @@ func (a *App) CombinePDFByGrid(inFile string, outFile string, row int, col int, 
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -825,8 +979,12 @@ func (a *App) CropPDFByBBOX(inFile string, outFile string, bbox []float32, unit 
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}
@@ -854,8 +1012,12 @@ func (a *App) CropPDFByMargin(inFile string, outFile string, margin []float32, u
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command(pdfExePath, args...)
-	err := CheckCmdError(cmd)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
 	}

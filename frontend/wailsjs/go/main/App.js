@@ -70,6 +70,10 @@ export function InsertPDF(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['InsertPDF'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function LoadConfig() {
+  return window['go']['main']['App']['LoadConfig']();
+}
+
 export function MergePDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['MergePDF'](arg1, arg2, arg3, arg4);
 }
@@ -88,6 +92,10 @@ export function ReplacePDF(arg1, arg2, arg3, arg4, arg5) {
 
 export function RotatePDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['RotatePDF'](arg1, arg2, arg3, arg4);
+}
+
+export function SaveConfig(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3);
 }
 
 export function ScalePDFByDim(arg1, arg2, arg3, arg4, arg5) {
