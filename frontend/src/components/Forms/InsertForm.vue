@@ -8,31 +8,111 @@
                     <a-radio-button value="replace">替换</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item label="源PDF路径" name="src_path" hasFeedback :validateStatus="validateStatus.src_path"
-                :help="validateHelp.src_path">
-                <a-input v-model:value="formState.src_path"
-                    :placeholder="formState.op === 'insert' ? '被插入的PDF路径' : '被替换的PDF路径'" allow-clear></a-input>
+            <a-form-item label="类型" v-if="formState.op === 'insert'">
+                <a-radio-group v-model:value="formState.insert_type">
+                    <a-radio value="blank">插入空白页</a-radio>
+                    <a-radio value="other">插入其他文件</a-radio>
+                </a-radio-group>
             </a-form-item>
-            <a-form-item name="page" label="插入位置" v-if="formState.op == 'insert'">
-                <a-tooltip>
-                    <template #title>
-                        插入到指定页码之前
-                    </template>
-                    <a-input-number v-model:value="formState.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
-                </a-tooltip>
-            </a-form-item>
-            <a-form-item name="src_range" hasFeedback :validateStatus="validateStatus.src_range"
-                :help="validateHelp.src_range" label="页码范围" v-if="formState.op == 'replace'">
-                <a-input v-model:value="formState.src_range" placeholder="被替换的页码范围(留空表示全部), e.g. 1-10" />
-            </a-form-item>
-            <a-form-item label="目标PDF路径" name="dst_path" hasFeedback :validateStatus="validateStatus.dst_path"
-                :help="validateHelp.dst_path">
-                <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
-            </a-form-item>
-            <a-form-item name="dst_range" hasFeedback :validateStatus="validateStatus.dst_range"
-                :help="validateHelp.dst_range" label="页码范围">
-                <a-input v-model:value="formState.dst_range" placeholder="目标PDF的页码范围(留空表示全部), e.g. 1-10" />
-            </a-form-item>
+            <div v-if="formState.op === 'insert' && formState.insert_type === 'blank'">
+                <a-form-item name="src_pos" label="插入位置" v-if="formState.op === 'insert'">
+                    <a-tooltip>
+                        <template #title>
+                            插入到指定页码之前
+                        </template>
+                        <a-input-number v-model:value="formState.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
+                    </a-tooltip>
+                </a-form-item>
+                <a-form-item name="paper_size" label="纸张大小">
+                    <a-select v-model:value="formState.paper_size" style="width: 200px">
+                        <a-select-option value="a0">A0</a-select-option>
+                        <a-select-option value="a1">A1</a-select-option>
+                        <a-select-option value="a2">A2</a-select-option>
+                        <a-select-option value="a3">A3</a-select-option>
+                        <a-select-option value="a4">A4</a-select-option>
+                        <a-select-option value="a5">A5</a-select-option>
+                        <a-select-option value="a6">A6</a-select-option>
+                        <a-select-option value="a7">A7</a-select-option>
+                        <a-select-option value="a8">A8</a-select-option>
+                        <a-select-option value="a9">A9</a-select-option>
+                        <a-select-option value="a10">A10</a-select-option>
+                        <a-select-option value="b0">B0</a-select-option>
+                        <a-select-option value="b1">B1</a-select-option>
+                        <a-select-option value="b2">B2</a-select-option>
+                        <a-select-option value="b3">B3</a-select-option>
+                        <a-select-option value="b4">B4</a-select-option>
+                        <a-select-option value="b5">B5</a-select-option>
+                        <a-select-option value="b6">B6</a-select-option>
+                        <a-select-option value="b7">B7</a-select-option>
+                        <a-select-option value="b8">B8</a-select-option>
+                        <a-select-option value="b9">B9</a-select-option>
+                        <a-select-option value="b10">B10</a-select-option>
+                        <a-select-option value="c0">C0</a-select-option>
+                        <a-select-option value="c1">C1</a-select-option>
+                        <a-select-option value="c2">C2</a-select-option>
+                        <a-select-option value="c3">C3</a-select-option>
+                        <a-select-option value="c4">C4</a-select-option>
+                        <a-select-option value="c5">C5</a-select-option>
+                        <a-select-option value="c6">C6</a-select-option>
+                        <a-select-option value="c7">C7</a-select-option>
+                        <a-select-option value="c8">C8</a-select-option>
+                        <a-select-option value="c9">C9</a-select-option>
+                        <a-select-option value="c10">C10</a-select-option>
+                        <a-select-option value="card-4x6">card-4x6</a-select-option>
+                        <a-select-option value="card-5x7">card-5x7</a-select-option>
+                        <a-select-option value="commercial">commercial</a-select-option>
+                        <a-select-option value="executive">executive</a-select-option>
+                        <a-select-option value="invoice">invoice</a-select-option>
+                        <a-select-option value="ledger">ledger</a-select-option>
+                        <a-select-option value="legal">legal</a-select-option>
+                        <a-select-option value="legal-13">legal-13</a-select-option>
+                        <a-select-option value="letter">letter</a-select-option>
+                        <a-select-option value="monarch">monarch</a-select-option>
+                        <a-select-option value="tabloid-extra">tabloid-extra</a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="纸张方向">
+                    <a-radio-group v-model:value="formState.orientation">
+                        <a-radio value="portrait">纵向</a-radio>
+                        <a-radio value="landscape">横向</a-radio>
+                    </a-radio-group>
+                </a-form-item>
+                <a-form-item label="插入页数">
+                    <a-input-number v-model:value="formState.count" :min="1" />
+                </a-form-item>
+                <a-form-item name="src_path" label="输入" hasFeedback :validateStatus="validateStatus.src_path"
+                    :help="validateHelp.src_path">
+                    <a-input v-model:value="formState.src_path" placeholder="输入文件路径" allow-clear />
+                </a-form-item>
+            </div>
+            <div v-if="formState.insert_type === 'other' || formState.op == 'replace'">
+                <a-form-item label="源PDF路径" name="src_path" hasFeedback :validateStatus="validateStatus.src_path"
+                    :help="validateHelp.src_path">
+                    <a-input v-model:value="formState.src_path"
+                        :placeholder="formState.op === 'insert' ? '被插入的PDF路径' : '被替换的PDF路径'" allow-clear></a-input>
+                </a-form-item>
+                <a-form-item name="src_pos" label="插入位置" v-if="formState.op === 'insert'">
+                    <a-tooltip>
+                        <template #title>
+                            插入到指定页码之前
+                        </template>
+                        <a-input-number v-model:value="formState.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
+                    </a-tooltip>
+                </a-form-item>
+                <a-form-item name="src_range" hasFeedback :validateStatus="validateStatus.src_range"
+                    :help="validateHelp.src_range" label="页码范围" v-if="formState.op == 'replace'">
+                    <a-input v-model:value="formState.src_range" placeholder="被替换的页码范围(留空表示全部), e.g. 1-10" />
+                </a-form-item>
+                <a-form-item label="目标PDF路径" name="dst_path" hasFeedback :validateStatus="validateStatus.dst_path"
+                    :help="validateHelp.dst_path">
+                    <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
+                </a-form-item>
+                <a-form-item name="dst_range" hasFeedback :validateStatus="validateStatus.dst_range"
+                    :help="validateHelp.dst_range" label="页码范围">
+                    <a-input v-model:value="formState.dst_range" placeholder="目标PDF的页码范围(留空表示全部), e.g. 1-10" />
+                </a-form-item>
+            </div>
+
             <a-form-item name="output" label="输出">
                 <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
@@ -46,7 +126,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, InsertPDF, ReplacePDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, InsertPDF, InsertBlankPDF, ReplacePDF } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { InsertState } from "../data";
@@ -61,6 +141,10 @@ export default defineComponent({
             output: "",
             page: "",
             op: "insert",
+            insert_type: "blank",
+            paper_size: "a4",
+            orientation: "portrait",
+            count: 1,
             src_pos: 1,
             src_path: "",
             dst_path: "",
@@ -165,7 +249,11 @@ export default defineComponent({
             confirmLoading.value = true;
             switch (formState.op) {
                 case "insert": {
-                    await handleOps(InsertPDF, [formState.src_path, formState.dst_path, formState.src_pos, formState.dst_range, formState.output])
+                    if (formState.insert_type === "blank") {
+                        await handleOps(InsertBlankPDF, [formState.src_path, formState.dst_path, formState.src_pos, formState.paper_size, formState.orientation, formState.count, formState.output])
+                    } else {
+                        await handleOps(InsertPDF, [formState.src_path, formState.dst_path, formState.src_pos, formState.dst_range, formState.output])
+                    }
                     confirmLoading.value = false;
                     break;
                 }

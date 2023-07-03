@@ -45,7 +45,7 @@ export default defineComponent({
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
             if (value === '') {
-                validateStatus.input = 'error';
+                validateStatus["input"] = 'error';
                 return Promise.reject('请填写路径');
             }
             await CheckFileExists(value).then((res: any) => {

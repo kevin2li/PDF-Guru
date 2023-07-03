@@ -5,9 +5,15 @@ export function CheckFileExists(arg1:string):Promise<void>;
 
 export function CheckRangeFormat(arg1:string):Promise<void>;
 
+export function CombinePDFByGrid(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string,arg6:string,arg7:string):Promise<void>;
+
 export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertPDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
+export function CutPDFByBreakpoints(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<number>,arg5:string):Promise<void>;
+
+export function CutPDFByGrid(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string):Promise<void>;
 
 export function DecryptPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
@@ -16,6 +22,12 @@ export function DeletePDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 export function EncryptPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>):Promise<void>;
 
 export function ExtractBookmark(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function ExtractImageFromPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function ExtractTextFromPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function InsertBlankPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:number):Promise<void>;
 
 export function InsertPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string):Promise<void>;
 
@@ -29,7 +41,11 @@ export function ReplacePDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:
 
 export function RotatePDF(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
 
-export function ScalePDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+export function ScalePDFByDim(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string):Promise<void>;
+
+export function ScalePDFByPaperSize(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
+export function ScalePDFByScale(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
 
 export function SplitPDFByBookmark(arg1:string,arg2:string,arg3:string):Promise<void>;
 

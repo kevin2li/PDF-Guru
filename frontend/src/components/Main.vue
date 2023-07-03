@@ -62,6 +62,12 @@
                     </template>
                     {{ menuRecord['crop'] }}
                 </a-menu-item>
+                <a-menu-item key="cut">
+                    <template #icon>
+                        <split-cells-outlined />
+                    </template>
+                    {{ menuRecord['cut'] }}
+                </a-menu-item>
                 <a-menu-item key="extract">
                     <template #icon>
                         <aim-outlined />
@@ -120,6 +126,7 @@
                     <WatermarkForm v-if="currentMenu.at(0) === 'watermark'" />
                     <RotateForm v-if="currentMenu.at(0) === 'rotate'" />
                     <CropForm v-if="currentMenu.at(0) === 'crop'" />
+                    <CutForm v-if="currentMenu.at(0) === 'cut'" />
                     <ExtractForm v-if="currentMenu.at(0) === 'extract'" />
                     <CompressForm v-if="currentMenu.at(0) === 'compress'" />
                     <ConvertForm v-if="currentMenu.at(0) === 'convert'" />
@@ -170,6 +177,7 @@ import ScaleForm from "./Forms/ScaleForm.vue";
 import WatermarkForm from './Forms/WatermarkForm.vue';
 import RotateForm from "./Forms/RotateForm.vue";
 import CropForm from "./Forms/CropForm.vue";
+import CutForm from "./Forms/CutForm.vue";
 import ExtractForm from "./Forms/ExtractForm.vue";
 import CompressForm from "./Forms/CompressForm.vue";
 import ConvertForm from "./Forms/ConvertForm.vue";
@@ -224,8 +232,10 @@ export default defineComponent({
         WatermarkForm,
         // 旋转
         RotateForm,
-        // 裁剪/分割
+        // 裁剪
         CropForm,
+        // 分割/组合
+        CutForm,
         // 提取
         ExtractForm,
         // 压缩

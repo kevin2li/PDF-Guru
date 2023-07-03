@@ -12,11 +12,12 @@ import (
 	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/types"
 	"github.com/pkg/errors"
 )
+
+const pdfExePath string = "C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe"
+const ocrExePath string = "C:\\Users\\kevin\\miniconda3\\envs\\ocr\\python.exe"
 
 // App struct
 type App struct {
@@ -108,6 +109,24 @@ func (a *App) CheckRangeFormat(pages string) error {
 }
 
 // Golang method
+
+// python method for compress
+// func (a *App) CompressPDF(inFile string, outFile string) error {
+// 	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+// 	args := []string{"compress"}
+// 	if outFile != "" {
+// 		args = append(args, "-o", outFile)
+// 	}
+// 	args = append(args, inFile)
+// 	fmt.Println(args)
+// 	cmd := exec.Command(pdfExePath, args...)
+// 	err := CheckCmdError(cmd)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
 func (a *App) CompressPDF(inFile string, outFile string) error {
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		fmt.Println(err)
@@ -116,38 +135,12 @@ func (a *App) CompressPDF(inFile string, outFile string) error {
 	conf := model.NewDefaultConfiguration()
 	if outFile == "" {
 		parent := filepath.Dir(inFile)
-		parts := strings.Split(filepath.Base(inFile), ".")
-		filename := strings.Join(parts[:len(parts)-1], ".")
-		outFile = filepath.Join(parent, filename+"_压缩.pdf")
+		fileExt := filepath.Ext(inFile)
+		fileName := filepath.Base(inFile)
+		fileNameWithoutExt := fileName[:len(fileName)-len(fileExt)]
+		outFile = filepath.Join(parent, fileNameWithoutExt+"_压缩.pdf")
 	}
 	err := api.OptimizeFile(inFile, outFile, conf)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (a *App) ScalePDF(inFile string, outFile string, description string, pagesStr string) error {
-	if _, err := os.Stat(inFile); os.IsNotExist(err) {
-		fmt.Println(err)
-		return err
-	}
-	pages, err := api.ParsePageSelection(pagesStr)
-	if err != nil {
-		return err
-	}
-	resizeConf, err := pdfcpu.ParseResizeConfig(description, types.POINTS)
-	if err != nil {
-		return err
-	}
-	conf := model.NewDefaultConfiguration()
-	if outFile == "" {
-		parent := filepath.Dir(inFile)
-		parts := strings.Split(filepath.Base(inFile), ".")
-		filename := strings.Join(parts[:len(parts)-1], ".")
-		outFile = filepath.Join(parent, filename+"_缩放.pdf")
-	}
-	err = api.ResizeFile(inFile, outFile, pages, resizeConf, conf)
 	if err != nil {
 		return err
 	}
@@ -199,7 +192,7 @@ func (a *App) SplitPDFByChunk(inFile string, chunkSize int, outDir string) error
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -219,7 +212,7 @@ func (a *App) SplitPDFByBookmark(inFile string, tocLevel string, outDir string) 
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -239,7 +232,7 @@ func (a *App) SplitPDFByPage(inFile string, pages string, outDir string) error {
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -258,7 +251,7 @@ func (a *App) DeletePDF(inFile string, outFile string, pagesStr string) error {
 	}
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -282,7 +275,32 @@ func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages 
 	args = append(args, inFile2)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) InsertBlankPDF(inFile string, outFile string, insertPos int, paper_size string, orientation string, count int) error {
+	fmt.Printf("inFile: %s, outFile: %s, insertPos: %d, orientation: %s, count: %d\n", inFile, outFile, insertPos, orientation, count)
+	args := []string{"insert", "--method", "blank"}
+	args = append(args, "--insert_pos", fmt.Sprintf("%d", insertPos))
+	if paper_size != "" {
+		args = append(args, "--paper_size", paper_size)
+	}
+	if orientation != "" {
+		args = append(args, "--orientation", orientation)
+	}
+	args = append(args, "--count", fmt.Sprintf("%d", count))
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile, "placeholder.pdf")
+	fmt.Printf("%v\n", args)
+	fmt.Println(strings.Join(args, ","))
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -306,7 +324,7 @@ func (a *App) ReplacePDF(inFile1 string, inFile2 string, srcPages string, dstPag
 	args = append(args, inFile2)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -329,7 +347,7 @@ func (a *App) RotatePDF(inFile string, outFile string, rotation int, pagesStr st
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -349,7 +367,7 @@ func (a *App) ReorderPDF(inFile string, outFile string, pagesStr string) error {
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -374,9 +392,73 @@ func (a *App) MergePDF(inFiles []string, outFile string, sortMethod string, sort
 	args = append(args, inFiles...)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ScalePDFByPaperSize(inFile string, outFile string, paperSize string, pagesStr string) error {
+	fmt.Printf("inFile: %s, outFile: %s, paperSize: %s, pagesStr: %s\n", inFile, outFile, paperSize, pagesStr)
+	args := []string{"resize", "--method", "paper_size"}
+	if paperSize != "" {
+		args = append(args, "--paper_size", paperSize)
+	}
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+func (a *App) ScalePDFByScale(inFile string, outFile string, scale float32, pagesStr string) error {
+	fmt.Printf("inFile: %s, outFile: %s, scale: %f, pagesStr: %s\n", inFile, outFile, scale, pagesStr)
+	args := []string{"resize", "--method", "scale"}
+	args = append(args, "--scale", fmt.Sprintf("%f", scale))
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+func (a *App) ScalePDFByDim(inFile string, outFile string, width float32, height float32, pagesStr string) error {
+	fmt.Printf("inFile: %s, outFile: %s, width: %f, height: %f, pagesStr: %s\n", inFile, outFile, width, height, pagesStr)
+	args := []string{"resize", "--method", "dim"}
+	args = append(args, "--width", fmt.Sprintf("%f", width))
+	args = append(args, "--height", fmt.Sprintf("%f", height))
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	return nil
@@ -405,7 +487,7 @@ func (a *App) EncryptPDF(inFile string, outFile string, upw string, opw string, 
 	args = append(args, inFile)
 	fmt.Printf("%v\n", args)
 	fmt.Println(strings.Join(args, ","))
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -427,7 +509,7 @@ func (a *App) DecryptPDF(inFile string, outFile string, passwd string) error {
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -449,7 +531,7 @@ func (a *App) ExtractBookmark(inFile string, outFile string, format string) erro
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -478,7 +560,7 @@ func (a *App) WriteBookmarkByFile(inFile string, outFile string, tocFile string,
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -501,7 +583,7 @@ func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format 
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -529,7 +611,7 @@ func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, a
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, "--toc", inFile)
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -569,7 +651,7 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command("C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\dist\\pdf.exe", args...)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -597,7 +679,124 @@ func (a *App) OCR(inFile string, outFile string, pages string, lang string, doub
 	}
 	args = append(args, inFile)
 	fmt.Println(args)
-	cmd := exec.Command("C:\\Users\\kevin\\miniconda3\\envs\\ocr\\python.exe", args...)
+	cmd := exec.Command(ocrExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ExtractTextFromPDF(inFile string, outFile string, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, pages: %s\n", inFile, outFile, pages)
+	args := []string{"extract", "--type", "text"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ExtractImageFromPDF(inFile string, outFile string, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, pages: %s\n", inFile, outFile, pages)
+	args := []string{"extract", "--type", "image"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) CutPDFByGrid(inFile string, outFile string, row int, col int, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, row: %d, col: %d, pages: %s\n", inFile, outFile, row, col, pages)
+	args := []string{"cut", "--method", "grid"}
+	args = append(args, "--nrow", fmt.Sprintf("%d", row))
+	args = append(args, "--ncol", fmt.Sprintf("%d", col))
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []float32, VBreakpoints []float32, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, HBreakpoints: %v, VBreakpoints: %v, pages: %s\n", inFile, outFile, HBreakpoints, VBreakpoints, pages)
+	args := []string{"cut", "--method", "breakpoints"}
+	if len(HBreakpoints) > 0 {
+		args = append(args, "--h_breakpoints")
+		for _, v := range HBreakpoints {
+			args = append(args, fmt.Sprintf("%f", v))
+		}
+	}
+	if len(VBreakpoints) > 0 {
+		args = append(args, "--v_breakpoints")
+		for _, v := range VBreakpoints {
+			args = append(args, fmt.Sprintf("%f", v))
+		}
+	}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) CombinePDFByGrid(inFile string, outFile string, row int, col int, pages string, paperSize string, orientation string) error {
+	fmt.Printf("inFile: %s, outFile: %s, row: %d, col: %d, pages: %s, paperSize: %s, orientation: %s\n", inFile, outFile, row, col, pages, paperSize, orientation)
+	args := []string{"combine", "--method", "grid"}
+	args = append(args, "--nrow", fmt.Sprintf("%d", row))
+	args = append(args, "--ncol", fmt.Sprintf("%d", col))
+	if paperSize != "" {
+		args = append(args, "--paper_size", paperSize)
+	}
+	if orientation != "" {
+		args = append(args, "--orientation", orientation)
+	}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile, "placeholder.pdf")
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
 	if err != nil {
 		return err

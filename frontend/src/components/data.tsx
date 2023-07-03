@@ -21,6 +21,10 @@ interface InsertState {
     output: string;
     page: string;
     op: string;
+    insert_type: string;
+    paper_size: string;
+    orientation: string;
+    count: number;
     src_pos: number;
     src_path: string;
     dst_path: string;
@@ -32,17 +36,25 @@ interface CropState {
     input: string;
     output: string;
     page: string;
-    op: string;
     unit: string;
     up: number;
     left: number;
     down: number;
     right: number;
+}
+
+interface CutState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
     split_h_breakpoints: number[];
     split_v_breakpoints: number[];
     split_type: string;
-    split_rows: number;
-    split_cols: number;
+    rows: number;
+    cols: number;
+    orientation: string;
+    paper_size: string;
 }
 
 interface ExtractState {
@@ -139,7 +151,11 @@ interface ScaleState {
     input: string;
     output: string;
     page: string;
-    scale_conf: string;
+    op: string;
+    ratio: number;
+    paper_size: string;
+    width: number;
+    height: number;
 }
 
 interface PreferencesState {
@@ -175,7 +191,8 @@ const menuRecord: Record<string, string> = {
     "watermark": "PDF水印",
     "scale": "PDF缩放",
     "rotate": "PDF旋转",
-    "crop": "PDF裁剪/分割",
+    "crop": "PDF裁剪",
+    "cut": "PDF分割/组合",
     "extract": "PDF提取",
     "compress": "PDF压缩",
     "convert": "PDF转换",
@@ -186,6 +203,7 @@ const menuRecord: Record<string, string> = {
 const menuDesc: Record<string, string> = {
     "merge": "将多个PDF文件合并为一个PDF文件,路径支持使用通配符'*'",
     "split": "将原始PDF文件按照给定的块大小进行分割",
+    "cut": "将原始页面分割成多个页面,或将多个页面组合为一个页面",
     "delete": "将原始PDF文件中的指定页面删除",
     "reorder": "根据指定的页码范围重新调整页面顺序",
     "insert": "插入或替换PDF文件的指定页面",
@@ -220,4 +238,4 @@ async function handleOps(func: any, args: any[]) {
 }
 
 export { menuRecord, menuDesc, handleOps };
-export type { FormState, InsertState, MergeState, SplitState, DeleteState, CompressState, ReorderState, CropState, ExtractState, EncryptState, WatermarkState, ConvertState, RotateState, BookmarkState, OcrState, ScaleState, PreferencesState };
+export type { FormState, InsertState, MergeState, SplitState, DeleteState, CompressState, ReorderState, CropState, CutState, ExtractState, EncryptState, WatermarkState, ConvertState, RotateState, BookmarkState, OcrState, ScaleState, PreferencesState };

@@ -2,8 +2,69 @@
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules">
-            <a-form-item name="scale_conf" label="缩放参数">
-                <a-input v-model:value="formState.scale_conf" placeholder="缩放参数" allow-clear />
+            <a-form-item name="op" label="操作">
+                <a-radio-group button-style="solid" v-model:value="formState.op">
+                    <a-radio-button value="ratio">按比例缩放</a-radio-button>
+                    <a-radio-button value="common">缩放到指定大小</a-radio-button>
+                    <a-radio-button value="custom">自定义长宽</a-radio-button>
+                </a-radio-group>
+            </a-form-item>
+            <a-form-item name="ratio" label="缩放比例" v-if="formState.op === 'ratio'">
+                <a-input-number v-model:value="formState.ratio" :min="0"></a-input-number>
+            </a-form-item>
+            <a-form-item name="paper_size" label="纸张大小" v-if="formState.op === 'common'">
+                <a-select v-model:value="formState.paper_size" style="width: 200px">
+                    <a-select-option value="a0">A0</a-select-option>
+                    <a-select-option value="a1">A1</a-select-option>
+                    <a-select-option value="a2">A2</a-select-option>
+                    <a-select-option value="a3">A3</a-select-option>
+                    <a-select-option value="a4">A4</a-select-option>
+                    <a-select-option value="a5">A5</a-select-option>
+                    <a-select-option value="a6">A6</a-select-option>
+                    <a-select-option value="a7">A7</a-select-option>
+                    <a-select-option value="a8">A8</a-select-option>
+                    <a-select-option value="a9">A9</a-select-option>
+                    <a-select-option value="a10">A10</a-select-option>
+                    <a-select-option value="b0">B0</a-select-option>
+                    <a-select-option value="b1">B1</a-select-option>
+                    <a-select-option value="b2">B2</a-select-option>
+                    <a-select-option value="b3">B3</a-select-option>
+                    <a-select-option value="b4">B4</a-select-option>
+                    <a-select-option value="b5">B5</a-select-option>
+                    <a-select-option value="b6">B6</a-select-option>
+                    <a-select-option value="b7">B7</a-select-option>
+                    <a-select-option value="b8">B8</a-select-option>
+                    <a-select-option value="b9">B9</a-select-option>
+                    <a-select-option value="b10">B10</a-select-option>
+                    <a-select-option value="c0">C0</a-select-option>
+                    <a-select-option value="c1">C1</a-select-option>
+                    <a-select-option value="c2">C2</a-select-option>
+                    <a-select-option value="c3">C3</a-select-option>
+                    <a-select-option value="c4">C4</a-select-option>
+                    <a-select-option value="c5">C5</a-select-option>
+                    <a-select-option value="c6">C6</a-select-option>
+                    <a-select-option value="c7">C7</a-select-option>
+                    <a-select-option value="c8">C8</a-select-option>
+                    <a-select-option value="c9">C9</a-select-option>
+                    <a-select-option value="c10">C10</a-select-option>
+                    <a-select-option value="card-4x6">card-4x6</a-select-option>
+                    <a-select-option value="card-5x7">card-5x7</a-select-option>
+                    <a-select-option value="commercial">commercial</a-select-option>
+                    <a-select-option value="executive">executive</a-select-option>
+                    <a-select-option value="invoice">invoice</a-select-option>
+                    <a-select-option value="ledger">ledger</a-select-option>
+                    <a-select-option value="legal">legal</a-select-option>
+                    <a-select-option value="legal-13">legal-13</a-select-option>
+                    <a-select-option value="letter">letter</a-select-option>
+                    <a-select-option value="monarch">monarch</a-select-option>
+                    <a-select-option value="tabloid-extra">tabloid-extra</a-select-option>
+                </a-select>
+            </a-form-item>
+            <a-form-item name="width" label="宽度" v-if="formState.op === 'custom'">
+                <a-input-number v-model:value="formState.width" :min="0"></a-input-number>
+            </a-form-item>
+            <a-form-item name="height" label="高度" v-if="formState.op === 'custom'">
+                <a-input-number v-model:value="formState.height" :min="0"></a-input-number>
             </a-form-item>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
@@ -26,7 +87,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, ScalePDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, ScalePDFByPaperSize, ScalePDFByScale, ScalePDFByDim } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { ScaleState } from "../data";
@@ -40,7 +101,11 @@ export default defineComponent({
             input: "",
             output: "",
             page: "",
-            scale_conf: "",
+            op: "ratio",
+            ratio: 0,
+            paper_size: "A4",
+            width: 0,
+            height: 0,
         });
 
         const validateStatus = reactive({
@@ -55,7 +120,7 @@ export default defineComponent({
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
             if (value === '') {
-                validateStatus.input = 'error';
+                validateStatus['input'] = 'error';
                 validateHelp["input"] = "请填写路径";
                 return Promise.reject();
             }
@@ -77,13 +142,18 @@ export default defineComponent({
             });
             const legal_suffix = [".pdf"];
             if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
-                validateStatus.input = 'error';
+                validateStatus["input"] = 'error';
                 validateHelp["input"] = "仅支持pdf格式的文件";
                 return Promise.reject();
             }
         };
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';
+            if (value.trim() === '') {
+                validateStatus["page"] = 'success';
+                validateHelp["page"] = '';
+                return Promise.resolve();
+            }
             await CheckRangeFormat(value).then((res: any) => {
                 if (res) {
                     console.log({ res });
@@ -112,15 +182,20 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         const onSubmit = async () => {
-            try {
-                await formRef.value?.validate();
-                confirmLoading.value = true;
-                await handleOps(ScalePDF, [formState.input, formState.output, formState.scale_conf, formState.page]);
-                confirmLoading.value = false;
-            } catch (err) {
-                console.log({ err });
-                message.error("表单验证失败");
+            // await formRef.value?.validate().then(async () => {
+            confirmLoading.value = true;
+            if (formState.op === "ratio") {
+                await handleOps(ScalePDFByScale, [formState.input, formState.output, formState.ratio, formState.page]);
+            } else if (formState.op === "common") {
+                await handleOps(ScalePDFByPaperSize, [formState.input, formState.output, formState.paper_size, formState.page]);
+            } else if (formState.op === "custom") {
+                await handleOps(ScalePDFByDim, [formState.input, formState.output, formState.width, formState.height, formState.page]);
             }
+            confirmLoading.value = false;
+            // }).catch((err: any) => {
+            //     console.log({ err });
+            //     message.error("表单验证失败");
+            // })
         }
         return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
     }

@@ -200,7 +200,24 @@ def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None)
         tmp_doc: fitz.Document = fitz.open()
         for i in roi_indices:
             tmp_doc.insert_pdf(doc, from_page=i, to_page=i)
-        tmp_doc.save(output_path)
+        tmp_doc.save(output_path, garbage=3, deflate=True)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def insert_blank_pdf(doc_path: str, pos: int, count: int, orientation: str, paper_size: str, output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-插入空白页.pdf")
+        tmp_doc: fitz.Document = fitz.open()
+        fmt = fitz.paper_rect(f"{paper_size}-l") if orientation == "landscape" else fitz.paper_rect(paper_size)
+        if pos - 2 >= 0:
+            tmp_doc.insert_pdf(doc, from_page=0, to_page=pos-2)
+        for i in range(count):
+            tmp_doc.new_page(-1, width=fmt.width, height=fmt.height)
+        tmp_doc.insert_pdf(doc, from_page=pos-1, to_page=-1)
+        tmp_doc.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
@@ -221,7 +238,7 @@ def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: int, page_range: str 
         for i in doc2_indices:
             tmp_doc.insert_pdf(doc2, from_page=i, to_page=i)
         tmp_doc.insert_pdf(doc1, from_page=insert_pos-1, to_page=n1-1)
-        tmp_doc.save(output_path)
+        tmp_doc.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
@@ -248,7 +265,7 @@ def replace_pdf(doc_path1: str, doc_path2: str, src_range: str = "all", dst_rang
             for i in dst_indices:
                 tmp_doc.insert_pdf(doc2, from_page=i, to_page=i)
             tmp_doc.insert_pdf(doc1, from_page=b, to_page=n1-1)
-            tmp_doc.save(output_path)
+            tmp_doc.save(output_path, garbage=3, deflate=True)
         elif len(parts) == 1:
             a = int(parts[0]) if parts[0] != "N" else n1
             tmp_doc.insert_pdf(doc1, from_page=0, to_page=a-2)
@@ -256,7 +273,7 @@ def replace_pdf(doc_path1: str, doc_path2: str, src_range: str = "all", dst_rang
                 tmp_doc.insert_pdf(doc2, from_page=i, to_page=i)
             if a < n1:
                 tmp_doc.insert_pdf(doc1, from_page=a, to_page=n1-1)
-            tmp_doc.save(output_path)
+            tmp_doc.save(output_path, garbage=3, deflate=True)
         else:
             raise ValueError("页码格式错误!")
     except:
@@ -336,11 +353,81 @@ def crop_pdf(doc_path: str, bbox: Tuple[int, int, int, int], page_range: str = "
     except:
         raise ValueError(traceback.format_exc())
 
-def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, output_path: str = None):
-    raise NotImplementedError
+def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        tmp_doc: fitz.Document = fitz.open()
+        for page_index in roi_indices:
+            page = doc[page_index]
+            page_width, page_height = page.rect.width, page.rect.height
+            # CropBox displacement if not starting at (0, 0)
+            # d = fitz.Rect(page.cropbox_position, page.cropbox_position)
+            width, height = page_width/n_col, page_height/n_row
+            for i in range(n_row):
+                for j in range(n_col):
+                    bbox = fitz.Rect(j*width, i*height, (j+1)*width, (i+1)*height)
+                    # bbox += d
+                    tmp_page = tmp_doc.new_page(-1, width=bbox.width, height=bbox.height)
+                    tmp_page.show_pdf_page(tmp_page.rect, doc, page_index, clip=bbox)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-网格分割.pdf")
+        tmp_doc.save(output_path, garbage=3, deflate=True)
+    except:
+        raise ValueError(traceback.format_exc())
 
-def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoints: List[float], output_path: str = None):
-    raise NotImplementedError
+def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoints: List[float], page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        tmp_doc: fitz.Document = fitz.open()
+        h_breakpoints = [v for v in h_breakpoints if 0 <= v <= 1]
+        h_breakpoints = [0] + h_breakpoints + [1]
+        h_breakpoints.sort()
+        v_breakpoints = [v for v in v_breakpoints if 0 <= v <= 1]
+        v_breakpoints = [0] + v_breakpoints + [1]
+        v_breakpoints.sort()
+        for page_index in roi_indices:
+            page = doc[page_index]
+            page_width, page_height = page.rect.width, page.rect.height
+            # CropBox displacement if not starting at (0, 0)
+            d = fitz.Rect(page.cropbox_position, page.cropbox_position)
+            for i in range(len(h_breakpoints)-1):
+                for j in range(len(v_breakpoints)-1):
+                    bbox = fitz.Rect(v_breakpoints[j]*page_width, h_breakpoints[i]*page_height, v_breakpoints[j+1]*page_width, h_breakpoints[i+1]*page_height,)
+                    bbox += d
+                    tmp_page = tmp_doc.new_page(-1, width=bbox.width, height=bbox.height)
+                    tmp_page.show_pdf_page(tmp_page.rect, doc, page_index, clip=bbox)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-自定义分割.pdf")
+        tmp_doc.save(output_path, garbage=3, deflate=True)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4", orientation: str = "portrait", page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        if orientation == "landscape":
+            paper_size = f"{paper_size}-l"
+        width, height = fitz.paper_size(paper_size)
+        batch_size = n_row * n_col
+        unit_w, unit_h = width / n_col, height / n_row
+        r_tab = []
+        for i in range(n_row):
+            for j in range(n_col):
+                rect = fitz.Rect(j*unit_w, i*unit_h, (j+1)*unit_w, (i+1)*unit_h)
+                r_tab.append(rect)
+        tmp_doc: fitz.Document = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        for page_index in roi_indices:
+            if page_index % batch_size == 0:
+                page = tmp_doc.new_page(-1, width=width, height=height)
+            page.show_pdf_page(r_tab[page_index % batch_size], doc, page_index)
+        tmp_doc.save(output_path, garbage=3, deflate=True)
+    except:
+        raise ValueError(traceback.format_exc())
 
 def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
@@ -363,6 +450,25 @@ def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str 
                 savepath = str(Path(output_path) / f"{page_index+1}-{i+1}.png")
                 pix.save(savepath) # save the image as PNG
                 pix = None
+    except:
+        raise ValueError(traceback.format_exc())
+
+def extract_pdf_text(doc_path: str, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indicies = parse_range(page_range, doc.page_count)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-文本")
+            Path(output_path).mkdir(parents=True, exist_ok=True)
+        else:
+            Path(output_path).mkdir(parents=True, exist_ok=True)
+        for page_index in roi_indicies:
+            page = doc[page_index]
+            text = page.get_text()
+            savepath = str(Path(output_path) / f"{page_index+1}.txt")
+            with open(savepath, "w", encoding="utf-8") as f:
+                f.write(text)
     except:
         raise ValueError(traceback.format_exc())
 
@@ -544,6 +650,74 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
         output_path = str(p.parent / f"{p.stem}-解密.pdf")
     doc.save(output_path)
 
+def compress_pdf(doc_path: str, output_path: str = None):
+    doc: fitz.Document = fitz.open(doc_path)
+    p = Path(doc_path)
+    if output_path is None:
+        output_path = str(p.parent / f"{p.stem}-压缩.pdf")
+    doc.save(output_path, garbage=4, deflate=True, clean=True)
+
+def resize_pdf_by_dim(doc_path: str, width: float, height: float, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
+        new_doc: fitz.Document = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        for i in range(doc.page_count):
+            if i not in roi_indices:
+                new_doc.insert_pdf(doc, from_page=i, to_page=i)
+                continue
+            page = doc[i]
+            new_page: fitz.Page = new_doc.new_page(width=width, height=height)
+            new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
+        new_doc.save(output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
+        new_doc: fitz.Document = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        for i in range(doc.page_count):
+            if i not in roi_indices:
+                new_doc.insert_pdf(doc, from_page=i, to_page=i)
+                continue
+            page = doc[i]
+            new_page: fitz.Page = new_doc.new_page(width=page.rect.width*scale, height=page.rect.height*scale)
+            new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
+        new_doc.save(output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
+        new_doc: fitz.Document = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        for i in range(doc.page_count):
+            if i not in roi_indices:
+                new_doc.insert_pdf(doc, from_page=i, to_page=i)
+                continue
+            page = doc[i]
+            if page.rect.width > page.rect.height:
+                fmt = fitz.paper_rect(f"{paper_size}-l")
+            else:
+                fmt = fitz.paper_rect(f"{paper_size}")
+            new_page: fitz.Page = new_doc.new_page(width=fmt.width, height=fmt.height)
+            new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
+        new_doc.save(output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
@@ -575,10 +749,14 @@ def main():
     # 插入子命令
     insert_parser = sub_parsers.add_parser("insert", help="插入", description="插入pdf文件")
     insert_parser.set_defaults(which='insert')
+    insert_parser.add_argument("--method", type=str, choices=['blank', 'pdf'], default="pdf", help="插入方式")
     insert_parser.add_argument("input_path1", type=str, help="被插入的pdf文件路径")
     insert_parser.add_argument("input_path2", type=str, help="插入pdf文件路径")
     insert_parser.add_argument("--insert_pos", type=int, default=0, help="插入位置")
     insert_parser.add_argument("--page_range", type=str, default="all", help="插入pdf的页码范围")
+    insert_parser.add_argument("--orientation", type=str, choices=['portrait', 'landscape'], default="portrait", help="纸张方向")
+    insert_parser.add_argument("--paper_size", type=str, default="A4", help="纸张大小")
+    insert_parser.add_argument("--count", type=int, default=1, help="插入数量")
     insert_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     # 替换子命令
@@ -671,8 +849,53 @@ def main():
     watermark_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     watermark_parser.set_defaults(which='watermark')
     
+    # 压缩子命令
+    compress_parser = sub_parsers.add_parser("compress", help="压缩", description="压缩pdf文件")
+    compress_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    compress_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+    compress_parser.set_defaults(which='compress')
+
+    # 缩放子命令
+    resize_parser = sub_parsers.add_parser("resize", help="缩放", description="缩放pdf文件")
+    resize_parser.set_defaults(which='resize')
+    resize_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    resize_parser.add_argument("--method", type=str, choices=['dim', 'scale', 'paper_size'], default="dim", help="缩放方式")
+    resize_parser.add_argument("--width", type=float, help="宽度")
+    resize_parser.add_argument("--height", type=float, help="高度")
+    resize_parser.add_argument("--scale", type=float, help="缩放比例")
+    resize_parser.add_argument("--paper_size", type=str, help="纸张大小")
+    resize_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    resize_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 提取子命令
+    extract_parser = sub_parsers.add_parser("extract", help="提取", description="提取pdf文件")
+    extract_parser.set_defaults(which='extract')
+    extract_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    extract_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    extract_parser.add_argument("--type", type=str, choices=['text', 'image'], default="text", help="提取类型")
+    extract_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 分割子命令
+    cut_parser = sub_parsers.add_parser("cut", help="分割", description="分割pdf文件")
+    cut_parser.set_defaults(which='cut')
+    cut_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    cut_parser.add_argument("--method", type=str, choices=['grid', 'breakpoints'], default="grid", help="分割模式")
+    cut_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    cut_parser.add_argument("--h_breakpoints", type=float, nargs="+", help="水平分割点")
+    cut_parser.add_argument("--v_breakpoints", type=float, nargs="+", help="垂直分割点")
+    cut_parser.add_argument("--nrow", type=int, default=1, help="行数")
+    cut_parser.add_argument("--ncol", type=int, default=1, help="列数")
+    cut_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 组合子命令
+    combine_parser = sub_parsers.add_parser("combine", help="组合", description="组合pdf文件")
+    combine_parser.set_defaults(which='combine')
+    combine_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    combine_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    combine_parser.add_argument("--method", type=str, choices=['grid', 'breakpoints'], default="grid", help="分割模式")
+
     args = parser.parse_args()
-    print(args)
+    logger.debug(args)
     if args.which == "merge":
         merge_pdf(args.input_path_list, args.sort_method, args.sort_direction, args.output)
     elif args.which == "split":
@@ -685,7 +908,10 @@ def main():
     elif args.which == "delete":
         slice_pdf(args.input_path, args.page_range, args.output, is_reverse=True)
     elif args.which == 'insert':
-        insert_pdf(args.input_path1, args.input_path2, args.insert_pos, args.page_range, args.output)
+        if args.method == "blank":
+            insert_blank_pdf(args.input_path1, args.insert_pos, args.count, args.orientation, args.paper_size, args.output)
+        else:
+            insert_pdf(args.input_path1, args.input_path2, args.insert_pos, args.page_range, args.output)
     elif args.which == "replace":
         replace_pdf(args.input_path1, args.input_path2, args.src_page_range, args.dst_page_range, args.output)
     elif args.which == "reorder":
@@ -696,6 +922,15 @@ def main():
         encrypt_pdf(args.input_path, args.user_password, args.owner_password, args.perm, args.output)
     elif args.which == "decrypt":
         decrypt_pdf(args.input_path, args.password, args.output)
+    elif args.which == "compress":
+        compress_pdf(args.input_path, args.output)
+    elif args.which == "resize":
+        if args.method == "dim":
+            resize_pdf_by_dim(args.input_path, args.width, args.height, args.page_range, args.output)
+        elif args.method == "scale":
+            resize_pdf_by_scale(args.input_path, args.scale, args.page_range, args.output)
+        elif args.method == "paper_size":
+            resize_pdf_by_paper_size(args.input_path, args.paper_size, args.page_range, args.output)
     elif args.which == "bookmark":
         if args.bookmark_which == "add":
             if args.method == "file":
@@ -706,6 +941,18 @@ def main():
             extract_toc(args.input_path, args.format, args.output)
         elif args.bookmark_which == "transform":
             transform_toc_file(args.toc, args.add_indent, args.remove_trailing_dots, args.add_offset, args.output)
+    elif args.which == "extract":
+        if args.type == "text":
+            extract_pdf_text(args.input_path, args.page_range, args.output)
+        elif args.type == "image":
+            extract_pdf_images(args.input_path, args.page_range, args.output)
+        else:
+            raise ValueError("不支持的提取类型!")
+    elif args.which == "cut":
+        if args.method == "grid":
+            cut_pdf_by_grid(args.input_path, args.nrow, args.ncol, args.page_range, args.output)
+        elif args.method == "breakpoints":
+            cut_pdf_by_breakpoints(args.input_path, args.h_breakpoints, args.v_breakpoints, args.page_range, args.output)
     elif args.which == "watermark":
         mark_args = {
             "font_family": args.font_family,
@@ -746,6 +993,6 @@ def create_wartmark(
     c.save()
 
 if __name__ == "__main__":
-    # main()
+    main()
     # print(parse_range("1-4", 10, is_reverse=True))
-    extract_pdf_images(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-decrypt.pdf")
+    # extract_pdf_images(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-decrypt.pdf")

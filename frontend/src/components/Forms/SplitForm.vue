@@ -71,7 +71,7 @@ export default defineComponent({
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
             if (value === '') {
-                validateStatus.input = 'error';
+                validateStatus["input"] = 'error';
                 validateHelp["input"] = "请填写路径";
                 return Promise.reject();
             }
@@ -93,7 +93,7 @@ export default defineComponent({
             });
             const legal_suffix = [".pdf"];
             if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
-                validateStatus.input = 'error';
+                validateStatus["input"] = 'error';
                 validateHelp["input"] = "仅支持pdf格式的文件";
                 return Promise.reject();
             }

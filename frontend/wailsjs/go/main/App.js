@@ -10,12 +10,24 @@ export function CheckRangeFormat(arg1) {
   return window['go']['main']['App']['CheckRangeFormat'](arg1);
 }
 
+export function CombinePDFByGrid(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['CombinePDFByGrid'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
 export function CompressPDF(arg1, arg2) {
   return window['go']['main']['App']['CompressPDF'](arg1, arg2);
 }
 
 export function ConvertPDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ConvertPDF'](arg1, arg2, arg3, arg4);
+}
+
+export function CutPDFByBreakpoints(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['CutPDFByBreakpoints'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function CutPDFByGrid(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['CutPDFByGrid'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function DecryptPDF(arg1, arg2, arg3) {
@@ -32,6 +44,18 @@ export function EncryptPDF(arg1, arg2, arg3, arg4, arg5) {
 
 export function ExtractBookmark(arg1, arg2, arg3) {
   return window['go']['main']['App']['ExtractBookmark'](arg1, arg2, arg3);
+}
+
+export function ExtractImageFromPDF(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ExtractImageFromPDF'](arg1, arg2, arg3);
+}
+
+export function ExtractTextFromPDF(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ExtractTextFromPDF'](arg1, arg2, arg3);
+}
+
+export function InsertBlankPDF(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['InsertBlankPDF'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function InsertPDF(arg1, arg2, arg3, arg4, arg5) {
@@ -58,8 +82,16 @@ export function RotatePDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['RotatePDF'](arg1, arg2, arg3, arg4);
 }
 
-export function ScalePDF(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['ScalePDF'](arg1, arg2, arg3, arg4);
+export function ScalePDFByDim(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['ScalePDFByDim'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function ScalePDFByPaperSize(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ScalePDFByPaperSize'](arg1, arg2, arg3, arg4);
+}
+
+export function ScalePDFByScale(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ScalePDFByScale'](arg1, arg2, arg3, arg4);
 }
 
 export function SplitPDFByBookmark(arg1, arg2, arg3) {

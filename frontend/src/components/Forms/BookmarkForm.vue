@@ -159,6 +159,11 @@ export default defineComponent({
         };
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';
+            if (value.trim() === '') {
+                validateStatus["page"] = 'success';
+                validateHelp["page"] = '';
+                return Promise.resolve();
+            }
             await CheckRangeFormat(value).then((res: any) => {
                 if (res) {
                     console.log({ res });
