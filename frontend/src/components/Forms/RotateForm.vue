@@ -115,15 +115,15 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         const onSubmit = async () => {
-            try {
-                await formRef.value?.validate();
-                confirmLoading.value = true;
-                await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
-                confirmLoading.value = false;
-            } catch (err) {
-                console.log({ err });
-                message.error("表单验证失败");
-            }
+            // await formRef.value?.validate().then(async () => {
+            confirmLoading.value = true;
+            await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
+            confirmLoading.value = false;
+            // }).catch((err: any) => {
+            //     console.log({ err });
+            //     message.error("表单验证失败");
+            //     return Promise.reject();
+            // })
         }
         return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
     }

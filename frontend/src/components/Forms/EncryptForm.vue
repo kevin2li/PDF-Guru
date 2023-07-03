@@ -44,7 +44,9 @@
                         :disabled="!formState.is_set_opw" />
                 </a-form-item>
             </div>
-            <a-form-item name="decrypt_pass" label="密码" v-if="formState.op == 'decrypt'" :rules="[{ required: true }]">
+            <a-form-item name="upw" label="密码" v-if="formState.op == 'decrypt'" :rules="[{
+                required: true, message: '请填写密码'
+            }]">
                 <a-input-password v-model:value="formState.upw" placeholder="解密密码" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
@@ -221,29 +223,29 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         const onSubmit = async () => {
-            try {
-                await formRef.value?.validate();
-                confirmLoading.value = true;
-                switch (formState.op) {
-                    case "encrypt": {
-                        let upw = "", opw = "", perm: string[] = [];
-                        if (formState.is_set_upw) { upw = formState.upw; }
-                        if (formState.is_set_opw) {
-                            opw = formState.opw;
-                            perm = formState.perm;
-                        }
-                        await handleOps(EncryptPDF, [formState.input, formState.output, upw, opw, perm]);
-                        break;
+            // await formRef.value?.validate().then(async () => {
+            confirmLoading.value = true;
+            switch (formState.op) {
+                case "encrypt": {
+                    let upw = "", opw = "", perm: string[] = [];
+                    if (formState.is_set_upw) { upw = formState.upw; }
+                    if (formState.is_set_opw) {
+                        opw = formState.opw;
+                        perm = formState.perm;
                     }
-                    case "decrypt": {
-                        await handleOps(DecryptPDF, [formState.input, formState.output, formState.upw]);
-                        break;
-                    }
-                }                confirmLoading.value = false;
-            } catch (err) {
-                console.log({ err });
-                message.error("表单验证失败");
+                    await handleOps(EncryptPDF, [formState.input, formState.output, upw, opw, perm]);
+                    break;
+                }
+                case "decrypt": {
+                    await handleOps(DecryptPDF, [formState.input, formState.output, formState.upw]);
+                    break;
+                }
             }
+            confirmLoading.value = false;
+            // }).catch((err: any) => {
+            //     console.log({ err });
+            //     message.error("表单验证失败");
+            // })
         }
         return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, checkAll, indeterminate, encrypt_perm_options, onCheckAllChange, resetFields, onSubmit };
     }

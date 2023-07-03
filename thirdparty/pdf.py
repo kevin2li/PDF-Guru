@@ -309,7 +309,7 @@ def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direc
 def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        roi_indices = parse_range(page_range)
+        roi_indices = parse_range(page_range, doc.page_count)
         for page_index in roi_indices:
             page = doc[page_index]
             page.set_rotation(angle)
@@ -324,7 +324,7 @@ def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: 
 def crop_pdf(doc_path: str, bbox: Tuple[int, int, int, int], page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        roi_indices = parse_range(page_range)
+        roi_indices = parse_range(page_range, doc.page_count)
         for page_index in roi_indices:
             page = doc[page_index]
             page.set_cropbox(fitz.Rect(*bbox))
@@ -341,6 +341,30 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, output_path: str = No
 
 def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoints: List[float], output_path: str = None):
     raise NotImplementedError
+
+def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indicies = parse_range(page_range, doc.page_count)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-图片")
+            Path(output_path).mkdir(parents=True, exist_ok=True)
+        else:
+            Path(output_path).mkdir(parents=True, exist_ok=True)
+        for page_index in roi_indicies:
+            page = doc[page_index]
+            image_list = page.get_images()
+            for i, img in enumerate(image_list):
+                xref = img[0] # get the XREF of the image
+                pix = fitz.Pixmap(doc, xref) # create a Pixmap
+                if pix.n - pix.alpha > 3: # CMYK: convert to RGB first
+                    pix = fitz.Pixmap(fitz.csRGB, pix)
+                savepath = str(Path(output_path) / f"{page_index+1}-{i+1}.png")
+                pix.save(savepath) # save the image as PNG
+                pix = None
+    except:
+        raise ValueError(traceback.format_exc())
 
 def title_preprocess(title: str):
     """提取标题层级和标题内容
@@ -384,15 +408,6 @@ def title_preprocess(title: str):
         
         return {'level': 1, "text": title}
 
-def fix_toc(toc):
-    # 校正层级
-    levels = [v[0] for v in toc]
-    diff = [levels[i+1]-levels[i] for i in range(len(levels)-1)]
-    indices = [i for i in range(len(diff)) if diff[i] > 1]
-    for idx in indices:
-        toc[idx][0] = toc[idx+1][0]
-    return toc
-
 def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: str = None):
     """从目录文件中导入书签到pdf文件(若文件中存在行没指定页码则按1算)
 
@@ -427,7 +442,12 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
             toc = json.load(f)
     else:
         raise ValueError("不支持的toc文件格式!")
-    toc = fix_toc(toc) # 校正层级
+    # 校正层级
+    levels = [v[0] for v in toc]
+    diff = [levels[i+1]-levels[i] for i in range(len(levels)-1)]
+    indices = [i for i in range(len(diff)) if diff[i] > 1]
+    for idx in indices:
+        toc[idx][0] = toc[idx+1][0]
     doc.set_toc(toc)
     if output_path is None:
         output_path = str(p.parent / f"{p.stem}-toc.pdf")
@@ -504,7 +524,7 @@ def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, p
     perm_value = sum(full_perm_dict.values())
     encrypt_meth = fitz.PDF_ENCRYPT_AES_256 # strongest algorithm
     if output_path is None:
-        output_path = str(p.parent / f"{p.stem}-encrypt.pdf")
+        output_path = str(p.parent / f"{p.stem}-加密.pdf")
     doc.save(
         output_path,
         encryption=encrypt_meth, # set the encryption method
@@ -521,7 +541,7 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
         n = doc.page_count
         doc.select(range(n))
     if output_path is None:
-        output_path = str(p.parent / f"{p.stem}-decrypt.pdf")
+        output_path = str(p.parent / f"{p.stem}-解密.pdf")
     doc.save(output_path)
 
 def main():
@@ -702,83 +722,30 @@ def main():
         else:
             raise ValueError("不支持的文件格式!")
 
-
-def test():
-    doc = fitz.Document()
-    page = doc.new_page()  # new or existing page via doc[n]
-    p = fitz.Point(50, 72)  # start point of 1st line
-
-    # text = "Some text,\nspread across\nseveral lines."
-    # # the same result is achievable by
-    # # text = ["Some text", "spread across", "several lines."]
-
-    # rc = page.insert_text(p,  # bottom-left of 1st char
-    #                     text,  # the text (honors '\n')
-    #                     fontname = "helv",  # the default font
-    #                     fontsize = 11,  # the default font size
-    #                     rotate = 90,  # also available: 90, 180, 270
-    #                     )
-    # print("%i lines printed on page %i." % (rc, page.number))
-
-    rect = fitz.Rect(100, 100, 200, 200)  # 设置文本框的位置和大小
-    annot = page.new_annot('Text', rect)
-
-    annot.update(fontsize=12, font='Times-Bold', color=(0, 0, 1))  # 设置字体、字号、颜色等属性
-    annot.set_rotation(30)  # 设置旋转角度
-    annot.content = 'Hello, world!'  # 插入文本
-    doc.save("text.pdf")
-    
-
-def embed():
-    doc = fitz.open("text.pdf") # open main document
-    embedded_doc = fitz.open("pdf2-0.pdf") # open document you want to embed
-
-    embedded_data = embedded_doc.tobytes() # get the document byte data as a buffer
-
-    # embed with the file name and the data
-    doc.embfile_add("my-embedded_file.pdf", embedded_data)
-
-    doc.save("document-with-embed.pdf") # save the document
-
-def create_wartmark(content:str,
-                    filename:str,
-                    width: Union[int, float],
-                    height: Union[int, float],
-                    font: str,
-                    fontsize: int,
-                    angle: Union[int, float] = 45,
-                    text_stroke_color_rgb: Tuple[int, int, int] = (0, 0, 0),
-                    text_fill_color_rgb: Tuple[int, int, int] = (0, 0, 0),
-                    text_fill_alpha: Union[int, float] = 1) -> None:
-    #创建PDF文件，指定文件名及尺寸，以像素为单位
-    c = canvas.Canvas(f'{filename}.pdf',pagesize=(width*units.mm,height*units.mm))
-
-    #画布平移保证文字完整性
+def create_wartmark(
+        content:str,
+        path:str,
+        width: Union[int, float],
+        height: Union[int, float],
+        font: str,
+        fontsize: int,
+        angle: Union[int, float] = 45,
+        text_stroke_color_rgb: Tuple[int, int, int] = (0, 0, 0),
+        text_fill_color_rgb: Tuple[int, int, int] = (0, 0, 0),
+        text_fill_alpha: Union[int, float] = 1
+    ) -> None:
+    c = canvas.Canvas(path,pagesize=(width*units.mm,height*units.mm))
     c.translate(0.1*width*units.mm,0.1*height*units.mm)
-
-    #设置旋转角度
-    # c.rotate(angle)
-
-    #设置字体大小
+    c.rotate(angle)
     c.setFont(font,fontsize)
-
-    #设置字体轮廓彩色
     c.setStrokeColorRGB(*text_stroke_color_rgb)
-
-    #设置填充色
     c.setFillColorRGB(*text_fill_color_rgb)
-
-    #设置字体透明度
     c.setFillAlpha(text_fill_alpha)
-
-    #绘制字体内容
     c.drawString(0,0,content)
-    # c.setPageRotation(45)
     c.setCropBox([0, 0, 100*units.mm, 30*units.mm])
-
-    #保存文件
     c.save()
 
 if __name__ == "__main__":
-    main()
+    # main()
     # print(parse_range("1-4", 10, is_reverse=True))
+    extract_pdf_images(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-decrypt.pdf")

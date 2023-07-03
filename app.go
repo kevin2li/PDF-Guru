@@ -318,7 +318,7 @@ func (a *App) RotatePDF(inFile string, outFile string, rotation int, pagesStr st
 	fmt.Printf("inFile: %s, outFile: %s, rotation: %d, pagesStr: %s\n", inFile, outFile, rotation, pagesStr)
 	args := []string{"rotate"}
 	if rotation != 0 {
-		args = append(args, "--rotation", fmt.Sprintf("%d", rotation))
+		args = append(args, "--angle", fmt.Sprintf("%d", rotation))
 	}
 	if pagesStr != "" {
 		args = append(args, "--page_range", pagesStr)
