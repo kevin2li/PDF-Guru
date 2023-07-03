@@ -36,7 +36,9 @@ interface CropState {
     input: string;
     output: string;
     page: string;
+    op: string;
     unit: string;
+    keep_size: boolean;
     up: number;
     left: number;
     down: number;

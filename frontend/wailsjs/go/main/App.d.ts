@@ -11,6 +11,10 @@ export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertPDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
+export function CropPDFByBBOX(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
+
+export function CropPDFByMargin(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
+
 export function CutPDFByBreakpoints(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<number>,arg5:string):Promise<void>;
 
 export function CutPDFByGrid(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string):Promise<void>;

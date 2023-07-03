@@ -22,6 +22,14 @@ export function ConvertPDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ConvertPDF'](arg1, arg2, arg3, arg4);
 }
 
+export function CropPDFByBBOX(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['CropPDFByBBOX'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function CropPDFByMargin(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['CropPDFByMargin'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
 export function CutPDFByBreakpoints(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['CutPDFByBreakpoints'](arg1, arg2, arg3, arg4, arg5);
 }

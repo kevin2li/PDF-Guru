@@ -1,7 +1,8 @@
 import argparse
-import json
-import re
 import glob
+import json
+import os
+import re
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -96,6 +97,23 @@ def range_compress(arr):
             start = end = arr[i]
     result.append([start, end])
     return result
+
+def convert_length(length, from_unit, to_unit):
+    """
+    将长度从一个单位转换为另一个单位
+    :param length: 长度值
+    :param from_unit: 原单位，可选值："pt"、"cm"、"mm"、"in"、"px"
+    :param to_unit: 目标单位，可选值："pt"、"cm"、"mm"、"in"、"px"
+    :param dpi: 屏幕或打印机的分辨率，默认为每英寸72个点（即标准屏幕分辨率）
+    :return: 转换后的长度值
+    """
+
+    units = {"pt": 1, "cm": 2.54/72, "mm": 25.4/72, "in": 1/72}
+    if from_unit not in units or to_unit not in units:
+        raise ValueError("Invalid unit")
+
+    pt_length = length / units[from_unit]
+    return pt_length * units[to_unit]
 
 def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, is_reverse: bool = False):
     try:
@@ -338,18 +356,51 @@ def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: 
     except:
         raise ValueError(traceback.format_exc())
 
-def crop_pdf(doc_path: str, bbox: Tuple[int, int, int, int], page_range: str = "all", output_path: str = None):
+def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str = "pt", keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
         roi_indices = parse_range(page_range, doc.page_count)
+        tmp_doc: fitz.Document = fitz.open()
+        if unit != "pt":
+            bbox = tuple(map(lambda x: convert_length(x, unit, "pt"), bbox))
+            logger.debug(bbox)
         for page_index in roi_indices:
             page = doc[page_index]
-            page.set_cropbox(fitz.Rect(*bbox))
-            
+            page_width, page_height = page.rect.width, page.rect.height
+            if keep_page_size:
+                new_page = tmp_doc.new_page(-1, width=page_width, height=page_height)
+                new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
+            else:
+                new_page = tmp_doc.new_page(-1, width=bbox[2]-bbox[0], height=bbox[3]-bbox[1])
+                new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
-        doc.save(output_path)
+        tmp_doc.save(output_path, garbage=3, deflate=True)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], unit: str = "pt", keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        tmp_doc: fitz.Document = fitz.open()
+        if unit != "pt":
+            margin = tuple(map(lambda x: convert_length(x, unit, "pt"), margin))
+        for page_index in roi_indices:
+            page = doc[page_index]
+            page_width, page_height = page.rect.width, page.rect.height
+            bbox = fitz.Rect(margin[3], margin[0], page_width-margin[1], page_height-margin[2])
+            if keep_page_size:
+                new_page = tmp_doc.new_page(-1, width=page_width, height=page_height)
+                new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
+            else:
+                new_page = tmp_doc.new_page(-1, width=bbox[2]-bbox[0], height=bbox[3]-bbox[1])
+                new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
+        tmp_doc.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
@@ -361,8 +412,6 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "al
         for page_index in roi_indices:
             page = doc[page_index]
             page_width, page_height = page.rect.width, page.rect.height
-            # CropBox displacement if not starting at (0, 0)
-            # d = fitz.Rect(page.cropbox_position, page.cropbox_position)
             width, height = page_width/n_col, page_height/n_row
             for i in range(n_row):
                 for j in range(n_col):
@@ -382,21 +431,24 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
         doc: fitz.Document = fitz.open(doc_path)
         roi_indices = parse_range(page_range, doc.page_count)
         tmp_doc: fitz.Document = fitz.open()
-        h_breakpoints = [v for v in h_breakpoints if 0 <= v <= 1]
-        h_breakpoints = [0] + h_breakpoints + [1]
-        h_breakpoints.sort()
-        v_breakpoints = [v for v in v_breakpoints if 0 <= v <= 1]
-        v_breakpoints = [0] + v_breakpoints + [1]
-        v_breakpoints.sort()
+        if h_breakpoints:
+            h_breakpoints = [v for v in h_breakpoints if 0 <= v <= 1]
+            h_breakpoints = [0] + h_breakpoints + [1]
+            h_breakpoints.sort()
+        else:
+            h_breakpoints = [0., 1.]
+        if v_breakpoints:
+            v_breakpoints = [v for v in v_breakpoints if 0 <= v <= 1]
+            v_breakpoints = [0] + v_breakpoints + [1]
+            v_breakpoints.sort()
+        else:
+            v_breakpoints = [0., 1.]
         for page_index in roi_indices:
             page = doc[page_index]
             page_width, page_height = page.rect.width, page.rect.height
-            # CropBox displacement if not starting at (0, 0)
-            d = fitz.Rect(page.cropbox_position, page.cropbox_position)
             for i in range(len(h_breakpoints)-1):
                 for j in range(len(v_breakpoints)-1):
-                    bbox = fitz.Rect(v_breakpoints[j]*page_width, h_breakpoints[i]*page_height, v_breakpoints[j+1]*page_width, h_breakpoints[i+1]*page_height,)
-                    bbox += d
+                    bbox = fitz.Rect(v_breakpoints[j]*page_width, h_breakpoints[i]*page_height, v_breakpoints[j+1]*page_width, h_breakpoints[i+1]*page_height)
                     tmp_page = tmp_doc.new_page(-1, width=bbox.width, height=bbox.height)
                     tmp_page.show_pdf_page(tmp_page.rect, doc, page_index, clip=bbox)
         if output_path is None:
@@ -423,8 +475,12 @@ def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4"
         roi_indices = parse_range(page_range, doc.page_count)
         for page_index in roi_indices:
             if page_index % batch_size == 0:
+                logger.debug(page_index)
                 page = tmp_doc.new_page(-1, width=width, height=height)
             page.show_pdf_page(r_tab[page_index % batch_size], doc, page_index)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-网格组合.pdf")
         tmp_doc.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
@@ -718,6 +774,28 @@ def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "
     except:
         raise ValueError(traceback.format_exc())
 
+def convert_pdf_to_images(doc_path: str, page_range: str = 'all', output_path: str = None):
+    doc: fitz.Document = fitz.open(doc_path)
+    p = Path(doc_path)
+    if page_range=="all":
+        roi_indices = list(range(len(doc)))
+    else:
+        roi_indices = parse_range(page_range)
+
+    if output_path is None:
+        output_dir = p.parent / "PDF转图片"
+    else:
+        output_dir = Path(output_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for page_index in roi_indices:
+        page: fitz.Page = doc[page_index]
+        pix = page.get_pixmap()
+        savepath = str(output_dir / f"page-{page.number+1}.png")
+        pix.pil_save(savepath, quality=100, dpi=(1800,1800))
+
+def convert_images_to_pdf(input_path: str, output_path: str = None):
+    raise NotImplementedError
+
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
@@ -848,7 +926,7 @@ def main():
     watermark_parser.add_argument("--quality", type=int, default=80, dest="quality", help="水印图片保存质量")
     watermark_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     watermark_parser.set_defaults(which='watermark')
-    
+
     # 压缩子命令
     compress_parser = sub_parsers.add_parser("compress", help="压缩", description="压缩pdf文件")
     compress_parser.add_argument("input_path", type=str, help="pdf文件路径")
@@ -892,7 +970,33 @@ def main():
     combine_parser.set_defaults(which='combine')
     combine_parser.add_argument("input_path", type=str, help="pdf文件路径")
     combine_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
-    combine_parser.add_argument("--method", type=str, choices=['grid', 'breakpoints'], default="grid", help="分割模式")
+    combine_parser.add_argument("--nrow", type=int, default=1, help="行数")
+    combine_parser.add_argument("--ncol", type=int, default=1, help="列数")
+    combine_parser.add_argument("--paper_size", type=str, default="A4", help="纸张大小")
+    combine_parser.add_argument("--orientation", type=str, choices=['portrait', 'landscape'], default="portrait", help="纸张方向")
+    combine_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 裁剪子命令
+    crop_parser = sub_parsers.add_parser("crop", help="裁剪", description="裁剪pdf文件")
+    crop_parser.set_defaults(which='crop')
+    crop_parser.add_argument("--method", type=str, choices=['bbox', 'margin'], default="bbox", help="裁剪模式")
+    crop_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    crop_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    crop_parser.add_argument("--bbox", type=float, nargs=4, help="裁剪框")
+    crop_parser.add_argument("--margin", type=float, nargs=4, help="裁剪边距")
+    crop_parser.add_argument("--keep_size", action="store_true", help="保持裁剪后的尺寸不变")
+    crop_parser.add_argument("--unit", type=str, choices=['pt', 'mm', 'cm', 'in'], default="pt", help="单位")
+    crop_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 转换子命令
+    convert_parser = sub_parsers.add_parser("convert", help="转换", description="转换pdf文件")
+    convert_parser.set_defaults(which='convert')
+    convert_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    convert_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    convert_parser.add_argument("--source-type", type=str, choices=["pdf", 'png', "jpg", "svg", "docx"], default="pdf", help="源类型")
+    convert_parser.add_argument("--target-type", type=str, choices=['png', "svg", "docx"], default="png", help="目标类型")
+    convert_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
 
     args = parser.parse_args()
     logger.debug(args)
@@ -953,6 +1057,15 @@ def main():
             cut_pdf_by_grid(args.input_path, args.nrow, args.ncol, args.page_range, args.output)
         elif args.method == "breakpoints":
             cut_pdf_by_breakpoints(args.input_path, args.h_breakpoints, args.v_breakpoints, args.page_range, args.output)
+    elif args.which == "combine":
+        combine_pdf_by_grid(args.input_path, args.nrow, args.ncol, args.paper_size, args.orientation, args.page_range, args.output)
+    elif args.which == "crop":
+        if args.method == "bbox":
+            crop_pdf_by_bbox(args.input_path, args.bbox, args.unit, args.keep_size, args.page_range, args.output)
+        elif args.method == "margin":
+            crop_pdf_by_page_margin(args.input_path, args.margin, args.unit, args.keep_size, args.page_range, args.output)
+    elif args.which == "convert":
+        pass
     elif args.which == "watermark":
         mark_args = {
             "font_family": args.font_family,
@@ -996,3 +1109,6 @@ if __name__ == "__main__":
     main()
     # print(parse_range("1-4", 10, is_reverse=True))
     # extract_pdf_images(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-decrypt.pdf")
+    # print(convert_length(540, "pt", "in"))
+    # print(convert_length(33.87, "cm", "pt"))
+    # print(convert_length(33.87, "cm", "mm"))

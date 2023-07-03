@@ -749,6 +749,7 @@ func (a *App) CutPDFByGrid(inFile string, outFile string, row int, col int, page
 func (a *App) CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []float32, VBreakpoints []float32, pages string) error {
 	fmt.Printf("inFile: %s, outFile: %s, HBreakpoints: %v, VBreakpoints: %v, pages: %s\n", inFile, outFile, HBreakpoints, VBreakpoints, pages)
 	args := []string{"cut", "--method", "breakpoints"}
+	args = append(args, inFile)
 	if len(HBreakpoints) > 0 {
 		args = append(args, "--h_breakpoints")
 		for _, v := range HBreakpoints {
@@ -767,7 +768,6 @@ func (a *App) CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []
 	if outFile != "" {
 		args = append(args, "-o", outFile)
 	}
-	args = append(args, inFile)
 	fmt.Println(args)
 	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)
@@ -779,7 +779,7 @@ func (a *App) CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []
 
 func (a *App) CombinePDFByGrid(inFile string, outFile string, row int, col int, pages string, paperSize string, orientation string) error {
 	fmt.Printf("inFile: %s, outFile: %s, row: %d, col: %d, pages: %s, paperSize: %s, orientation: %s\n", inFile, outFile, row, col, pages, paperSize, orientation)
-	args := []string{"combine", "--method", "grid"}
+	args := []string{"combine"}
 	args = append(args, "--nrow", fmt.Sprintf("%d", row))
 	args = append(args, "--ncol", fmt.Sprintf("%d", col))
 	if paperSize != "" {
@@ -794,7 +794,65 @@ func (a *App) CombinePDFByGrid(inFile string, outFile string, row int, col int, 
 	if outFile != "" {
 		args = append(args, "-o", outFile)
 	}
-	args = append(args, inFile, "placeholder.pdf")
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) CropPDFByBBOX(inFile string, outFile string, bbox []float32, unit string, keepSize bool, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, bbox: %v, unit: %s, keepSize: %v, pages: %s\n", inFile, outFile, bbox, unit, keepSize, pages)
+	args := []string{"crop", "--method", "bbox"}
+	args = append(args, "--bbox")
+	for _, v := range bbox {
+		args = append(args, fmt.Sprintf("%f", v))
+	}
+	if unit != "" {
+		args = append(args, "--unit", unit)
+	}
+	if keepSize {
+		args = append(args, "--keep_size")
+	}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	cmd := exec.Command(pdfExePath, args...)
+	err := CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) CropPDFByMargin(inFile string, outFile string, margin []float32, unit string, keepSize bool, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, margin: %v, unit: %s, keepSize: %v, pages: %s\n", inFile, outFile, margin, unit, keepSize, pages)
+	args := []string{"crop", "--method", "margin"}
+	args = append(args, "--margin")
+	for _, v := range margin {
+		args = append(args, fmt.Sprintf("%f", v))
+	}
+	if unit != "" {
+		args = append(args, "--unit", unit)
+	}
+	if keepSize {
+		args = append(args, "--keep_size")
+	}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
 	fmt.Println(args)
 	cmd := exec.Command(pdfExePath, args...)
 	err := CheckCmdError(cmd)

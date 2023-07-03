@@ -64,7 +64,7 @@
                 </a-menu-item>
                 <a-menu-item key="cut">
                     <template #icon>
-                        <split-cells-outlined />
+                        <borderless-table-outlined />
                     </template>
                     {{ menuRecord['cut'] }}
                 </a-menu-item>
@@ -164,7 +164,7 @@ import {
     FontSizeOutlined,
     EyeOutlined,
     SplitCellsOutlined,
-    LoginOutlined
+    LoginOutlined,
 } from '@ant-design/icons-vue';
 import { menuDesc, menuRecord } from "./data";
 import MergeForm from "./Forms/MergeForm.vue";

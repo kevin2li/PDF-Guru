@@ -149,7 +149,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, CutPDFByGrid, CutPDFByBreakpoints } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, CutPDFByGrid, CutPDFByBreakpoints, CombinePDFByGrid } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons-vue';
@@ -272,15 +272,18 @@ export default defineComponent({
             // await formRef.value?.validate().then(async () => {
             confirmLoading.value = true;
             switch (formState.op) {
-                case "crop":
-                    break;
-                case "split":
+                case "split": {
                     if (formState.split_type == "even") {
-                        await handleOps(CutPDFByGrid, [formState.input.trim(), formState.output.trim(), formState.split_rows, formState.split_cols, formState.page]);
+                        await handleOps(CutPDFByGrid, [formState.input.trim(), formState.output.trim(), formState.rows, formState.cols, formState.page]);
                     } else {
                         await handleOps(CutPDFByBreakpoints, [formState.input.trim(), formState.output.trim(), formState.split_h_breakpoints, formState.split_v_breakpoints, formState.page]);
                     }
                     break;
+                }
+                case "combine": {
+                    await handleOps(CombinePDFByGrid, [formState.input.trim(), formState.output.trim(), formState.rows, formState.cols, formState.page, formState.paper_size, formState.orientation]);
+                    break;
+                }
             }
             confirmLoading.value = false;
             // }).catch((err: any) => {
