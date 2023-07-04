@@ -1,7 +1,8 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules">
+            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
+            @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="encrypt_op" label="操作" style="margin-bottom: 1.8vh;">
                 <a-radio-group button-style="solid" v-model:value="formState.op">
                     <a-radio-button value="encrypt">加密</a-radio-button>
@@ -9,14 +10,15 @@
                 </a-radio-group>
             </a-form-item>
             <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;" v-if="formState.op == 'encrypt'">
-                <a-form-item name="encrypt.is_set_upw" label="设置打开密码" :disabled="!formState.is_set_upw">
+                <a-form-item name="is_set_upw" label="设置打开密码" :disabled="!formState.is_set_upw">
                     <a-checkbox v-model:checked="formState.is_set_upw"></a-checkbox>
                 </a-form-item>
-                <a-form-item name="upw" label="设置密码" hasFeedback :validateStatus="validateStatus.encrypt_upw">
+                <a-form-item :name="formState.is_set_upw ? 'upw' : 'upw-none'" label="设置密码" hasFeedback
+                    :validateStatus="validateStatus.encrypt_upw">
                     <a-input-password v-model:value="formState.upw" placeholder="不少于6位" allow-clear
                         :disabled="!formState.is_set_upw" />
                 </a-form-item>
-                <a-form-item name="upw_confirm" label="确认密码" hasFeedback
+                <a-form-item :name="formState.is_set_upw ? 'upw_confirm' : 'upw_confirm-none'" label="确认密码" hasFeedback
                     :validateStatus="validateStatus.encrypt_upw_confirm">
                     <a-input-password v-model:value="formState.upw_confirm" placeholder="再次输入密码" allow-clear
                         :disabled="!formState.is_set_upw" />
@@ -27,16 +29,17 @@
                 <a-form-item name="is_set_opw" label="设置权限密码">
                     <a-checkbox v-model:checked="formState.is_set_opw"></a-checkbox>
                 </a-form-item>
-                <a-form-item name="opw" label="设置密码" hasFeedback :validateStatus="validateStatus.encrypt_opw">
+                <a-form-item :name="formState.is_set_opw ? 'opw' : 'opw-none'" label="设置密码" hasFeedback
+                    :validateStatus="validateStatus.encrypt_opw">
                     <a-input-password v-model:value="formState.opw" placeholder="不少于6位" allow-clear
                         :disabled="!formState.is_set_opw" />
                 </a-form-item>
-                <a-form-item name="opw_confirm" label="确认密码" hasFeedback
+                <a-form-item :name="formState.is_set_opw ? 'opw_confirm' : 'opw_confirm-none'" label="确认密码" hasFeedback
                     :validateStatus="validateStatus.encrypt_opw_confirm">
                     <a-input-password v-model:value="formState.opw_confirm" allow-clear placeholder="再次输入密码"
                         :disabled="!formState.is_set_opw" />
                 </a-form-item>
-                <a-form-item name="perm" label="限制功能">
+                <a-form-item :name="formState.is_set_opw ? 'perm' : 'perm-none'" label="保护功能">
                     <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate" :disabled="!formState.is_set_opw"
                         @change="onCheckAllChange">全选</a-checkbox>
                     <a-divider type="vertical" />
@@ -57,7 +60,7 @@
                 <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
-                <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">确认</a-button>
+                <a-button type="primary" html-type="submit" :loading="confirmLoading">确认</a-button>
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
@@ -82,7 +85,7 @@ export default defineComponent({
             op: "encrypt",
             upw: "",
             opw: "",
-            perm: ["打开"],
+            perm: [],
             is_set_upw: false,
             is_set_opw: false,
             upw_confirm: "",
@@ -107,7 +110,7 @@ export default defineComponent({
             validateStatus["input"] = 'validating';
             if (value === '') {
                 validateStatus["input"] = 'error';
-                validateHelp["input"] = "请填写路径";
+            validateHelp["input"] = "请填写路径";
                 return Promise.reject();
             }
             await CheckFileExists(value).then((res: any) => {
@@ -222,16 +225,23 @@ export default defineComponent({
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
-        const onSubmit = async () => {
-            // await formRef.value?.validate().then(async () => {
+        async function submit() {
+            if (!formState.is_set_opw && !formState.is_set_upw) {
+                message.error("请至少设置一种密码");
+                return;
+            }
             confirmLoading.value = true;
             switch (formState.op) {
                 case "encrypt": {
                     let upw = "", opw = "", perm: string[] = [];
-                    if (formState.is_set_upw) { upw = formState.upw; }
+                    if (formState.is_set_upw) {
+                        upw = formState.upw;
+                        perm = ["打开"];
+                    }
                     if (formState.is_set_opw) {
                         opw = formState.opw;
                         perm = formState.perm;
+                        perm.push("打开");
                     }
                     await handleOps(EncryptPDF, [formState.input, formState.output, upw, opw, perm]);
                     break;
@@ -242,12 +252,23 @@ export default defineComponent({
                 }
             }
             confirmLoading.value = false;
-            // }).catch((err: any) => {
-            //     console.log({ err });
-            //     message.error("表单验证失败");
-            // })
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, checkAll, indeterminate, encrypt_perm_options, onCheckAllChange, resetFields, onSubmit };
+        const onFinish = async () => {
+            await submit();
+        }
+
+        // @ts-ignore
+        const onFinishFailed = async ({ values, errorFields, outOfDate }) => {
+            if (errorFields.length > 0) {
+                console.log({ errorFields });
+                message.error("表单验证失败");
+            }
+            if (outOfDate) {
+                // 忽略过期
+                await submit();
+            }
+        }
+        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, checkAll, indeterminate, encrypt_perm_options, onCheckAllChange, resetFields, onFinish, onFinishFailed };
     }
 })
 </script>

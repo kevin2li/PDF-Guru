@@ -1,7 +1,8 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules">
+            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
+            @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="bookmark_op" label="操作">
                 <a-radio-group button-style="solid" v-model:value="formState.op">
                     <a-radio-button value="extract">提取书签</a-radio-button>
@@ -19,7 +20,7 @@
                 </a-form-item>
             </div>
             <div v-if="formState.op == 'write'">
-                <a-form-item name="bookmark.write_type" label="类型" :rules="{ required: true }">
+                <a-form-item name="bookmark.write_type" label="类型">
                     <a-radio-group v-model:value="formState.write_type">
                         <a-radio value="file">书签文件导入</a-radio>
                         <a-radio value="page">页码书签</a-radio>
@@ -29,26 +30,24 @@
                     :help="validateHelp.bookmark_file" v-if="formState.write_type == 'file'">
                     <a-input v-model:value="formState.bookmark_file" placeholder="书签文件路径" allow-clear />
                 </a-form-item>
-                <a-form-item name="bookmark.write_offset" label="页码偏移量" :rules="{ required: true }"
-                    v-if="formState.write_type == 'file'">
-                    <a-input-number v-model:value="formState.write_offset" placeholder="页码偏移量" />
+                <a-form-item name="write_offset" label="页码偏移量" v-if="formState.write_type == 'file'">
+                    <a-input-number v-model:value="formState.write_offset" />
                 </a-form-item>
-                <a-form-item name="bookmark.write_gap" label="间隔页数" :rules="{ required: true }"
-                    v-if="formState.write_type == 'page'">
-                    <a-input-number v-model:value="formState.write_gap" placeholder="间隔页数" />
+                <a-form-item name="write_gap" label="间隔页数" v-if="formState.write_type == 'page'">
+                    <a-input-number v-model:value="formState.write_gap" />
                 </a-form-item>
                 <a-form-item name="bookmark.write_format" label="命名格式" v-if="formState.write_type == 'page'">
                     <a-input v-model:value="formState.write_format" placeholder="e.g. 第%p页(%p表示页码)" allow-clear />
                 </a-form-item>
             </div>
             <div v-if="formState.op == 'transform'">
-                <a-form-item name="bookmark.transform_offset" label="页码偏移量" :rules="{ required: true }">
-                    <a-input-number v-model:value="formState.transform_offset" placeholder="页码偏移量" />
+                <a-form-item name="transform_offset" label="页码偏移量">
+                    <a-input-number v-model:value="formState.transform_offset" />
                 </a-form-item>
-                <a-form-item name="bookmark.transform_indent" label="增加缩进" :rules="{ required: true }">
+                <a-form-item name="bookmark.transform_indent" label="增加缩进">
                     <a-switch v-model:checked="formState.transform_indent" />
                 </a-form-item>
-                <a-form-item name="bookmark.transform_dots" label="删除尾部点" :rules="{ required: true }">
+                <a-form-item name="bookmark.transform_dots" label="删除尾部点">
                     <a-switch v-model:checked="formState.transform_dots" />
                 </a-form-item>
             </div>
@@ -75,7 +74,7 @@
                 <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
-                <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">确认</a-button>
+                <a-button type="primary" html-type="submit" :loading="confirmLoading">确认</a-button>
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
@@ -185,6 +184,9 @@ export default defineComponent({
             input: [{ required: true, validator: validateFileExists, trigger: 'change' }],
             page: [{ validator: validateRange, trigger: 'change' }],
             bookmark_file: [{ required: true, validator: validateFileExists, trigger: 'change' }],
+            write_offset: [{ required: true, message: "请填写页码偏移量, 计算方式：实际页码-标注页码" }],
+            write_gap: [{ required: true, message: "请填写间隔页数" }],
+            transform_offset: [{ required: true, message: "增减页码的数值" }],
         };
         // 重置表单
         const resetFields = () => {
@@ -192,40 +194,49 @@ export default defineComponent({
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
-        const onSubmit = async () => {
-            try {
-                await formRef.value?.validate();
-                confirmLoading.value = true;
-                switch (formState.op) {
-                    case "extract": {
-                        await handleOps(ExtractBookmark, [formState.input, formState.output, formState.extract_format]);
-                        break;
-                    }
-                    case "write": {
-                        switch (formState.write_type) {
-                            case "file": {
-                                await handleOps(WriteBookmarkByFile, [formState.input, formState.output, formState.bookmark_file, formState.write_offset]);
-                                break;
-                            }
-                            case "page": {
-                                await handleOps(WriteBookmarkByGap, [formState.input, formState.output, formState.write_gap, formState.write_format]);
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                    case "transform": {
-                        await handleOps(TransformBookmark, [formState.input, formState.output, formState.transform_indent, formState.transform_offset, formState.transform_dots]);
-                        break;
-                    }
+        async function submit() {
+            confirmLoading.value = true;
+            switch (formState.op) {
+                case "extract": {
+                    await handleOps(ExtractBookmark, [formState.input, formState.output, formState.extract_format]);
+                    break;
                 }
-                confirmLoading.value = false;
-            } catch (err) {
-                console.log({ err });
+                case "write": {
+                    switch (formState.write_type) {
+                        case "file": {
+                            await handleOps(WriteBookmarkByFile, [formState.input, formState.output, formState.bookmark_file, formState.write_offset]);
+                            break;
+                        }
+                        case "page": {
+                            await handleOps(WriteBookmarkByGap, [formState.input, formState.output, formState.write_gap, formState.write_format]);
+                            break;
+                        }
+                    }
+                    break;
+                }
+                case "transform": {
+                    await handleOps(TransformBookmark, [formState.input, formState.output, formState.transform_indent, formState.transform_offset, formState.transform_dots]);
+                    break;
+                }
+            }
+            confirmLoading.value = false;
+        }
+        const onFinish = async () => {
+            await submit();
+        }
+
+        // @ts-ignore
+        const onFinishFailed = async ({ values, errorFields, outOfDate }) => {
+            if (errorFields.length > 0) {
+                console.log({ errorFields });
                 message.error("表单验证失败");
             }
+            if (outOfDate) {
+                // 忽略过期
+                await submit();
+            }
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
+        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
     }
 })
 </script>

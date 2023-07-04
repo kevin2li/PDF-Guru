@@ -135,6 +135,34 @@ func (a *App) CheckFileExists(path string) error {
 	return nil
 }
 
+func (a *App) CheckOutputDirExists(path string) error {
+	fmt.Printf("check output dir exists: %s\n", path)
+	if !filepath.IsAbs(path) {
+		return errors.New("路径必须是绝对路径!")
+	}
+	if info, err := os.Stat(path); err == nil && !info.IsDir() {
+		return errors.New("路径是文件，不是目录!")
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return errors.New("路径不存在，继续则自动创建目录!")
+	}
+	return nil
+}
+
+func (a *App) CheckOutputFileExists(path string) error {
+	fmt.Printf("check output file exists: %s\n", path)
+	if !filepath.IsAbs(path) {
+		return errors.New("路径必须是绝对路径!")
+	}
+	if info, err := os.Stat(path); err == nil {
+		if info.IsDir() {
+			return errors.New("路径是目录，不是文件!")
+		}
+		return errors.New("路径已存在，继续则覆盖文件!")
+	}
+	return nil
+}
+
 func (a *App) CheckRangeFormat(pages string) error {
 	fmt.Printf("check range: %s\n", pages)
 	pages = strings.TrimSpace(pages)

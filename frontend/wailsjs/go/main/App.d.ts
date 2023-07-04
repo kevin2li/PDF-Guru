@@ -4,6 +4,10 @@ import {main} from '../models';
 
 export function CheckFileExists(arg1:string):Promise<void>;
 
+export function CheckOutputDirExists(arg1:string):Promise<void>;
+
+export function CheckOutputFileExists(arg1:string):Promise<void>;
+
 export function CheckRangeFormat(arg1:string):Promise<void>;
 
 export function CombinePDFByGrid(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string,arg6:string,arg7:string):Promise<void>;

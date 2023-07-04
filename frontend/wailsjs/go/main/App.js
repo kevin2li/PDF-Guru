@@ -6,6 +6,14 @@ export function CheckFileExists(arg1) {
   return window['go']['main']['App']['CheckFileExists'](arg1);
 }
 
+export function CheckOutputDirExists(arg1) {
+  return window['go']['main']['App']['CheckOutputDirExists'](arg1);
+}
+
+export function CheckOutputFileExists(arg1) {
+  return window['go']['main']['App']['CheckOutputFileExists'](arg1);
+}
+
 export function CheckRangeFormat(arg1) {
   return window['go']['main']['App']['CheckRangeFormat'](arg1);
 }

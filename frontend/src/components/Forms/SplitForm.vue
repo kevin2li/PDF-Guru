@@ -1,7 +1,8 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules">
+            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
+            @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="op" label="类型">
                 <a-radio-group button-style="solid" v-model:value="formState.op">
                     <a-radio-button value="span">均匀分块</a-radio-button>
@@ -31,7 +32,7 @@
                 <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
-                <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">确认</a-button>
+                <a-button type="primary" html-type="submit" :loading="confirmLoading">确认</a-button>
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
@@ -128,8 +129,7 @@ export default defineComponent({
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
-        const onSubmit = async () => {
-            // await formRef.value?.validate().then(async () => {
+        async function submit() {
             confirmLoading.value = true;
             switch (formState.op) {
                 case "span": {
@@ -146,12 +146,23 @@ export default defineComponent({
                 }
             }
             confirmLoading.value = false;
-            // }).catch((err) => {
-            //     console.log("Failed validate:", { err });
-            //     message.error("表单验证失败");
-            // })
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onSubmit };
+        const onFinish = async () => {
+            await submit();
+        }
+
+        // @ts-ignore
+        const onFinishFailed = async ({ values, errorFields, outOfDate }) => {
+            if (errorFields.length > 0) {
+                console.log({ errorFields });
+                message.error("表单验证失败");
+            }
+            if (outOfDate) {
+                // 忽略过期
+                await submit();
+            }
+        }
+        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
     }
 })
 </script>

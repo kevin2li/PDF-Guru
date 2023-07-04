@@ -1,7 +1,8 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules">
+            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
+            @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="ocr_path" label="ocr路径" hasFeedback :validateStatus="validateStatus.ocr_path"
                 :help="validateHelp.ocr_path">
                 <a-input v-model:value="formState.ocr_path" placeholder="填写ocr路径" :disabled="!formState.allow_modify"
@@ -13,7 +14,7 @@
                     allow-clear></a-input>
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
-                <a-button type="primary" html-type="submit" @click="onSubmit" :loading="confirmLoading">{{ button_text }}
+                <a-button type="primary" html-type="submit" :loading="confirmLoading">{{ button_text }}
                 </a-button>
             </a-form-item>
         </a-form>
@@ -26,7 +27,6 @@ import { CheckFileExists, SaveConfig, LoadConfig } from '../../../wailsjs/go/mai
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { PreferencesState } from "../data";
-import { handleOps } from "../data";
 export default defineComponent({
     components: {
     },
@@ -102,8 +102,7 @@ export default defineComponent({
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
-        const onSubmit = async () => {
-            // await formRef.value?.validate().then(async () => {
+        const submit = async () => {
             confirmLoading.value = true;
             formState.allow_modify = !formState.allow_modify;
             button_text.value = formState.allow_modify ? "保存" : "修改";
@@ -118,15 +117,27 @@ export default defineComponent({
             }
             formRef.value?.clearValidate();
             confirmLoading.value = false;
-            // }).catch((err: any) => {
-            //     console.log({ err });
-            //     message.error("表单验证失败");
-            // });
         }
+        const onFinish = async () => {
+            await submit();
+        }
+
+        // @ts-ignore
+        const onFinishFailed = async ({ values, errorFields, outOfDate }) => {
+            if (errorFields.length > 0) {
+                console.log({ errorFields });
+                message.error("表单验证失败");
+            }
+            if (outOfDate) {
+                // 忽略过期
+                await submit();
+            }
+        }
+
         onMounted(async () => {
             await loadConfig();
         });
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, button_text, resetFields, onSubmit };
+        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, button_text, resetFields, onFinish, onFinishFailed };
     }
 })
 </script>

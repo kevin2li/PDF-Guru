@@ -229,7 +229,10 @@ def insert_blank_pdf(doc_path: str, pos: int, count: int, orientation: str, pape
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-插入空白页.pdf")
         tmp_doc: fitz.Document = fitz.open()
-        fmt = fitz.paper_rect(f"{paper_size}-l") if orientation == "landscape" else fitz.paper_rect(paper_size)
+        if paper_size == "same":
+            fmt = doc[0].rect
+        else:
+            fmt = fitz.paper_rect(f"{paper_size}-l") if orientation == "landscape" else fitz.paper_rect(paper_size)
         if pos - 2 >= 0:
             tmp_doc.insert_pdf(doc, from_page=0, to_page=pos-2)
         for i in range(count):
@@ -461,9 +464,13 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
 def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4", orientation: str = "portrait", page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        if orientation == "landscape":
-            paper_size = f"{paper_size}-l"
-        width, height = fitz.paper_size(paper_size)
+        if paper_size == "same":
+            rect = doc[0].rect
+            width, height = rect.width, rect.height
+        else:
+            if orientation == "landscape":
+                paper_size = f"{paper_size}-l"
+            width, height = fitz.paper_size(paper_size)
         batch_size = n_row * n_col
         unit_w, unit_h = width / n_col, height / n_row
         r_tab = []
