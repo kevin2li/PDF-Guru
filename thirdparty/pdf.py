@@ -3,6 +3,8 @@ import glob
 import json
 import os
 import re
+import shutil
+import subprocess
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -10,6 +12,7 @@ from typing import List, Tuple, Union
 import fitz
 from loguru import logger
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFont, ImageOps
+from pypdf import PdfReader, PdfWriter
 from reportlab.lib import units
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -803,6 +806,96 @@ def convert_pdf_to_images(doc_path: str, page_range: str = 'all', output_path: s
 def convert_images_to_pdf(input_path: str, output_path: str = None):
     raise NotImplementedError
 
+def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path: str = None):
+    try:
+        new_doc_path = doc_path
+        COMPRESS_FLAG = False
+        # 判断是否被压缩
+        with open(doc_path, "rb") as f:
+            reader = PdfReader(f)
+            page = reader.pages[-1]
+            if page['/Contents'] == {"/Filter": "/FlateDecode"}:
+                new_doc_path = str(Path(doc_path).parent / "tmp.pdf")
+                result = subprocess.run(["C:/Users/kevin/code/wails_demo/gui_project/thirdparty/qpdf/qpdf.exe", "--qdf", "--object-streams=disable", doc_path, new_doc_path], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                logger.debug(f"stdout: {result.stdout}")
+                logger.debug(f"stderr: {result.stderr}")
+                COMPRESS_FLAG = True
+            else:
+                new_doc_path = doc_path
+        doc: fitz.Document = fitz.open(new_doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        WATERMARK_FLAG = False
+        for page_index in roi_indices:
+            page: fitz.Page = doc[page_index]
+            page.clean_contents()
+            xref = page.get_contents()[0]
+            cont = bytearray(page.read_contents())
+            if cont.find(b"/Subtype/Watermark"):
+                WATERMARK_FLAG = True
+                while True:
+                    i1 = cont.find(b"/Artifact")  # start of definition
+                    if i1 < 0: break  # none more left: done
+                    i2 = cont.find(b"EMC", i1)  # end of definition
+                    cont[i1 : i2+3] = b""  # remove the full definition source "/Artifact ... EMC"
+                doc.update_stream(xref, cont)
+        if WATERMARK_FLAG:
+            if output_path is None:
+                p = Path(doc_path)
+                output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
+            doc.ez_save(output_path)
+        else:
+            raise ValueError("没有找到水印，请尝试其他方式!")
+        doc.close()
+        if COMPRESS_FLAG:
+            os.remove(new_doc_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: str = None):
+    try:
+        with open(doc_path, "rb") as f:
+            reader = PdfReader(f)
+            writer = PdfWriter()
+            page = reader.pages[wm_page_number]
+            logger.debug(page['/Contents'])
+            if "/Contents" in page and  isinstance(page['/Contents'], list):
+                for i, v in enumerate(page['/Contents']):
+                    tmp_reader = PdfReader(f)
+                    tmp_page = tmp_reader.pages[wm_page_number]
+                    del tmp_page['/Contents'][i]
+                    writer.add_page(tmp_page)
+                if outpath is None:
+                    p = Path(doc_path)
+                    outpath = str(p.parent / f"{p.stem}-人工识别水印.pdf")
+                with open(outpath, "wb") as f2:
+                    writer.write(f2)
+            else:
+                raise ValueError("没有找到水印，请尝试其他方式!")
+    except:
+        raise ValueError(traceback.format_exc())
+
+def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: str, output_path: str = None):
+    try:
+        with open(doc_path, "rb") as f:
+            reader = PdfReader(f)
+            writer = PdfWriter()
+            roi_indices = parse_range(page_range, len(reader.pages))
+            for page_index in roi_indices:
+                page = reader.pages[page_index]
+                logger.debug(page['/Contents'])
+                wm_index.sort(reverse=True)
+                for i in wm_index:
+                    logger.debug(i)
+                    del page['/Contents'][i]
+                writer.add_page(page)
+            if output_path is None:
+                p = Path(doc_path)
+                outpath = str(p.parent / f"{p.stem}-去水印版.pdf")
+            with open(outpath, "wb") as f2:
+                writer.write(f2)
+    except:
+        raise ValueError(traceback.format_exc())
+
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
@@ -921,18 +1014,37 @@ def main():
 
     # 水印子命令
     watermark_parser = sub_parsers.add_parser("watermark", help="水印", description="添加文本水印")
-    watermark_parser.add_argument("input_path", type=str, help="pdf文件路径")
-    watermark_parser.add_argument("--mark-text", type=str, required=True, dest="mark_text", help="水印文本")
-    watermark_parser.add_argument("--font-family", type=str, dest="font_family", help="水印字体路径")
-    watermark_parser.add_argument("--font-size", type=int, default=50, dest="font_size", help="水印字体大小")
-    watermark_parser.add_argument("--color", type=str, default="#808080", dest="color", help="水印文本颜色")
-    watermark_parser.add_argument("--angle", type=int, default=30, dest="angle", help="水印旋转角度")
-    watermark_parser.add_argument("--space", type=int, default=75, dest="space", help="水印文本间距")
-    watermark_parser.add_argument("--opacity", type=float, default=0.15, dest="opacity", help="水印不透明度")
-    watermark_parser.add_argument("--font-height-crop", type=str, default="1.2", dest="font_height_crop")
-    watermark_parser.add_argument("--quality", type=int, default=80, dest="quality", help="水印图片保存质量")
-    watermark_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     watermark_parser.set_defaults(which='watermark')
+
+    watermark_subparsers = watermark_parser.add_subparsers()
+    watermark_add_parser= watermark_subparsers.add_parser("add", help="添加水印")
+    watermark_add_parser.set_defaults(watermark_which='add')
+    watermark_add_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    watermark_add_parser.add_argument("--mark-text", type=str, required=True, dest="mark_text", help="水印文本")
+    watermark_add_parser.add_argument("--font-family", type=str, dest="font_family", help="水印字体路径")
+    watermark_add_parser.add_argument("--font-size", type=int, default=50, dest="font_size", help="水印字体大小")
+    watermark_add_parser.add_argument("--color", type=str, default="#808080", dest="color", help="水印文本颜色")
+    watermark_add_parser.add_argument("--angle", type=int, default=30, dest="angle", help="水印旋转角度")
+    watermark_add_parser.add_argument("--space", type=int, default=75, dest="space", help="水印文本间距")
+    watermark_add_parser.add_argument("--opacity", type=float, default=0.15, dest="opacity", help="水印不透明度")
+    watermark_add_parser.add_argument("--font-height-crop", type=str, default="1.2", dest="font_height_crop")
+    watermark_add_parser.add_argument("--quality", type=int, default=80, dest="quality", help="水印图片保存质量")
+    watermark_add_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    watermark_remove_parser = watermark_subparsers.add_parser("remove", help="删除水印")
+    watermark_remove_parser.set_defaults(watermark_which='remove')
+    watermark_remove_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    watermark_remove_parser.add_argument("--method", type=str, choices=['type', 'index'], default="type", help="删除方式")
+    watermark_remove_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    watermark_remove_parser.add_argument("--wm_index", type=int, nargs="+", help="水印元素所有索引")
+    watermark_remove_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    watermark_detect_parser = watermark_subparsers.add_parser("detect", help="检测水印")
+    watermark_detect_parser.set_defaults(watermark_which='detect')
+    watermark_detect_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    watermark_detect_parser.add_argument("--wm_index", type=int, default=0, help="水印所在页码")
+    watermark_detect_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
 
     # 压缩子命令
     compress_parser = sub_parsers.add_parser("compress", help="压缩", description="压缩pdf文件")
@@ -1004,7 +1116,6 @@ def main():
     convert_parser.add_argument("--target-type", type=str, choices=['png', "svg", "docx"], default="png", help="目标类型")
     convert_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
-
     args = parser.parse_args()
     logger.debug(args)
     if args.which == "merge":
@@ -1074,20 +1185,29 @@ def main():
     elif args.which == "convert":
         pass
     elif args.which == "watermark":
-        mark_args = {
-            "font_family": args.font_family,
-            "size": args.font_size,
-            "space": args.space,
-            "angle": args.angle,
-            "color": args.color,
-            "opacity": args.opacity,
-            "font_height_crop": "1.2",
-        }
-        if args.input_path.endswith(".pdf"):
-            # add_mark_to_pdf(doc_path=args.input_path, output_path=args.output, mark_text=args.mark_text, quality=args.quality, **mark_args)
-            pass
-        else:
-            raise ValueError("不支持的文件格式!")
+        if args.watermark_which == "add":
+            mark_args = {
+                "font_family": args.font_family,
+                "size": args.font_size,
+                "space": args.space,
+                "angle": args.angle,
+                "color": args.color,
+                "opacity": args.opacity,
+                "font_height_crop": "1.2",
+            }
+            if args.input_path.endswith(".pdf"):
+                # add_mark_to_pdf(doc_path=args.input_path, output_path=args.output, mark_text=args.mark_text, quality=args.quality, **mark_args)
+                pass
+            else:
+                raise ValueError("不支持的文件格式!")
+        elif args.watermark_which == "remove":
+            if args.method == "type":
+                remove_watermark_by_type(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
+            elif args.method == "index":
+                remove_watermark_by_index(doc_path=args.input_path, wm_index=args.wm_index, page_range=args.page_range, output_path=args.output)
+        elif args.watermark_which == "detect":
+            detect_watermark_index_helper(doc_path=args.input_path, wm_page_number=args.wm_index, outpath=args.output)
+
 
 def create_wartmark(
         content:str,
@@ -1114,8 +1234,11 @@ def create_wartmark(
 
 if __name__ == "__main__":
     main()
-    # print(parse_range("1-4", 10, is_reverse=True))
-    # extract_pdf_images(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-decrypt.pdf")
-    # print(convert_length(540, "pt", "in"))
-    # print(convert_length(33.87, "cm", "pt"))
-    # print(convert_length(33.87, "cm", "mm"))
+    # remove_watermark_by_index(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-decrypt.pdf", [-2], "all")
+    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\新东方.pdf", "all")
+    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\迅捷PDF编辑器v2.0使用手册.pdf", "all")
+    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\test-wm.pdf", "all")
+    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\2022年中级注册安全工程师《专业实务-建筑》考试真题及答案解析.pdf", "all")
+    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题.pdf", "all")
+    # remove_watermark_by_index(r"C:\Users\kevin\Downloads\test-wm.pdf", [3,4], "all")
+    # detect_watermark_index_helper(r"C:\Users\kevin\Downloads\tmp.pdf", 0)

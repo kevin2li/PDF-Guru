@@ -1051,3 +1051,77 @@ func (a *App) CropPDFByMargin(inFile string, outFile string, margin []float32, u
 	}
 	return nil
 }
+
+func (a *App) RemoveWatermarkByType(inFile string, outFile string, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, pages: %s\n", inFile, outFile, pages)
+	args := []string{"watermark", "remove", "--method", "type"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) RemoveWatermarkByIndex(inFile string, outFile string, wmIndex []int, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, wmIndex: %v, pages: %s\n", inFile, outFile, wmIndex, pages)
+	args := []string{"watermark", "remove"}
+	args = append(args, inFile)
+	args = append(args, "--method", "index")
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	args = append(args, "--wm_index")
+	for _, v := range wmIndex {
+		args = append(args, fmt.Sprintf("%d", v))
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) DetectWatermarkByIndex(inFile string, outFile string, wmIndex int) error {
+	fmt.Printf("inFile: %s, outFile: %s, wmIndex: %d\n", inFile, outFile, wmIndex)
+	args := []string{"watermark", "detect"}
+	args = append(args, inFile)
+	args = append(args, "--wm_index")
+	args = append(args, fmt.Sprintf("%d", wmIndex))
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+

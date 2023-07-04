@@ -79,11 +79,43 @@
                         </a-input-number>
                     </a-space>
                 </a-form-item>
+                <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
+                    label="页码范围">
+                    <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                </a-form-item>
             </div>
-            <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
-                label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
-            </a-form-item>
+            <div v-if="formState.op === 'remove'">
+                <a-form-item name="remove_method" label="去水印方法">
+                    <a-radio-group v-model:value="formState.remove_method">
+                        <a-radio value="type">自动查找水印去除</a-radio>
+                        <a-radio value="index">人工识别水印索引</a-radio>
+                    </a-radio-group>
+                </a-form-item>
+                <div v-if="formState.remove_method === 'type'">
+                    <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
+                        label="页码范围">
+                        <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                    </a-form-item>
+                </div>
+                <div v-if="formState.remove_method === 'index'">
+                    <a-form-item name="step" label="步骤">
+                        <a-radio-group v-model:value="formState.step">
+                            <a-radio style="display: flex;height:30px;lineHeight:30px;" value="1">步骤一：识别水印索引</a-radio>
+                            <a-radio style="display: flex;height:30px;lineHeight:30px;" value="2">步骤二：删除水印</a-radio>
+                        </a-radio-group>
+                    </a-form-item>
+                    <a-form-item name="page" label="含水印页码" v-if="formState.step === '1'">
+                        <a-input v-model:value="formState.wm_index" placeholder="包含水印的页码，1页即可"></a-input>
+                    </a-form-item>
+                    <a-form-item name="page" label="水印索引" v-if="formState.step === '2'">
+                        <a-input v-model:value="formState.wm_index" placeholder="多个数字用英文逗号隔开, e.g. 5"></a-input>
+                    </a-form-item>
+                    <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
+                        label="页码范围" v-if="formState.step === '2'">
+                        <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                    </a-form-item>
+                </div>
+            </div>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
                 :help="validateHelp.input">
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
@@ -101,7 +133,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, WatermarkPDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, WatermarkPDF, RemoveWatermarkByIndex, RemoveWatermarkByType, DetectWatermarkByIndex } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { WatermarkState } from "../data";
@@ -125,6 +157,9 @@ export default defineComponent({
             quaility: 80,
             rotate: 30,
             space: 75,
+            remove_method: "type",
+            step: "1",
+            wm_index: ""
         });
 
         const validateStatus = reactive({
@@ -202,7 +237,36 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(WatermarkPDF, [formState.input, formState.output, formState.text, formState.font_family, formState.font_size, formState.font_color, formState.rotate, formState.space, formState.font_opacity, formState.quaility]);
+            switch (formState.op) {
+                case "add": {
+                    await handleOps(WatermarkPDF, [formState.input, formState.output, formState.text, formState.font_family, formState.font_size, formState.font_color, formState.rotate, formState.space, formState.font_opacity, formState.quaility]);
+                    break;
+                }
+                case "remove": {
+                    switch (formState.remove_method) {
+                        case "type": {
+                            await handleOps(RemoveWatermarkByType, [formState.input, formState.output, formState.page]);
+                            break;
+                        }
+                        case "index": {
+                            switch (formState.step) {
+                                case "1": {
+                                    let wm_index = formState.wm_index.split(",").map((item) => parseInt(item.trim()));
+                                    await handleOps(DetectWatermarkByIndex, [formState.input, formState.output, wm_index[0]]);
+                                    break;
+                                }
+                                case "2": {
+                                    let wm_index = formState.wm_index.split(",").map((item) => parseInt(item.trim()) - 1);
+                                    await handleOps(RemoveWatermarkByIndex, [formState.input, formState.output, wm_index, formState.page]);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
             confirmLoading.value = false;
         }
         const onFinish = async () => {

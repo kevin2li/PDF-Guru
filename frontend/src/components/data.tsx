@@ -93,6 +93,9 @@ interface WatermarkState {
     quaility: number;
     rotate: number;
     space: number;
+    remove_method: string;
+    step: string;
+    wm_index: string;
 }
 
 interface ConvertState {

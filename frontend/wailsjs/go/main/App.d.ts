@@ -28,6 +28,8 @@ export function DecryptPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function DeletePDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function DetectWatermarkByIndex(arg1:string,arg2:string,arg3:number):Promise<void>;
+
 export function EncryptPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>):Promise<void>;
 
 export function ExtractBookmark(arg1:string,arg2:string,arg3:string):Promise<void>;
@@ -45,6 +47,10 @@ export function LoadConfig():Promise<main.MyConfig>;
 export function MergePDF(arg1:Array<string>,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function OCR(arg1:string,arg2:string,arg3:string,arg4:string,arg5:boolean):Promise<void>;
+
+export function RemoveWatermarkByIndex(arg1:string,arg2:string,arg3:Array<number>,arg4:string):Promise<void>;
+
+export function RemoveWatermarkByType(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function ReorderPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 

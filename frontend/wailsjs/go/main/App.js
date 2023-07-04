@@ -54,6 +54,10 @@ export function DeletePDF(arg1, arg2, arg3) {
   return window['go']['main']['App']['DeletePDF'](arg1, arg2, arg3);
 }
 
+export function DetectWatermarkByIndex(arg1, arg2, arg3) {
+  return window['go']['main']['App']['DetectWatermarkByIndex'](arg1, arg2, arg3);
+}
+
 export function EncryptPDF(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['EncryptPDF'](arg1, arg2, arg3, arg4, arg5);
 }
@@ -88,6 +92,14 @@ export function MergePDF(arg1, arg2, arg3, arg4) {
 
 export function OCR(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['OCR'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function RemoveWatermarkByIndex(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['RemoveWatermarkByIndex'](arg1, arg2, arg3, arg4);
+}
+
+export function RemoveWatermarkByType(arg1, arg2, arg3) {
+  return window['go']['main']['App']['RemoveWatermarkByType'](arg1, arg2, arg3);
 }
 
 export function ReorderPDF(arg1, arg2, arg3) {
