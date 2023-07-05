@@ -74,7 +74,7 @@ export function SplitPDFByPage(arg1:string,arg2:string,arg3:string):Promise<void
 
 export function TransformBookmark(arg1:string,arg2:string,arg3:boolean,arg4:number,arg5:boolean):Promise<void>;
 
-export function WatermarkPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:number,arg6:string,arg7:number,arg8:number,arg9:number,arg10:number):Promise<void>;
+export function WatermarkPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:number,arg6:string,arg7:number,arg8:number,arg9:number,arg10:number,arg11:number,arg12:number,arg13:boolean):Promise<void>;
 
 export function WriteBookmarkByFile(arg1:string,arg2:string,arg3:string,arg4:number):Promise<void>;
 

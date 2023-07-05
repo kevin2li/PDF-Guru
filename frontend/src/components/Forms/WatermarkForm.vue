@@ -16,8 +16,8 @@
                         <a-radio value="image" disabled>图片</a-radio>
                     </a-radio-group>
                 </a-form-item>
-                <a-form-item name="watermark_text" label="水印文本">
-                    <a-input v-model:value="formState.text" placeholder="e.g. 这是水印" allow-clear />
+                <a-form-item name="text" label="水印文本">
+                    <a-input v-model:value="formState.text" placeholder="e.g. 内部资料" allow-clear />
                 </a-form-item>
                 <a-form-item name="watermark_font_size" label="字体属性">
                     <a-space size="large">
@@ -54,6 +54,7 @@
                             </a-input>
                         </a-tooltip>
                     </a-space>
+
                 </a-form-item>
                 <a-form-item name="watermark_font_opacity" label="水印属性">
                     <a-space size="large">
@@ -67,14 +68,39 @@
                                 旋转角度
                             </template>
                         </a-input-number>
-                        <a-input-number v-model:value="formState.space" :min="0" :max="360">
+
+                    </a-space>
+                </a-form-item>
+                <a-form-item label="位置">
+                    <a-space size="large">
+                        <a-input-number v-model:value="formState.x_offset">
                             <template #addonBefore>
-                                文字间距
+                                水平偏移量
                             </template>
                         </a-input-number>
-                        <a-input-number v-model:value="formState.quaility" :min="0" :max="360">
+                        <a-input-number v-model:value="formState.y_offset">
                             <template #addonBefore>
-                                图片质量
+                                垂直偏移量
+                            </template>
+                        </a-input-number>
+                    </a-space>
+                </a-form-item>
+                <a-form-item label="排布">
+                    <a-radio-group v-model:value="formState.multiple_mode">
+                        <a-radio :value="false">单行</a-radio>
+                        <a-radio :value="true">多行</a-radio>
+                    </a-radio-group>
+                </a-form-item>
+                <a-form-item label="多行水印" v-if="formState.multiple_mode">
+                    <a-space size="large">
+                        <a-input-number v-model:value="formState.num_lines">
+                            <template #addonBefore>
+                                行数
+                            </template>
+                        </a-input-number>
+                        <a-input-number v-model:value="formState.line_spacing" :min="0" :max="100">
+                            <template #addonBefore>
+                                行间距
                             </template>
                         </a-input-number>
                     </a-space>
@@ -107,8 +133,9 @@
                     <a-form-item name="page" label="含水印页码" v-if="formState.step === '1'">
                         <a-input v-model:value="formState.wm_index" placeholder="包含水印的页码，1页即可"></a-input>
                     </a-form-item>
-                    <a-form-item name="page" label="水印索引" v-if="formState.step === '2'">
-                        <a-input v-model:value="formState.wm_index" placeholder="多个数字用英文逗号隔开, e.g. 5"></a-input>
+                    <a-form-item name="page" label="水印索引" v-if="formState.step === '2'"
+                        :rules="[{ required: true, message: '请提供水印索引' }]">
+                        <a-input v-model:value="formState.wm_index" placeholder="多个数字用英文逗号隔开,支持负数(表示倒数页) e.g. -1"></a-input>
                     </a-form-item>
                     <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                         label="页码范围" v-if="formState.step === '2'">
@@ -136,10 +163,13 @@ import { message, Modal } from 'ant-design-vue';
 import { CheckFileExists, CheckRangeFormat, WatermarkPDF, RemoveWatermarkByIndex, RemoveWatermarkByType, DetectWatermarkByIndex } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
+import { FontSizeOutlined, FontColorsOutlined } from '@ant-design/icons-vue';
 import type { WatermarkState } from "../data";
 import { handleOps } from "../data";
 export default defineComponent({
     components: {
+        FontSizeOutlined,
+        FontColorsOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -151,15 +181,19 @@ export default defineComponent({
             type: "text",
             text: "",
             font_family: "msyh.ttc",
-            font_size: 14,
-            font_color: "#808080",
-            font_opacity: 0.15,
-            quaility: 80,
-            rotate: 30,
-            space: 75,
+            font_size: 50,
+            font_color: "#000000",
+            font_opacity: 0.3,
+            rotate: 45,
+            num_lines: 1,
+            multiple_mode: false,
+            x_offset: 0,
+            y_offset: 0,
+            line_spacing: 1,
             remove_method: "type",
             step: "1",
-            wm_index: ""
+            wm_index: "",
+            lines: 0
         });
 
         const validateStatus = reactive({
@@ -228,6 +262,7 @@ export default defineComponent({
         const rules: Record<string, Rule[]> = {
             input: [{ required: true, validator: validateFileExists, trigger: 'change' }],
             page: [{ validator: validateRange, trigger: 'change' }],
+            text: [{ required: true, message: "请填写水印文本", trigger: 'change' }]
         };
         // 重置表单
         const resetFields = () => {
@@ -239,7 +274,7 @@ export default defineComponent({
             confirmLoading.value = true;
             switch (formState.op) {
                 case "add": {
-                    await handleOps(WatermarkPDF, [formState.input, formState.output, formState.text, formState.font_family, formState.font_size, formState.font_color, formState.rotate, formState.space, formState.font_opacity, formState.quaility]);
+                    await handleOps(WatermarkPDF, [formState.input, formState.output, formState.text, formState.font_family, formState.font_size, formState.font_color, formState.rotate, formState.font_opacity, formState.num_lines, formState.line_spacing, formState.x_offset, formState.y_offset, formState.multiple_mode]);
                     break;
                 }
                 case "remove": {
@@ -252,7 +287,7 @@ export default defineComponent({
                             switch (formState.step) {
                                 case "1": {
                                     let wm_index = formState.wm_index.split(",").map((item) => parseInt(item.trim()));
-                                    await handleOps(DetectWatermarkByIndex, [formState.input, formState.output, wm_index[0]]);
+                                    await handleOps(DetectWatermarkByIndex, [formState.input, formState.output, wm_index[0] - 1]);
                                     break;
                                 }
                                 case "2": {

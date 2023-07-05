@@ -3,12 +3,12 @@ import glob
 import json
 import os
 import re
-import shutil
+import math
 import subprocess
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union
-
+import random
 import fitz
 from loguru import logger
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFont, ImageOps
@@ -17,10 +17,9 @@ from reportlab.lib import units
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
+import colorsys
 
-pdfmetrics.registerFont(TTFont('msyh','msyh.ttc'))
-pdfmetrics.registerFont(TTFont('simkai','simkai.ttf'))
-
+# 工具类函数
 def parse_range(page_range: str, page_count: int, is_multi_range: bool = False, is_reverse: bool = False, is_unique: bool = True):
     # e.g.: "1-3,5-6,7-10", "1,4-5", "3-N", "even", "odd"
     page_range = page_range.strip()
@@ -117,6 +116,17 @@ def convert_length(length, from_unit, to_unit):
 
     pt_length = length / units[from_unit]
     return pt_length * units[to_unit]
+
+def hex_to_rgb(hex_color):
+    # 去掉 # 号并解析为十六进制数值
+    hex_value = hex_color.lstrip("#")
+    # 解析 R、G、B 三个十六进制数值
+    r, g, b = tuple(int(hex_value[i:i+2], 16) for i in (0, 2, 4))
+    # 将 R、G、B 转换为 RGB 颜色值
+    rgb_color = colorsys.rgb_to_hsv(r/255, g/255, b/255)
+    return tuple(round(c * 255) for c in colorsys.hsv_to_rgb(*rgb_color))
+
+# 功能类函数
 
 def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, is_reverse: bool = False):
     try:
@@ -468,7 +478,7 @@ def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4"
     try:
         doc: fitz.Document = fitz.open(doc_path)
         if paper_size == "same":
-            rect = doc[0].rect
+            rect = doc[-1].rect
             width, height = rect.width, rect.height
         else:
             if orientation == "landscape":
@@ -806,6 +816,91 @@ def convert_pdf_to_images(doc_path: str, page_range: str = 'all', output_path: s
 def convert_images_to_pdf(input_path: str, output_path: str = None):
     raise NotImplementedError
 
+def create_wartmark(
+        wm_text:str,
+        width: Union[int, float],
+        height: Union[int, float],
+        font: str = "msyh.ttc",
+        fontsize: int = 55,
+        angle: Union[int, float] = 45,
+        text_stroke_color_rgb: Tuple[int, int, int] = (0, 1, 0),
+        text_fill_color_rgb: Tuple[int, int, int] = (1, 0, 0),
+        text_fill_alpha: Union[int, float] = 0.3,
+        num_lines: Union[int, float] = 1,
+        line_spacing: Union[int, float] = 2,
+        x_offset: Union[int, float] = 0,
+        y_offset: Union[int, float] = 0,
+        multiple_mode: bool = False,
+        output_path:str = None,
+    ) -> None:
+    if output_path is None:
+        output_path = "watermark.pdf"
+    c = canvas.Canvas(output_path,pagesize=(width,height))
+    pdfmetrics.registerFont(TTFont('custom_font',font))
+
+    parts = wm_text.split("\n")
+    max_part = max(parts, key=lambda x: len(x))
+    wm_length = c.stringWidth(max_part, "custom_font", fontsize)
+    font_length = c.stringWidth("中", "custom_font", fontsize)
+    line_height = c.stringWidth(max_part[0], "custom_font", fontsize)*1.1
+    wm_height = line_height * len(parts)
+    
+    c.setFont("custom_font", fontsize)
+    c.setStrokeColorRGB(*text_stroke_color_rgb)
+    c.setFillColorRGB(*text_fill_color_rgb)
+    c.setFillAlpha(text_fill_alpha)
+    c.translate(width/2, height/2)
+    c.rotate(angle)
+
+    diagonal_length = math.sqrt(width**2 + height**2) # diagonal length of the paper
+    if multiple_mode:
+        start_y_list = list(map(lambda x: x*wm_height*(line_spacing+1), range(num_lines)))
+        center_y = sum(start_y_list) / len(start_y_list)
+        start_y_list = list(map(lambda x: x - center_y + y_offset, start_y_list))
+        logger.debug(start_y_list)
+        for start_y in start_y_list:
+            start_x = -diagonal_length + x_offset
+            while start_x < diagonal_length:
+                for i, part in enumerate(parts):
+                    c.drawString(start_x,start_y-i*line_height,part)
+                start_x += wm_length+font_length
+    else:
+        start_x = - wm_length/2 + x_offset
+        start_y = - wm_height/2 + y_offset
+        for i, part in enumerate(parts):
+            c.drawString(start_x,start_y-i*line_height,part)
+    c.save()
+
+def watermark_pdf(doc_path: str, wm_text: str, output_path: str = None, **args):
+    try:
+        doc = fitz.open(doc_path)
+        page = doc[-1]
+        p = Path(doc_path)
+        tmp_wm_path = str(p.parent / "tmp_wm.pdf")
+        create_wartmark(wm_text=wm_text, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
+        wm_doc = fitz.open(tmp_wm_path)
+        writer = fitz.open()
+        for i in range(doc.page_count):
+            page: fitz.Page = doc[i]
+            new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
+            # 混淆顺序
+            if random.random() > 0.5:
+                new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
+                new_page.show_pdf_page(new_page.rect, doc, page.number)
+            else:
+                new_page.show_pdf_page(new_page.rect, doc, page.number)
+                new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
+            
+        if output_path is None:
+            output_path = p.parent / f"{p.stem}-加水印版.pdf"
+        writer.save(output_path)
+        wm_doc.close()
+        doc.close()
+        writer.close()
+        os.remove(tmp_wm_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
 def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         new_doc_path = doc_path
@@ -816,7 +911,7 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
             page = reader.pages[-1]
             if page['/Contents'] == {"/Filter": "/FlateDecode"}:
                 new_doc_path = str(Path(doc_path).parent / "tmp.pdf")
-                result = subprocess.run(["C:/Users/kevin/code/wails_demo/gui_project/thirdparty/qpdf/qpdf.exe", "--qdf", "--object-streams=disable", doc_path, new_doc_path], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                result = subprocess.run(["./qpdf/qpdf.exe", "--qdf", "--object-streams=disable", doc_path, new_doc_path], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
                 logger.debug(f"stdout: {result.stdout}")
                 logger.debug(f"stderr: {result.stderr}")
                 COMPRESS_FLAG = True
@@ -879,11 +974,14 @@ def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: st
         with open(doc_path, "rb") as f:
             reader = PdfReader(f)
             writer = PdfWriter()
+            page_count = len(reader.pages)
             roi_indices = parse_range(page_range, len(reader.pages))
+            for i in range(len(wm_index)):
+                if wm_index[i] < 0:
+                    wm_index[i] = page_count + wm_index[i]
+            wm_index.sort(reverse=True)
             for page_index in roi_indices:
                 page = reader.pages[page_index]
-                logger.debug(page['/Contents'])
-                wm_index.sort(reverse=True)
                 for i in wm_index:
                     logger.debug(i)
                     del page['/Contents'][i]
@@ -1023,12 +1121,14 @@ def main():
     watermark_add_parser.add_argument("--mark-text", type=str, required=True, dest="mark_text", help="水印文本")
     watermark_add_parser.add_argument("--font-family", type=str, dest="font_family", help="水印字体路径")
     watermark_add_parser.add_argument("--font-size", type=int, default=50, dest="font_size", help="水印字体大小")
-    watermark_add_parser.add_argument("--color", type=str, default="#808080", dest="color", help="水印文本颜色")
+    watermark_add_parser.add_argument("--color", type=str, default="#000000", dest="color", help="水印文本颜色")
     watermark_add_parser.add_argument("--angle", type=int, default=30, dest="angle", help="水印旋转角度")
-    watermark_add_parser.add_argument("--space", type=int, default=75, dest="space", help="水印文本间距")
-    watermark_add_parser.add_argument("--opacity", type=float, default=0.15, dest="opacity", help="水印不透明度")
-    watermark_add_parser.add_argument("--font-height-crop", type=str, default="1.2", dest="font_height_crop")
-    watermark_add_parser.add_argument("--quality", type=int, default=80, dest="quality", help="水印图片保存质量")
+    watermark_add_parser.add_argument("--opacity", type=float, default=0.3, dest="opacity", help="水印不透明度")
+    watermark_add_parser.add_argument("--line-spacing", type=float, default=1, dest="line_spacing", help="水印行间距")
+    watermark_add_parser.add_argument("--x-offset", type=float, default=0, dest="x_offset", help="水印x轴偏移量")
+    watermark_add_parser.add_argument("--y-offset", type=float, default=0, dest="y_offset", help="水印y轴偏移量")
+    watermark_add_parser.add_argument("--multiple-mode", action="store_true", dest="multiple_mode", help="多行水印模式")
+    watermark_add_parser.add_argument("--num-lines", type=int, default=1, dest="num_lines", help="多行水印行数")
     watermark_add_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     watermark_remove_parser = watermark_subparsers.add_parser("remove", help="删除水印")
@@ -1186,20 +1286,8 @@ def main():
         pass
     elif args.which == "watermark":
         if args.watermark_which == "add":
-            mark_args = {
-                "font_family": args.font_family,
-                "size": args.font_size,
-                "space": args.space,
-                "angle": args.angle,
-                "color": args.color,
-                "opacity": args.opacity,
-                "font_height_crop": "1.2",
-            }
-            if args.input_path.endswith(".pdf"):
-                # add_mark_to_pdf(doc_path=args.input_path, output_path=args.output, mark_text=args.mark_text, quality=args.quality, **mark_args)
-                pass
-            else:
-                raise ValueError("不支持的文件格式!")
+            color = hex_to_rgb(args.color)
+            watermark_pdf(doc_path=args.input_path, wm_text=args.mark_text, output_path=args.output, font=args.font_family, fontsize=args.font_size, angle=args.angle, text_stroke_color_rgb=(0, 0, 0), text_fill_color_rgb=color, text_fill_alpha=args.opacity, num_lines=args.num_lines, line_spacing=args.line_spacing, multiple_mode=args.multiple_mode, x_offset=args.x_offset, y_offset=args.y_offset)
         elif args.watermark_which == "remove":
             if args.method == "type":
                 remove_watermark_by_type(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
@@ -1208,37 +1296,22 @@ def main():
         elif args.watermark_which == "detect":
             detect_watermark_index_helper(doc_path=args.input_path, wm_page_number=args.wm_index, outpath=args.output)
 
-
-def create_wartmark(
-        content:str,
-        path:str,
-        width: Union[int, float],
-        height: Union[int, float],
-        font: str,
-        fontsize: int,
-        angle: Union[int, float] = 45,
-        text_stroke_color_rgb: Tuple[int, int, int] = (0, 0, 0),
-        text_fill_color_rgb: Tuple[int, int, int] = (0, 0, 0),
-        text_fill_alpha: Union[int, float] = 1
-    ) -> None:
-    c = canvas.Canvas(path,pagesize=(width*units.mm,height*units.mm))
-    c.translate(0.1*width*units.mm,0.1*height*units.mm)
-    c.rotate(angle)
-    c.setFont(font,fontsize)
-    c.setStrokeColorRGB(*text_stroke_color_rgb)
-    c.setFillColorRGB(*text_fill_color_rgb)
-    c.setFillAlpha(text_fill_alpha)
-    c.drawString(0,0,content)
-    c.setCropBox([0, 0, 100*units.mm, 30*units.mm])
-    c.save()
-
 if __name__ == "__main__":
     main()
-    # remove_watermark_by_index(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-decrypt.pdf", [-2], "all")
-    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\新东方.pdf", "all")
-    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\迅捷PDF编辑器v2.0使用手册.pdf", "all")
-    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\test-wm.pdf", "all")
-    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\2022年中级注册安全工程师《专业实务-建筑》考试真题及答案解析.pdf", "all")
-    # remove_watermark_by_type(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题.pdf", "all")
-    # remove_watermark_by_index(r"C:\Users\kevin\Downloads\test-wm.pdf", [3,4], "all")
-    # detect_watermark_index_helper(r"C:\Users\kevin\Downloads\tmp.pdf", 0)
+    # create_wartmark(
+    #     wm_text         = '内部资料',
+    #     width           = 200,
+    #     height          = 200,
+    #     font            = 'msyh.ttc',
+    #     fontsize        = 55,
+    #     angle           = -90,
+    #     text_fill_alpha = 0.3,
+    #     num_lines       = 3,
+    #     line_spacing    = 1,
+    #     multiple_mode   = False,
+    #     x_offset        = 0,
+    #     y_offset        = 0,
+    #     output_path     = r'C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\水印.pdf',
+    # ) 
+
+    # watermark_pdf("C:/Users/kevin/Downloads/2023考研英语一真题-去水印版.pdf", "内部资料", output_path=None, num_lines=3, line_spacing=1, multiple_mode=False, x_offset=0, y_offset=0)

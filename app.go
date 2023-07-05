@@ -779,13 +779,13 @@ func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, a
 	return nil
 }
 
-func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontFamily string, fontSize int, fontColor string, angle int, space int, opacity float32, quality int) error {
-	fmt.Printf("inFile: %s, outFile: %s, markText: %s, fontFamily: %s, fontSize: %d, fontColor: %s, angle: %d, space: %d, opacity: %f, quality: %d\n", inFile, outFile, markText, fontFamily, fontSize, fontColor, angle, space, opacity, quality)
+func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontFamily string, fontSize int, fontColor string, angle int, opacity float32, num_lines int, line_spacing float32, x_offset float32, y_offset float32, multiple_mode bool) error {
+	fmt.Printf("inFile: %s, outFile: %s, markText: %s, fontFamily: %s, fontSize: %d, fontColor: %s, angle: %d, opacity: %f, num_lines: %d, line_spacing: %f, x_offset: %f, y_offset: %f, multiple_mode: %v\n", inFile, outFile, markText, fontFamily, fontSize, fontColor, angle, opacity, num_lines, line_spacing, x_offset, y_offset, multiple_mode)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		fmt.Println(err)
 		return err
 	}
-	args := []string{"watermark"}
+	args := []string{"watermark", "add"}
 	if markText != "" {
 		args = append(args, "--mark-text", markText)
 	}
@@ -797,9 +797,14 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 	}
 	args = append(args, "--font-size", fmt.Sprintf("%d", fontSize))
 	args = append(args, "--angle", fmt.Sprintf("%d", angle))
-	args = append(args, "--space", fmt.Sprintf("%d", space))
 	args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
-	args = append(args, "--quality", fmt.Sprintf("%d", quality))
+	args = append(args, "--num-lines", fmt.Sprintf("%d", num_lines))
+	args = append(args, "--line-spacing", fmt.Sprintf("%f", line_spacing))
+	args = append(args, "--x-offset", fmt.Sprintf("%f", x_offset))
+	args = append(args, "--y-offset", fmt.Sprintf("%f", y_offset))
+	if multiple_mode {
+		args = append(args, "--multiple-mode")
+	}
 	if outFile != "" {
 		args = append(args, "-o", outFile)
 	}

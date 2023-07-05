@@ -90,9 +90,13 @@ interface WatermarkState {
     font_size: number;
     font_color: string;
     font_opacity: number;
-    quaility: number;
+    num_lines: number;
+    line_spacing: number;
+    x_offset: number;
+    y_offset: number;
+    multiple_mode: boolean;
     rotate: number;
-    space: number;
+    lines: number;
     remove_method: string;
     step: string;
     wm_index: string;
