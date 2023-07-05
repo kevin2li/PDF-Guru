@@ -779,8 +779,8 @@ func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, a
 	return nil
 }
 
-func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontFamily string, fontSize int, fontColor string, angle int, opacity float32, num_lines int, line_spacing float32, x_offset float32, y_offset float32, multiple_mode bool) error {
-	fmt.Printf("inFile: %s, outFile: %s, markText: %s, fontFamily: %s, fontSize: %d, fontColor: %s, angle: %d, opacity: %f, num_lines: %d, line_spacing: %f, x_offset: %f, y_offset: %f, multiple_mode: %v\n", inFile, outFile, markText, fontFamily, fontSize, fontColor, angle, opacity, num_lines, line_spacing, x_offset, y_offset, multiple_mode)
+func (a *App) WatermarkPDFByText(inFile string, outFile string, markText string, fontFamily string, fontSize int, fontColor string, angle int, opacity float32, num_lines int, line_spacing float32, word_spacing float32, x_offset float32, y_offset float32, multiple_mode bool, pagesStr string) error {
+	fmt.Printf("inFile: %s, outFile: %s, markText: %s, fontFamily: %s, fontSize: %d, fontColor: %s, angle: %d, opacity: %f, num_lines: %d, word_spacing: %f, line_spacing: %f, x_offset: %f, y_offset: %f, multiple_mode: %v\n", inFile, outFile, markText, fontFamily, fontSize, fontColor, angle, opacity, num_lines, word_spacing, line_spacing, x_offset, y_offset, multiple_mode)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		fmt.Println(err)
 		return err
@@ -800,10 +800,86 @@ func (a *App) WatermarkPDF(inFile string, outFile string, markText string, fontF
 	args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
 	args = append(args, "--num-lines", fmt.Sprintf("%d", num_lines))
 	args = append(args, "--line-spacing", fmt.Sprintf("%f", line_spacing))
+	args = append(args, "--word-spacing", fmt.Sprintf("%f", word_spacing))
 	args = append(args, "--x-offset", fmt.Sprintf("%f", x_offset))
 	args = append(args, "--y-offset", fmt.Sprintf("%f", y_offset))
 	if multiple_mode {
 		args = append(args, "--multiple-mode")
+	}
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) WatermarkPDFByImage(inFile string, outFile string, wmPath string, angle int, opacity float32, scale float32, num_lines int, line_spacing float32, word_spacing float32, x_offset float32, y_offset float32, multiple_mode bool, pagesStr string) error {
+	fmt.Printf("inFile: %s, outFile: %s, wmPath: %s, angle: %d, opacity: %f, scale: %f, num_lines: %d, word_spacing: %f, line_spacing: %f, x_offset: %f, y_offset: %f, multiple_mode: %v\n", inFile, outFile, wmPath, angle, opacity, scale, num_lines, word_spacing, line_spacing, x_offset, y_offset, multiple_mode)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"watermark", "add", "--type", "image"}
+	if wmPath != "" {
+		args = append(args, "--wm-path", wmPath)
+	}
+	args = append(args, "--angle", fmt.Sprintf("%d", angle))
+	args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	args = append(args, "--scale", fmt.Sprintf("%f", scale))
+	args = append(args, "--num-lines", fmt.Sprintf("%d", num_lines))
+	args = append(args, "--line-spacing", fmt.Sprintf("%f", line_spacing))
+	args = append(args, "--word-spacing", fmt.Sprintf("%f", word_spacing))
+	args = append(args, "--x-offset", fmt.Sprintf("%f", x_offset))
+	args = append(args, "--y-offset", fmt.Sprintf("%f", y_offset))
+	if multiple_mode {
+		args = append(args, "--multiple-mode")
+	}
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) WatermarkPDFByPDF(inFile string, outFile string, wmPath string, pagesStr string) error {
+	fmt.Printf("inFile: %s, outFile: %s, wmPath: %s, pagesStr: %s\n", inFile, outFile, wmPath, pagesStr)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	args := []string{"watermark", "add", "--type", "pdf"}
+	if wmPath != "" {
+		args = append(args, "--wm-path", wmPath)
+	}
+
+	if pagesStr != "" {
+		args = append(args, "--page_range", pagesStr)
 	}
 	if outFile != "" {
 		args = append(args, "-o", outFile)

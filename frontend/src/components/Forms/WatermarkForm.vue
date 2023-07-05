@@ -10,101 +10,153 @@
                 </a-radio-group>
             </a-form-item>
             <div v-if="formState.op === 'add'">
-                <a-form-item name="watermark_type" label="水印类型">
+                <a-form-item name="type" label="水印类型">
                     <a-radio-group v-model:value="formState.type">
                         <a-radio value="text">文本</a-radio>
-                        <a-radio value="image" disabled>图片</a-radio>
+                        <a-radio value="image">图片</a-radio>
+                        <a-radio value="pdf">PDF</a-radio>
                     </a-radio-group>
                 </a-form-item>
-                <a-form-item name="text" label="水印文本">
-                    <a-input v-model:value="formState.text" placeholder="e.g. 内部资料" allow-clear />
-                </a-form-item>
-                <a-form-item name="watermark_font_size" label="字体属性">
-                    <a-space size="large">
-                        <a-select v-model:value="formState.font_family" style="width: 200px">
-                            <a-select-option value="msyh.ttc">微软雅黑</a-select-option>
-                            <a-select-option value="simsun.ttc">宋体</a-select-option>
-                            <a-select-option value="simhei.ttf">黑体</a-select-option>
-                            <a-select-option value="simkai.ttf">楷体</a-select-option>
-                            <a-select-option value="simfang.ttf">仿宋</a-select-option>
-                            <a-select-option value="SIMYOU.TTF">幼圆</a-select-option>
-                            <a-select-option value="STHUPO.TTF">华文琥珀</a-select-option>
-                            <a-select-option value="FZSTK.TTF">方正舒体</a-select-option>
-                            <a-select-option value="STZHONGS.TTF">华文中宋</a-select-option>
-                            <a-select-option value="arial.ttf">Arial</a-select-option>
-                            <a-select-option value="times.ttf">TimesNewRoman</a-select-option>
-                            <a-select-option value="calibri.ttf">Calibri</a-select-option>
-                            <a-select-option value="consola.ttf">Consola</a-select-option>
-                        </a-select>
-                        <a-tooltip>
-                            <template #title>字号</template>
-                            <a-input-number v-model:value="formState.font_size" :min="1">
-                                <template #prefix>
-                                    <font-size-outlined />
+                <div v-if="formState.type === 'text'">
+                    <a-form-item name="text" label="水印文本">
+                        <a-input v-model:value="formState.text" placeholder="e.g. 内部资料" allow-clear />
+                    </a-form-item>
+                    <a-form-item name="watermark_font_size" label="字体属性">
+                        <a-space size="large">
+                            <a-select v-model:value="formState.font_family" style="width: 200px">
+                                <a-select-option value="msyh.ttc">微软雅黑</a-select-option>
+                                <a-select-option value="simsun.ttc">宋体</a-select-option>
+                                <a-select-option value="simhei.ttf">黑体</a-select-option>
+                                <a-select-option value="simkai.ttf">楷体</a-select-option>
+                                <a-select-option value="simfang.ttf">仿宋</a-select-option>
+                                <a-select-option value="SIMYOU.TTF">幼圆</a-select-option>
+                                <a-select-option value="STHUPO.TTF">华文琥珀</a-select-option>
+                                <a-select-option value="FZSTK.TTF">方正舒体</a-select-option>
+                                <a-select-option value="STZHONGS.TTF">华文中宋</a-select-option>
+                                <a-select-option value="arial.ttf">Arial</a-select-option>
+                                <a-select-option value="times.ttf">TimesNewRoman</a-select-option>
+                                <a-select-option value="calibri.ttf">Calibri</a-select-option>
+                                <a-select-option value="consola.ttf">Consola</a-select-option>
+                            </a-select>
+                            <a-tooltip>
+                                <template #title>字号</template>
+                                <a-input-number v-model:value="formState.font_size" :min="1">
+                                    <template #prefix>
+                                        <font-size-outlined />
+                                    </template>
+                                </a-input-number>
+                            </a-tooltip>
+                            <a-tooltip>
+                                <template #title>字体颜色</template>
+                                <a-input v-model:value="formState.font_color" placeholder="字体颜色"
+                                    :defaultValue="formState.font_color" allow-clear>
+                                    <template #prefix>
+                                        <font-colors-outlined />
+                                    </template>
+                                </a-input>
+                            </a-tooltip>
+                        </a-space>
+                    </a-form-item>
+                    <a-form-item name="watermark_font_opacity" label="水印属性">
+                        <a-space size="large">
+                            <a-input-number v-model:value="formState.font_opacity" :min="0" :max="1" :step="0.01">
+                                <template #addonBefore>
+                                    不透明度
                                 </template>
                             </a-input-number>
-                        </a-tooltip>
-                        <a-tooltip>
-                            <template #title>字体颜色</template>
-                            <a-input v-model:value="formState.font_color" placeholder="字体颜色"
-                                :defaultValue="formState.font_color" allow-clear>
-                                <template #prefix>
-                                    <font-colors-outlined />
+                            <a-input-number v-model:value="formState.rotate" :min="0" :max="360">
+                                <template #addonBefore>
+                                    旋转角度
                                 </template>
-                            </a-input>
-                        </a-tooltip>
-                    </a-space>
+                            </a-input-number>
+                        </a-space>
+                    </a-form-item>
+                    <a-form-item label="位置">
+                        <a-space size="large">
+                            <a-input-number v-model:value="formState.x_offset">
+                                <template #addonBefore>
+                                    水平偏移量
+                                </template>
+                            </a-input-number>
+                            <a-input-number v-model:value="formState.y_offset">
+                                <template #addonBefore>
+                                    垂直偏移量
+                                </template>
+                            </a-input-number>
+                        </a-space>
+                    </a-form-item>
+                </div>
+                <div v-if="formState.type === 'image'">
+                    <a-form-item name="wm_path" hasFeedback label="水印图片路径">
+                        <a-input v-model:value="formState.wm_path" placeholder="水印图片路径" allow-clear />
+                    </a-form-item>
+                    <a-form-item name="watermark_font_opacity" label="水印属性">
+                        <a-space size="large">
+                            <a-input-number v-model:value="formState.font_opacity" :min="0" :max="1" :step="0.01">
+                                <template #addonBefore>
+                                    不透明度
+                                </template>
+                            </a-input-number>
+                            <a-input-number v-model:value="formState.rotate" :min="0" :max="360">
+                                <template #addonBefore>
+                                    旋转角度
+                                </template>
+                            </a-input-number>
+                        </a-space>
+                    </a-form-item>
+                    <a-form-item label="位置">
+                        <a-space size="large">
+                            <a-input-number v-model:value="formState.x_offset">
+                                <template #addonBefore>
+                                    水平偏移量
+                                </template>
+                            </a-input-number>
+                            <a-input-number v-model:value="formState.y_offset">
+                                <template #addonBefore>
+                                    垂直偏移量
+                                </template>
+                            </a-input-number>
+                            <a-input-number v-model:value="formState.scale" :min="0">
+                                <template #addonBefore>
+                                    缩放比例
+                                </template>
+                            </a-input-number>
+                        </a-space>
+                    </a-form-item>
+                </div>
+                <div v-if="formState.type === 'text' || formState.type === 'image'">
 
-                </a-form-item>
-                <a-form-item name="watermark_font_opacity" label="水印属性">
-                    <a-space size="large">
-                        <a-input-number v-model:value="formState.font_opacity" :min="0" :max="1" :step="0.01">
-                            <template #addonBefore>
-                                不透明度
-                            </template>
-                        </a-input-number>
-                        <a-input-number v-model:value="formState.rotate" :min="0" :max="360">
-                            <template #addonBefore>
-                                旋转角度
-                            </template>
-                        </a-input-number>
-
-                    </a-space>
-                </a-form-item>
-                <a-form-item label="位置">
-                    <a-space size="large">
-                        <a-input-number v-model:value="formState.x_offset">
-                            <template #addonBefore>
-                                水平偏移量
-                            </template>
-                        </a-input-number>
-                        <a-input-number v-model:value="formState.y_offset">
-                            <template #addonBefore>
-                                垂直偏移量
-                            </template>
-                        </a-input-number>
-                    </a-space>
-                </a-form-item>
-                <a-form-item label="排布">
-                    <a-radio-group v-model:value="formState.multiple_mode">
-                        <a-radio :value="false">单行</a-radio>
-                        <a-radio :value="true">多行</a-radio>
-                    </a-radio-group>
-                </a-form-item>
-                <a-form-item label="多行水印" v-if="formState.multiple_mode">
-                    <a-space size="large">
-                        <a-input-number v-model:value="formState.num_lines">
-                            <template #addonBefore>
-                                行数
-                            </template>
-                        </a-input-number>
-                        <a-input-number v-model:value="formState.line_spacing" :min="0" :max="100">
-                            <template #addonBefore>
-                                行间距
-                            </template>
-                        </a-input-number>
-                    </a-space>
-                </a-form-item>
+                    <a-form-item label="排布">
+                        <a-radio-group v-model:value="formState.multiple_mode">
+                            <a-radio :value="false">单行</a-radio>
+                            <a-radio :value="true">多行</a-radio>
+                        </a-radio-group>
+                    </a-form-item>
+                    <a-form-item label="多行水印" v-if="formState.multiple_mode">
+                        <a-space size="large">
+                            <a-input-number v-model:value="formState.num_lines">
+                                <template #addonBefore>
+                                    行数
+                                </template>
+                            </a-input-number>
+                            <a-input-number v-model:value="formState.line_spacing" :min="0" :max="100">
+                                <template #addonBefore>
+                                    行间距
+                                </template>
+                            </a-input-number>
+                            <a-input-number v-model:value="formState.word_spacing" :min="0" :max="100">
+                                <template #addonBefore>
+                                    相邻水印间距
+                                </template>
+                            </a-input-number>
+                        </a-space>
+                    </a-form-item>
+                </div>
+                <div v-if="formState.type === 'pdf'">
+                    <a-form-item name="wm_path" hasFeedback label="水印PDF路径">
+                        <a-input v-model:value="formState.wm_path" placeholder="水印PDF路径" allow-clear />
+                    </a-form-item>
+                </div>
                 <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                     label="页码范围">
                     <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
@@ -160,7 +212,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, WatermarkPDF, RemoveWatermarkByIndex, RemoveWatermarkByType, DetectWatermarkByIndex } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, WatermarkPDFByText, WatermarkPDFByImage, WatermarkPDFByPDF, RemoveWatermarkByIndex, RemoveWatermarkByType, DetectWatermarkByIndex } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { FontSizeOutlined, FontColorsOutlined } from '@ant-design/icons-vue';
@@ -189,11 +241,14 @@ export default defineComponent({
             multiple_mode: false,
             x_offset: 0,
             y_offset: 0,
+            word_spacing: 1,
             line_spacing: 1,
             remove_method: "type",
             step: "1",
             wm_index: "",
-            lines: 0
+            lines: 0,
+            wm_path: "",
+            scale: 1,
         });
 
         const validateStatus = reactive({
@@ -262,7 +317,8 @@ export default defineComponent({
         const rules: Record<string, Rule[]> = {
             input: [{ required: true, validator: validateFileExists, trigger: 'change' }],
             page: [{ validator: validateRange, trigger: 'change' }],
-            text: [{ required: true, message: "请填写水印文本", trigger: 'change' }]
+            text: [{ required: true, message: "请填写水印文本", trigger: 'change' }],
+            wm_path: [{ required: true, message: "请填写水印图片路径", trigger: 'change' }],
         };
         // 重置表单
         const resetFields = () => {
@@ -274,7 +330,20 @@ export default defineComponent({
             confirmLoading.value = true;
             switch (formState.op) {
                 case "add": {
-                    await handleOps(WatermarkPDF, [formState.input, formState.output, formState.text, formState.font_family, formState.font_size, formState.font_color, formState.rotate, formState.font_opacity, formState.num_lines, formState.line_spacing, formState.x_offset, formState.y_offset, formState.multiple_mode]);
+                    switch (formState.type) {
+                        case "text": {
+                            await handleOps(WatermarkPDFByText, [formState.input, formState.output, formState.text, formState.font_family, formState.font_size, formState.font_color, formState.rotate, formState.font_opacity, formState.num_lines, formState.word_spacing, formState.line_spacing, formState.x_offset, formState.y_offset, formState.multiple_mode, formState.page]);
+                            break;
+                        }
+                        case "image": {
+                            await handleOps(WatermarkPDFByImage, [formState.input, formState.output, formState.wm_path, formState.rotate, formState.font_opacity, formState.scale, formState.num_lines, formState.line_spacing, formState.word_spacing, formState.x_offset, formState.y_offset, formState.multiple_mode, formState.page]);
+                            break;
+                        }
+                        case "pdf": {
+                            await handleOps(WatermarkPDFByPDF, [formState.input, formState.output, formState.wm_path, formState.page]);
+                            break;
+                        }
+                    }
                     break;
                 }
                 case "remove": {

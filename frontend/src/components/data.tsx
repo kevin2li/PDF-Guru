@@ -91,6 +91,7 @@ interface WatermarkState {
     font_color: string;
     font_opacity: number;
     num_lines: number;
+    word_spacing: number;
     line_spacing: number;
     x_offset: number;
     y_offset: number;
@@ -100,6 +101,8 @@ interface WatermarkState {
     remove_method: string;
     step: string;
     wm_index: string;
+    wm_path: string;
+    scale: number;
 }
 
 interface ConvertState {

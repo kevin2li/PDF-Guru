@@ -146,8 +146,16 @@ export function TransformBookmark(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['TransformBookmark'](arg1, arg2, arg3, arg4, arg5);
 }
 
-export function WatermarkPDF(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13) {
-  return window['go']['main']['App']['WatermarkPDF'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+export function WatermarkPDFByImage(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13) {
+  return window['go']['main']['App']['WatermarkPDFByImage'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+}
+
+export function WatermarkPDFByPDF(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['WatermarkPDFByPDF'](arg1, arg2, arg3, arg4);
+}
+
+export function WatermarkPDFByText(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15) {
+  return window['go']['main']['App']['WatermarkPDFByText'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
 }
 
 export function WriteBookmarkByFile(arg1, arg2, arg3, arg4) {

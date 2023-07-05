@@ -62,3 +62,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 * [wails](https://github.com/wailsapp/wails)
+* [PyMuPDF](https://pymupdf.readthedocs.io/en/latest/)
+* [PyPDF](https://github.com/py-pdf/pypdf)

@@ -816,7 +816,7 @@ def convert_pdf_to_images(doc_path: str, page_range: str = 'all', output_path: s
 def convert_images_to_pdf(input_path: str, output_path: str = None):
     raise NotImplementedError
 
-def create_wartmark(
+def create_text_wartmark(
         wm_text:str,
         width: Union[int, float],
         height: Union[int, float],
@@ -828,6 +828,7 @@ def create_wartmark(
         text_fill_alpha: Union[int, float] = 0.3,
         num_lines: Union[int, float] = 1,
         line_spacing: Union[int, float] = 2,
+        word_spacing: Union[int, float] = 2,
         x_offset: Union[int, float] = 0,
         y_offset: Union[int, float] = 0,
         multiple_mode: bool = False,
@@ -863,7 +864,7 @@ def create_wartmark(
             while start_x < diagonal_length:
                 for i, part in enumerate(parts):
                     c.drawString(start_x,start_y-i*line_height,part)
-                start_x += wm_length+font_length
+                start_x += wm_length+font_length*word_spacing
     else:
         start_x = - wm_length/2 + x_offset
         start_y = - wm_height/2 + y_offset
@@ -871,25 +872,73 @@ def create_wartmark(
             c.drawString(start_x,start_y-i*line_height,part)
     c.save()
 
-def watermark_pdf(doc_path: str, wm_text: str, output_path: str = None, **args):
+def create_image_wartmark(
+        width: Union[int, float],
+        height: Union[int, float],
+        wm_image_path: str,
+        angle: Union[int, float] = 0,
+        scale: Union[int, float] = 1,
+        opacity: Union[int, float] = 1,
+        num_lines: Union[int, float] = 1,
+        word_spacing: Union[int, float] = 0.1,
+        line_spacing: Union[int, float] = 2,
+        x_offset: Union[int, float] = 0,
+        y_offset: Union[int, float] = 0,
+        multiple_mode: bool = False,
+        output_path: str = None,
+    ):
+    try:
+        if output_path is None:
+            output_path = "watermark.pdf"
+        c = canvas.Canvas(output_path,pagesize=(width, height))
+        diagonal_length = math.sqrt(width**2 + height**2) # diagonal length of the paper
+        wm_image = Image.open(wm_image_path)
+        # if opacity:
+        alpha = Image.new("L", wm_image.size, int(255*opacity))
+        wm_image.putalpha(alpha)
+        wm_path = str(Path(output_path).parent / "tmp_wm.png")
+        wm_image.save(wm_path)
+        logger.debug(wm_path)
+        # else:
+        #     wm_path = wm_image_path
+        logger.debug(wm_image.size)
+        wm_width, wm_height = wm_image.size[0]*scale, wm_image.size[1]*scale
+        gap = word_spacing*wm_width
+        c.translate(width/2, height/2)
+        c.rotate(angle)
+        if multiple_mode:
+            start_y_list = list(map(lambda x: x*wm_height*(line_spacing+1), range(num_lines)))
+            center_y = sum(start_y_list) / len(start_y_list)
+            start_y_list = list(map(lambda x: x - center_y + y_offset, start_y_list))
+            logger.debug(start_y_list)
+            for start_y in start_y_list:
+                start_x = -diagonal_length + x_offset
+                while start_x < diagonal_length:
+                    c.drawImage(wm_path, start_x, start_y, width=wm_width, height=wm_height)
+                    start_x += wm_width + gap
+        else:
+            start_x = - wm_width/2 + x_offset
+            start_y = - wm_height/2 + y_offset
+            c.drawImage(wm_path, start_x, start_y, width=wm_width, height=wm_height)
+        c.save()
+    except:
+        raise ValueError(traceback.format_exc())
+
+def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", output_path: str = None, **args):
     try:
         doc = fitz.open(doc_path)
         page = doc[-1]
         p = Path(doc_path)
         tmp_wm_path = str(p.parent / "tmp_wm.pdf")
-        create_wartmark(wm_text=wm_text, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
+        create_text_wartmark(wm_text=wm_text, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
         wm_doc = fitz.open(tmp_wm_path)
         writer = fitz.open()
-        for i in range(doc.page_count):
+        roi_indices = parse_range(page_range, doc.page_count)
+        for i in roi_indices:
             page: fitz.Page = doc[i]
             new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
-            # 混淆顺序
-            if random.random() > 0.5:
-                new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
-                new_page.show_pdf_page(new_page.rect, doc, page.number)
-            else:
-                new_page.show_pdf_page(new_page.rect, doc, page.number)
-                new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
+            new_page.show_pdf_page(new_page.rect, doc, page.number)
+            new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
             
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
@@ -898,6 +947,53 @@ def watermark_pdf(doc_path: str, wm_text: str, output_path: str = None, **args):
         doc.close()
         writer.close()
         os.remove(tmp_wm_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all", output_path: str = None, **args):
+    try:
+        doc = fitz.open(doc_path)
+        page = doc[-1]
+        p = Path(doc_path)
+        tmp_wm_path = str(p.parent / "tmp_wm.pdf")
+        create_image_wartmark(wm_image_path=wm_path, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
+        wm_doc = fitz.open(tmp_wm_path)
+        writer = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        for i in roi_indices:
+            page: fitz.Page = doc[i]
+            new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
+            new_page.show_pdf_page(new_page.rect, doc, page.number)
+            new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
+            
+        if output_path is None:
+            output_path = p.parent / f"{p.stem}-加水印版.pdf"
+        writer.save(output_path)
+        wm_doc.close()
+        doc.close()
+        writer.close()
+        os.remove(tmp_wm_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all", output_path: str = None):
+    try:
+        doc = fitz.open(doc_path)
+        wm_doc = fitz.open(wm_doc_path)
+        writer = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        for i in roi_indices:
+            page: fitz.Page = doc[i]
+            new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
+            new_page.show_pdf_page(new_page.rect, doc, page.number)
+            new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = p.parent / f"{p.stem}-加水印版.pdf"
+        writer.save(output_path)
+        wm_doc.close()
+        doc.close()
+        writer.close()
     except:
         raise ValueError(traceback.format_exc())
 
@@ -1089,18 +1185,18 @@ def main():
     bookmark_add_parser.add_argument("--offset", type=int, default=0, help="偏移量, 计算方式: “pdf文件实际页码” - “目录文件标注页码”")
     bookmark_add_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_add_parser.set_defaults(bookmark_which='add')
-    
+
     ### 页码书签
     bookmark_add_parser.add_argument("--gap", type=int, default=1, help="页码间隔")
     bookmark_add_parser.add_argument("--format", type=str, default="第%p页", help="页码格式")
-    
+
     ## 提取书签
     bookmark_extract_parser = bookmark_sub_parsers.add_parser("extract", help="提取书签")
     bookmark_extract_parser.add_argument("input_path", type=str, help="pdf文件路径")
     bookmark_extract_parser.add_argument("--format", type=str, default="txt", choices=['txt', 'json'], help="输出文件格式")
     bookmark_extract_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_extract_parser.set_defaults(bookmark_which='extract')
-    
+
     ## 书签转换
     bookmark_transform_parser = bookmark_sub_parsers.add_parser("transform", help="转换书签")
     bookmark_transform_parser.add_argument("--toc", type=str, help="目录文件路径")
@@ -1118,17 +1214,22 @@ def main():
     watermark_add_parser= watermark_subparsers.add_parser("add", help="添加水印")
     watermark_add_parser.set_defaults(watermark_which='add')
     watermark_add_parser.add_argument("input_path", type=str, help="pdf文件路径")
-    watermark_add_parser.add_argument("--mark-text", type=str, required=True, dest="mark_text", help="水印文本")
+    watermark_add_parser.add_argument("--type", type=str, choices=['text', 'image', 'pdf'], default="text", help="水印类型")
+    watermark_add_parser.add_argument("--mark-text", type=str, dest="mark_text", help="水印文本")
     watermark_add_parser.add_argument("--font-family", type=str, dest="font_family", help="水印字体路径")
     watermark_add_parser.add_argument("--font-size", type=int, default=50, dest="font_size", help="水印字体大小")
     watermark_add_parser.add_argument("--color", type=str, default="#000000", dest="color", help="水印文本颜色")
     watermark_add_parser.add_argument("--angle", type=int, default=30, dest="angle", help="水印旋转角度")
     watermark_add_parser.add_argument("--opacity", type=float, default=0.3, dest="opacity", help="水印不透明度")
     watermark_add_parser.add_argument("--line-spacing", type=float, default=1, dest="line_spacing", help="水印行间距")
+    watermark_add_parser.add_argument("--word-spacing", type=float, default=1, dest="word_spacing", help="相邻水印间距")
     watermark_add_parser.add_argument("--x-offset", type=float, default=0, dest="x_offset", help="水印x轴偏移量")
     watermark_add_parser.add_argument("--y-offset", type=float, default=0, dest="y_offset", help="水印y轴偏移量")
     watermark_add_parser.add_argument("--multiple-mode", action="store_true", dest="multiple_mode", help="多行水印模式")
     watermark_add_parser.add_argument("--num-lines", type=int, default=1, dest="num_lines", help="多行水印行数")
+    watermark_add_parser.add_argument("--wm-path", type=str, dest="wm_path", help="水印图片路径")
+    watermark_add_parser.add_argument("--scale", type=float, default=1, dest="scale", help="水印图片缩放比例")
+    watermark_add_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
     watermark_add_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     watermark_remove_parser = watermark_subparsers.add_parser("remove", help="删除水印")
@@ -1144,7 +1245,6 @@ def main():
     watermark_detect_parser.add_argument("input_path", type=str, help="pdf文件路径")
     watermark_detect_parser.add_argument("--wm_index", type=int, default=0, help="水印所在页码")
     watermark_detect_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
-
 
     # 压缩子命令
     compress_parser = sub_parsers.add_parser("compress", help="压缩", description="压缩pdf文件")
@@ -1286,8 +1386,13 @@ def main():
         pass
     elif args.which == "watermark":
         if args.watermark_which == "add":
-            color = hex_to_rgb(args.color)
-            watermark_pdf(doc_path=args.input_path, wm_text=args.mark_text, output_path=args.output, font=args.font_family, fontsize=args.font_size, angle=args.angle, text_stroke_color_rgb=(0, 0, 0), text_fill_color_rgb=color, text_fill_alpha=args.opacity, num_lines=args.num_lines, line_spacing=args.line_spacing, multiple_mode=args.multiple_mode, x_offset=args.x_offset, y_offset=args.y_offset)
+            if args.type == "text":
+                color = hex_to_rgb(args.color)
+                watermark_pdf_by_text(doc_path=args.input_path, wm_text=args.mark_text, page_range=args.page_range, output_path=args.output, font=args.font_family, fontsize=args.font_size, angle=args.angle, text_stroke_color_rgb=(0, 0, 0), text_fill_color_rgb=color, text_fill_alpha=args.opacity, num_lines=args.num_lines, line_spacing=args.line_spacing, word_spacing=args.word_spacing, multiple_mode=args.multiple_mode, x_offset=args.x_offset, y_offset=args.y_offset)
+            elif args.type == "image":
+                watermark_pdf_by_image(doc_path=args.input_path, wm_path=args.wm_path, page_range=args.page_range, output_path=args.output, scale=args.scale, angle=args.angle, opacity=args.opacity, multiple_mode=args.multiple_mode, num_lines=args.num_lines, line_spacing=args.line_spacing, word_spacing=args.word_spacing, x_offset=args.x_offset, y_offset=args.y_offset)
+            elif args.type == "pdf":
+                watermark_pdf_by_pdf(doc_path=args.input_path, wm_doc_path=args.wm_path, page_range=args.page_range, output_path=args.output)
         elif args.watermark_which == "remove":
             if args.method == "type":
                 remove_watermark_by_type(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
@@ -1298,7 +1403,7 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # create_wartmark(
+    # create_text_wartmark(
     #     wm_text         = '内部资料',
     #     width           = 200,
     #     height          = 200,
@@ -1312,6 +1417,18 @@ if __name__ == "__main__":
     #     x_offset        = 0,
     #     y_offset        = 0,
     #     output_path     = r'C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\水印.pdf',
-    # ) 
+    # )
 
-    # watermark_pdf("C:/Users/kevin/Downloads/2023考研英语一真题-去水印版.pdf", "内部资料", output_path=None, num_lines=3, line_spacing=1, multiple_mode=False, x_offset=0, y_offset=0)
+    # watermark_pdf_by_text("C:/Users/kevin/Downloads/2023考研英语一真题-去水印版.pdf", "内部资料", output_path=None, num_lines=3, line_spacing=1, multiple_mode=False, x_offset=0, y_offset=0)
+    # create_image_wartmark(
+    #     595,
+    #     842,
+    #     r"C:\Users\kevin\miniconda3\envs\ocr\Lib\site-packages\pdf2docx\gui\icon.ico",
+    #     scale=0.2,
+    #     angle=45,
+    #     opacity=0.3,
+    #     multiple_mode=True,
+    #     num_lines=3,
+    #     line_spacing=2,
+    #     word_spacing=3
+    # )
