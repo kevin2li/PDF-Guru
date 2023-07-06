@@ -903,7 +903,13 @@ func (a *App) OCR(inFile string, outFile string, pages string, lang string, doub
 		fmt.Println(err)
 		return err
 	}
-	args := []string{"C:\\Users\\kevin\\code\\wails_demo\\gui_project\\thirdparty\\ocr.py", "ocr"}
+	path, err := os.Executable()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return err
+	}
+	path = filepath.Join(filepath.Dir(path), "ocr.py")
+	args := []string{path, "ocr"}
 	if lang != "" {
 		args = append(args, "--lang", lang)
 	}
@@ -1205,4 +1211,3 @@ func (a *App) DetectWatermarkByIndex(inFile string, outFile string, wmIndex int)
 	}
 	return nil
 }
-

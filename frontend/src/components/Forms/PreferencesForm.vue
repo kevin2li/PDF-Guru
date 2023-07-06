@@ -18,6 +18,9 @@
                 </a-button>
             </a-form-item>
         </a-form>
+        <div style="margin-top: 20px;">
+            项目地址：<a href="https://github.com/kevin2li/PDF-Guru" target="_blank">https://github.com/kevin2li/PDF-Guru</a>
+        </div>
     </div>
 </template>
 <script lang="ts">

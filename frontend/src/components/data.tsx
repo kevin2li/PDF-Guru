@@ -207,11 +207,15 @@ const menuRecord: Record<string, string> = {
     "rotate": "PDF旋转",
     "crop": "PDF裁剪",
     "cut": "PDF分割/组合",
+    "header": "页眉页脚",
+    "background": "文档背景",
+    "page_number": "页码设置",
     "extract": "PDF提取",
     "compress": "PDF压缩",
     "convert": "PDF转换",
     "encrypt": "PDF加解密",
     "ocr": "OCR识别",
+    "meta": "查看元信息",
     "settings": "首选项"
 };
 const menuDesc: Record<string, string> = {
@@ -223,6 +227,9 @@ const menuDesc: Record<string, string> = {
     "insert": "插入或替换PDF文件的指定页面",
     "bookmark": "从原始PDF文件中提取书签信息，或将PDF书签信息写入PDF文件",
     "watermark": "将原始PDF文件按照给定的水印参数添加水印",
+    "header": "页眉页脚",
+    "background": "文档背景",
+    "page_number": "页码设置",
     "scale": "将原始PDF文件按照给定的缩放参数进行缩放",
     "rotate": "将原始PDF文件按照给定的旋转角度进行旋转",
     "crop": "将原始PDF文件(的指定页面)按照给定参数进行裁剪或分割",
@@ -231,6 +238,7 @@ const menuDesc: Record<string, string> = {
     "convert": "PDF转换",
     "encrypt": "对PDF文件进行加密或解密",
     "ocr": "对PDF文件或图片(支持png、jpg格式)进行OCR识别",
+    "meta": "查看元信息",
     "settings": "对软件功能进行配置"
 }
 

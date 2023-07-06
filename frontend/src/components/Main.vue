@@ -1,104 +1,148 @@
 <template>
     <a-row>
         <a-col :span="4">
-            <a-menu v-model:selectedKeys="currentMenu" style="width: 180px" mode="inline">
-                <a-menu-item key="merge">
+            <a-menu v-model:selectedKeys="state.selectedKeys" :open-keys="state.openKeys" style="width: 180px"
+                @openChange="onOpenChange" mode="inline">
+                <a-sub-menu key="page_edit">
+                    <template #title>页面编辑</template>
                     <template #icon>
-                        <block-outlined />
+                        <form-outlined />
                     </template>
-                    {{ menuRecord['merge'] }}
-                </a-menu-item>
-                <a-menu-item key="split">
-                    <template #icon>
-                        <split-cells-outlined />
-                    </template>
-                    {{ menuRecord['split'] }}
-                </a-menu-item>
-                <a-menu-item key="delete">
-                    <template #icon>
-                        <close-outlined />
-                    </template>
-                    {{ menuRecord['delete'] }}
-                </a-menu-item>
-                <a-menu-item key="reorder">
-                    <template #icon>
-                        <ordered-list-outlined />
-                    </template>
-                    {{ menuRecord['reorder'] }}
-                </a-menu-item>
-                <a-menu-item key="insert">
+                    <a-menu-item key="insert">
+                        <template #icon>
+                            <!-- <login-outlined /> -->
+                            <icon-font type="icon-twitter" />
+                            <!-- <icon-font type="icon-mergeant" /> -->
+                        </template>
+                        {{ menuRecord['insert'] }}
+                    </a-menu-item>
+                    <a-menu-item key="merge">
+                        <template #icon>
+                            <merge-cells-outlined />
+                        </template>
+                        {{ menuRecord['merge'] }}
+                    </a-menu-item>
+                    <a-menu-item key="split">
+                        <template #icon>
+                            <split-cells-outlined />
+                        </template>
+                        {{ menuRecord['split'] }}
+                    </a-menu-item>
+                    <a-menu-item key="rotate">
+                        <template #icon>
+                            <rotate-right-outlined />
+                        </template>
+                        {{ menuRecord['rotate'] }}
+                    </a-menu-item>
+                    <a-menu-item key="delete">
+                        <template #icon>
+                            <delete-outlined />
+                        </template>
+                        {{ menuRecord['delete'] }}
+                    </a-menu-item>
+                    <a-menu-item key="reorder">
+                        <template #icon>
+                            <ordered-list-outlined />
+                        </template>
+                        {{ menuRecord['reorder'] }}
+                    </a-menu-item>
+                    <a-menu-item key="crop">
+                        <template #icon>
+                            <scissor-outlined />
+                        </template>
+                        {{ menuRecord['crop'] }}
+                    </a-menu-item>
+                    <a-menu-item key="scale">
+                        <template #icon>
+                            <fullscreen-outlined />
+                        </template>
+                        {{ menuRecord['scale'] }}
+                    </a-menu-item>
+                    <a-menu-item key="cut">
+                        <template #icon>
+                            <borderless-table-outlined />
+                        </template>
+                        {{ menuRecord['cut'] }}
+                    </a-menu-item>
+                    <a-menu-item key="header">
+                        <template #icon>
+                            <borderless-table-outlined />
+                        </template>
+                        {{ menuRecord['header'] }}
+                    </a-menu-item>
+                    <a-menu-item key="page_number">
+                        <template #icon>
+                            <borderless-table-outlined />
+                        </template>
+                        {{ menuRecord['page_number'] }}
+                    </a-menu-item>
+                    <a-menu-item key="background">
+                        <template #icon>
+                            <borderless-table-outlined />
+                        </template>
+                        {{ menuRecord['background'] }}
+                    </a-menu-item>
+                </a-sub-menu>
+                <a-sub-menu key="protect">
+                    <template #title>保护</template>
                     <template #icon>
                         <login-outlined />
                     </template>
-                    {{ menuRecord['insert'] }}
-                </a-menu-item>
-                <a-menu-item key="bookmark">
+                    <a-menu-item key="watermark">
+                        <template #icon>
+                            <highlight-outlined />
+                        </template>
+                        {{ menuRecord['watermark'] }}
+                    </a-menu-item>
+                    <a-menu-item key="encrypt">
+                        <template #icon>
+                            <lock-outlined />
+                        </template>
+                        {{ menuRecord['encrypt'] }}
+                    </a-menu-item>
+                </a-sub-menu>
+                <a-sub-menu key="other">
+                    <template #title>其他</template>
                     <template #icon>
-                        <bars-outlined />
+                        <login-outlined />
                     </template>
-                    {{ menuRecord['bookmark'] }}
-                </a-menu-item>
-                <a-menu-item key="scale">
-                    <template #icon>
-                        <fullscreen-outlined />
-                    </template>
-                    {{ menuRecord['scale'] }}
-                </a-menu-item>
-                <a-menu-item key="watermark">
-                    <template #icon>
-                        <highlight-outlined />
-                    </template>
-                    {{ menuRecord['watermark'] }}
-                </a-menu-item>
-                <a-menu-item key="rotate">
-                    <template #icon>
-                        <rotate-right-outlined />
-                    </template>
-                    {{ menuRecord['rotate'] }}
-                </a-menu-item>
-                <a-menu-item key="crop">
-                    <template #icon>
-                        <scissor-outlined />
-                    </template>
-                    {{ menuRecord['crop'] }}
-                </a-menu-item>
-                <a-menu-item key="cut">
-                    <template #icon>
-                        <borderless-table-outlined />
-                    </template>
-                    {{ menuRecord['cut'] }}
-                </a-menu-item>
-                <a-menu-item key="extract">
-                    <template #icon>
-                        <aim-outlined />
-                    </template>
-                    {{ menuRecord['extract'] }}
-                </a-menu-item>
-                <a-menu-item key="compress">
-                    <template #icon>
-                        <file-zip-outlined />
-                    </template>
-                    {{ menuRecord['compress'] }}
-                </a-menu-item>
-                <a-menu-item key="convert">
-                    <template #icon>
-                        <export-outlined />
-                    </template>
-                    {{ menuRecord['convert'] }}
-
-                </a-menu-item>
-                <a-menu-item key="encrypt">
-                    <template #icon>
-                        <lock-outlined />
-                    </template>
-                    {{ menuRecord['encrypt'] }}
-                </a-menu-item>
-                <a-menu-item key="ocr">
-                    <template #icon>
-                        <eye-outlined />
-                    </template>
-                    {{ menuRecord['ocr'] }}
-                </a-menu-item>
+                    <a-menu-item key="meta">
+                        <template #icon>
+                            <bars-outlined />
+                        </template>
+                        {{ menuRecord['meta'] }}
+                    </a-menu-item>
+                    <a-menu-item key="bookmark">
+                        <template #icon>
+                            <bars-outlined />
+                        </template>
+                        {{ menuRecord['bookmark'] }}
+                    </a-menu-item>
+                    <a-menu-item key="extract">
+                        <template #icon>
+                            <aim-outlined />
+                        </template>
+                        {{ menuRecord['extract'] }}
+                    </a-menu-item>
+                    <a-menu-item key="compress">
+                        <template #icon>
+                            <file-zip-outlined />
+                        </template>
+                        {{ menuRecord['compress'] }}
+                    </a-menu-item>
+                    <a-menu-item key="convert">
+                        <template #icon>
+                            <export-outlined />
+                        </template>
+                        {{ menuRecord['convert'] }}
+                    </a-menu-item>
+                    <a-menu-item key="ocr">
+                        <template #icon>
+                            <eye-outlined />
+                        </template>
+                        {{ menuRecord['ocr'] }}
+                    </a-menu-item>
+                </a-sub-menu>
                 <a-menu-item key="settings">
                     <template #icon>
                         <SettingOutlined />
@@ -110,29 +154,33 @@
         <a-col :span="20">
             <div>
                 <div style="margin-right: 5vw;margin-top: 0.5em;">
-                    <a-typography-title>{{ menuRecord[currentMenu.at(0) || "merge"] }}</a-typography-title>
+                    <a-typography-title>{{ menuRecord[state.selectedKeys.at(0) || "merge"] }}</a-typography-title>
                     <a-typography-paragraph>
-                        <blockquote>功能说明：{{ menuDesc[currentMenu.at(0) || "merge"] }}</blockquote>
+                        <blockquote>功能说明：{{ menuDesc[state.selectedKeys.at(0) || "merge"] }}</blockquote>
                     </a-typography-paragraph>
                 </div>
                 <div>
-                    <MergeForm v-if="currentMenu.at(0) === 'merge'" />
-                    <SplitForm v-if="currentMenu.at(0) === 'split'" />
-                    <DeleteForm v-if="currentMenu.at(0) === 'delete'" />
-                    <ReorderForm v-if="currentMenu.at(0) === 'reorder'" />
-                    <InsertForm v-if="currentMenu.at(0) === 'insert'" />
-                    <BookmarkForm v-if="currentMenu.at(0) === 'bookmark'" />
-                    <ScaleForm v-if="currentMenu.at(0) === 'scale'" />
-                    <WatermarkForm v-if="currentMenu.at(0) === 'watermark'" />
-                    <RotateForm v-if="currentMenu.at(0) === 'rotate'" />
-                    <CropForm v-if="currentMenu.at(0) === 'crop'" />
-                    <CutForm v-if="currentMenu.at(0) === 'cut'" />
-                    <ExtractForm v-if="currentMenu.at(0) === 'extract'" />
-                    <CompressForm v-if="currentMenu.at(0) === 'compress'" />
-                    <ConvertForm v-if="currentMenu.at(0) === 'convert'" />
-                    <EncryptForm v-if="currentMenu.at(0) === 'encrypt'" />
-                    <OcrForm v-if="currentMenu.at(0) === 'ocr'" />
-                    <PreferencesForm v-if="currentMenu.at(0) === 'settings'" />
+                    <MergeForm v-if="state.selectedKeys.at(0) === 'merge'" />
+                    <SplitForm v-if="state.selectedKeys.at(0) === 'split'" />
+                    <DeleteForm v-if="state.selectedKeys.at(0) === 'delete'" />
+                    <ReorderForm v-if="state.selectedKeys.at(0) === 'reorder'" />
+                    <InsertForm v-if="state.selectedKeys.at(0) === 'insert'" />
+                    <BookmarkForm v-if="state.selectedKeys.at(0) === 'bookmark'" />
+                    <ScaleForm v-if="state.selectedKeys.at(0) === 'scale'" />
+                    <WatermarkForm v-if="state.selectedKeys.at(0) === 'watermark'" />
+                    <RotateForm v-if="state.selectedKeys.at(0) === 'rotate'" />
+                    <CropForm v-if="state.selectedKeys.at(0) === 'crop'" />
+                    <CutForm v-if="state.selectedKeys.at(0) === 'cut'" />
+                    <ExtractForm v-if="state.selectedKeys.at(0) === 'extract'" />
+                    <CompressForm v-if="state.selectedKeys.at(0) === 'compress'" />
+                    <ConvertForm v-if="state.selectedKeys.at(0) === 'convert'" />
+                    <EncryptForm v-if="state.selectedKeys.at(0) === 'encrypt'" />
+                    <OcrForm v-if="state.selectedKeys.at(0) === 'ocr'" />
+                    <PreferencesForm v-if="state.selectedKeys.at(0) === 'settings'" />
+                    <HeaderAndFooterForm v-if="state.selectedKeys.at(0) === 'header'" />
+                    <PageNumberForm v-if="state.selectedKeys.at(0) === 'page_number'" />
+                    <BackgroundForm v-if="state.selectedKeys.at(0) === 'background'" />
+                    <MetaForm v-if="state.selectedKeys.at(0) === 'meta'" />
                 </div>
             </div>
         </a-col>
@@ -165,7 +213,12 @@ import {
     EyeOutlined,
     SplitCellsOutlined,
     LoginOutlined,
+    FormOutlined,
+    DeleteOutlined,
+    MergeCellsOutlined,
+    createFromIconfontCN,
 } from '@ant-design/icons-vue';
+
 import { menuDesc, menuRecord } from "./data";
 import MergeForm from "./Forms/MergeForm.vue";
 import SplitForm from "./Forms/SplitForm.vue";
@@ -184,7 +237,12 @@ import ConvertForm from "./Forms/ConvertForm.vue";
 import EncryptForm from "./Forms/EncryptForm.vue";
 import OcrForm from "./Forms/OcrForm.vue";
 import PreferencesForm from "./Forms/PreferencesForm.vue";
+import HeaderAndFooterForm from "./Forms/HeaderAndFooterForm.vue";
+import BackgroundForm from "./Forms/BackgroundForm.vue";
+import PageNumberForm from "./Forms/PageNumberForm.vue";
+import MetaForm from "./Forms/MetaForm.vue";
 
+const IconFont = createFromIconfontCN({ scriptUrl: '//at.alicdn.com/t/font_8d5l8fzk5b87iudi.js' });
 
 export default defineComponent({
     components: {
@@ -213,6 +271,10 @@ export default defineComponent({
         EyeOutlined,
         SplitCellsOutlined,
         LoginOutlined,
+        FormOutlined,
+        DeleteOutlined,
+        MergeCellsOutlined,
+        IconFont,
         // form
         // 合并
         MergeForm,
@@ -248,12 +310,34 @@ export default defineComponent({
         OcrForm,
         // 首选项
         PreferencesForm,
+        // 页眉页脚
+        HeaderAndFooterForm,
+        // 文档背景
+        BackgroundForm,
+        // 页码设置
+        PageNumberForm,
+        // 文档属性
+        MetaForm,
     },
     setup() {
+        const state = reactive({
+            rootSubmenuKeys: ['page_edit', 'protect', 'other', "settings"],
+            selectedKeys: ["insert"],
+            openKeys: ["page_edit"]
+        });
+        const onOpenChange = (openKeys: string[]) => {
+            const latestOpenKey = openKeys.find(key => state.openKeys.indexOf(key) === -1);
+            if (state.rootSubmenuKeys.indexOf(latestOpenKey!) === -1) {
+                state.openKeys = openKeys;
+            } else {
+                state.openKeys = latestOpenKey ? [latestOpenKey] : [];
+            }
+        };
         return {
             menuRecord,
             menuDesc,
-            currentMenu: ref<string[]>(["merge"]),
+            state,
+            onOpenChange
         };
     },
 });

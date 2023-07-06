@@ -1,23 +1,21 @@
 import argparse
+import colorsys
 import glob
 import json
+import math
 import os
 import re
-import math
-import subprocess
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union
-import random
+
 import fitz
 from loguru import logger
-from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFont, ImageOps
-from pypdf import PdfReader, PdfWriter
-from reportlab.lib import units
+from PIL import Image
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
-import colorsys
+
 
 # 工具类函数
 def parse_range(page_range: str, page_count: int, is_multi_range: bool = False, is_reverse: bool = False, is_unique: bool = True):
@@ -126,8 +124,25 @@ def hex_to_rgb(hex_color):
     rgb_color = colorsys.rgb_to_hsv(r/255, g/255, b/255)
     return tuple(round(c * 255) for c in colorsys.hsv_to_rgb(*rgb_color))
 
-# 功能类函数
+def batch_process(func):
+    def wrapper(*args, **kwargs):
+        logger.debug(args)
+        logger.debug(kwargs)
+        doc_path = kwargs['doc_path']
+        if "*" in doc_path:
+            path_list = glob.glob(doc_path)
+            logger.debug(f"path_list length: {len(path_list) if path_list else 0}")
+            if path_list:
+                del kwargs['doc_path']
+                for path in path_list:
+                    func(*args, doc_path=path, **kwargs)
+        else:
+            func(*args, **kwargs)
+        func(*args, **kwargs)
+    return wrapper
 
+# 功能类函数
+@batch_process
 def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, is_reverse: bool = False):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -139,11 +154,12 @@ def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, i
         parts = range_compress(roi_indices)
         for part in parts:
             tmp_doc.insert_pdf(doc, from_page=part[0], to_page=part[1])
-        tmp_doc.save(str(output_dir / f"{p.stem}-切片.pdf"))
+        tmp_doc.save(str(output_dir / f"{p.stem}-切片.pdf"), garbage=3, deflate=True)
     except:
         logger.error(f"roi_indices: {roi_indices}")
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -158,10 +174,11 @@ def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
             savepath = str(output_dir / f"{p.stem}-{i+1}-{min(i+chunk_size, doc.page_count)}.pdf")
             tmp_doc:fitz.Document = fitz.open()
             tmp_doc.insert_pdf(doc, from_page=i, to_page=min(i+chunk_size, doc.page_count)-1)
-            tmp_doc.save(savepath)
+            tmp_doc.save(savepath, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -178,10 +195,11 @@ def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str =
             parts = range_compress(indices)
             for part in parts:
                 tmp_doc.insert_pdf(doc, from_page=part[0], to_page=part[1])
-            tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"))
+            tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"), garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -215,17 +233,17 @@ def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
 
             tmp_toc = list(map(lambda x: [x[0], x[1], x[2]-begin],toc[cur_idx:next_idx]))
             tmp_doc.set_toc(tmp_toc)
-            tmp_doc.save(str(output_dir / f"{title}.pdf"))
+            tmp_doc.save(str(output_dir / f"{title}.pdf"), garbage=3, deflate=True)
     except:
         logger.debug(p)
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
         p = Path(doc_path)
         roi_indices = parse_range(page_range, doc.page_count, is_unique=False)
-        logger.debug(roi_indices)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-重排.pdf")
         tmp_doc: fitz.Document = fitz.open()
@@ -235,6 +253,7 @@ def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None)
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def insert_blank_pdf(doc_path: str, pos: int, count: int, orientation: str, paper_size: str, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -357,6 +376,7 @@ def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direc
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -372,6 +392,7 @@ def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: 
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str = "pt", keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -396,6 +417,7 @@ def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str =
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], unit: str = "pt", keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -420,6 +442,7 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -442,6 +465,7 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "al
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoints: List[float], page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -474,6 +498,7 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4", orientation: str = "portrait", page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -505,6 +530,7 @@ def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4"
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -529,6 +555,7 @@ def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str 
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def extract_pdf_text(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -590,6 +617,7 @@ def title_preprocess(title: str):
         
         return {'level': 1, "text": title}
 
+@batch_process
 def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: str = None):
     """从目录文件中导入书签到pdf文件(若文件中存在行没指定页码则按1算)
 
@@ -635,6 +663,7 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
         output_path = str(p.parent / f"{p.stem}-toc.pdf")
     doc.save(output_path)
 
+@batch_process
 def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", output_path: str = None):
     doc: fitz.Document = fitz.open(doc_path)
     p = Path(doc_path)
@@ -647,6 +676,7 @@ def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", output
         output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
     doc.save(output_path)
 
+@batch_process
 def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
     doc: fitz.Document = fitz.open(doc_path)
     p = Path(doc_path)
@@ -669,6 +699,7 @@ def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(toc, f)
 
+@batch_process
 def transform_toc_file(toc_path: str, is_add_indent: bool = True, is_remove_trailing_dots: bool = True, add_offset: int = 0, output_path: str = None):
     if output_path is None:
         p = Path(toc_path)
@@ -690,6 +721,7 @@ def transform_toc_file(toc_path: str, is_add_indent: bool = True, is_remove_trai
                     new_line = new_line[:m.span()[0]-1] + f" {pno}\n"
             f2.write(new_line)
 
+@batch_process
 def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, perm: List[str] = [], output_path: str = None):
     doc: fitz.Document = fitz.open(doc_path)
     p = Path(doc_path)
@@ -715,6 +747,7 @@ def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, p
         permissions=perm_value, # set permissions
     )
 
+@batch_process
 def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
     doc: fitz.Document = fitz.open(doc_path)
     p = Path(doc_path)
@@ -726,6 +759,7 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
         output_path = str(p.parent / f"{p.stem}-解密.pdf")
     doc.save(output_path)
 
+@batch_process
 def compress_pdf(doc_path: str, output_path: str = None):
     doc: fitz.Document = fitz.open(doc_path)
     p = Path(doc_path)
@@ -733,6 +767,7 @@ def compress_pdf(doc_path: str, output_path: str = None):
         output_path = str(p.parent / f"{p.stem}-压缩.pdf")
     doc.save(output_path, garbage=4, deflate=True, clean=True)
 
+@batch_process
 def resize_pdf_by_dim(doc_path: str, width: float, height: float, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -748,10 +783,11 @@ def resize_pdf_by_dim(doc_path: str, width: float, height: float, page_range: st
             page = doc[i]
             new_page: fitz.Page = new_doc.new_page(width=width, height=height)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
-        new_doc.save(output_path)
+        new_doc.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -767,10 +803,11 @@ def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", ou
             page = doc[i]
             new_page: fitz.Page = new_doc.new_page(width=page.rect.width*scale, height=page.rect.height*scale)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
-        new_doc.save(output_path)
+        new_doc.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -790,10 +827,11 @@ def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "
                 fmt = fitz.paper_rect(f"{paper_size}")
             new_page: fitz.Page = new_doc.new_page(width=fmt.width, height=fmt.height)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
-        new_doc.save(output_path)
+        new_doc.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def convert_pdf_to_images(doc_path: str, page_range: str = 'all', output_path: str = None):
     doc: fitz.Document = fitz.open(doc_path)
     p = Path(doc_path)
@@ -812,6 +850,7 @@ def convert_pdf_to_images(doc_path: str, page_range: str = 'all', output_path: s
         pix = page.get_pixmap()
         savepath = str(output_dir / f"page-{page.number+1}.png")
         pix.pil_save(savepath, quality=100, dpi=(1800,1800))
+
 
 def convert_images_to_pdf(input_path: str, output_path: str = None):
     raise NotImplementedError
@@ -924,22 +963,27 @@ def create_image_wartmark(
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", output_path: str = None, **args):
     try:
-        doc = fitz.open(doc_path)
+        doc: fitz.Document = fitz.open(doc_path)
         page = doc[-1]
         p = Path(doc_path)
         tmp_wm_path = str(p.parent / "tmp_wm.pdf")
         create_text_wartmark(wm_text=wm_text, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
-        wm_doc = fitz.open(tmp_wm_path)
-        writer = fitz.open()
+        wm_doc: fitz.Document = fitz.open(tmp_wm_path)
+        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
-        for i in roi_indices:
-            page: fitz.Page = doc[i]
-            new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
-            new_page.show_pdf_page(new_page.rect, doc, page.number)
-            new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
-            
+        for page_index in range(doc.page_count):
+            if page_index not in roi_indices:
+                writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
+                continue
+            else:
+                page: fitz.Page = doc[page_index]
+                new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
+                new_page.show_pdf_page(new_page.rect, doc, page.number)
+                new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
+                new_page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
         writer.save(output_path)
@@ -950,9 +994,10 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all", output_path: str = None, **args):
     try:
-        doc = fitz.open(doc_path)
+        doc: fitz.Document = fitz.open(doc_path)
         page = doc[-1]
         p = Path(doc_path)
         tmp_wm_path = str(p.parent / "tmp_wm.pdf")
@@ -965,7 +1010,7 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
             new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
             new_page.show_pdf_page(new_page.rect, doc, page.number)
             new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
-            
+            new_page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
         writer.save(output_path)
@@ -976,17 +1021,19 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all", output_path: str = None):
     try:
-        doc = fitz.open(doc_path)
-        wm_doc = fitz.open(wm_doc_path)
-        writer = fitz.open()
+        doc: fitz.Document = fitz.open(doc_path)
+        wm_doc: fitz.Document = fitz.open(wm_doc_path)
+        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for i in roi_indices:
             page: fitz.Page = doc[i]
             new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
             new_page.show_pdf_page(new_page.rect, doc, page.number)
             new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
+            new_page.clean_contents()
         if output_path is None:
             p = Path(doc_path)
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
@@ -997,99 +1044,90 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
     except:
         raise ValueError(traceback.format_exc())
 
+
+@batch_process
 def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
-        new_doc_path = doc_path
-        COMPRESS_FLAG = False
-        # 判断是否被压缩
-        with open(doc_path, "rb") as f:
-            reader = PdfReader(f)
-            page = reader.pages[-1]
-            if page['/Contents'] == {"/Filter": "/FlateDecode"}:
-                new_doc_path = str(Path(doc_path).parent / "tmp.pdf")
-                result = subprocess.run(["./qpdf/qpdf.exe", "--qdf", "--object-streams=disable", doc_path, new_doc_path], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
-                logger.debug(f"stdout: {result.stdout}")
-                logger.debug(f"stderr: {result.stderr}")
-                COMPRESS_FLAG = True
-            else:
-                new_doc_path = doc_path
-        doc: fitz.Document = fitz.open(new_doc_path)
+        doc: fitz.Document = fitz.open(doc_path)
+        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
-        WATERMARK_FLAG = False
-        for page_index in roi_indices:
+        for page_index in range(doc.page_count):
             page: fitz.Page = doc[page_index]
-            page.clean_contents()
-            xref = page.get_contents()[0]
-            cont = bytearray(page.read_contents())
-            if cont.find(b"/Subtype/Watermark"):
-                WATERMARK_FLAG = True
-                while True:
-                    i1 = cont.find(b"/Artifact")  # start of definition
-                    if i1 < 0: break  # none more left: done
-                    i2 = cont.find(b"EMC", i1)  # end of definition
-                    cont[i1 : i2+3] = b""  # remove the full definition source "/Artifact ... EMC"
-                doc.update_stream(xref, cont)
-        if WATERMARK_FLAG:
-            if output_path is None:
-                p = Path(doc_path)
-                output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-            doc.ez_save(output_path)
-        else:
-            raise ValueError("没有找到水印，请尝试其他方式!")
-        doc.close()
-        if COMPRESS_FLAG:
-            os.remove(new_doc_path)
+            if page in roi_indices:
+                page.clean_contents()
+                xref = page.get_contents()[0]
+                stream = doc.xref_stream(xref)
+                if stream:
+                    stream = bytearray(stream)
+                    if stream.find(b"/Subtype/Watermark"):
+                        while True:
+                            i1 = stream.find(b"/Artifact")  # start of definition
+                            if i1 < 0: break  # none more left: done
+                            i2 = stream.find(b"EMC", i1)  # end of definition
+                            stream[i1 : i2+3] = b""  # remove the full definition source "/Artifact ... EMC"
+                        doc.update_stream(xref, stream)
+            writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
+        writer.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: str = None):
     try:
-        with open(doc_path, "rb") as f:
-            reader = PdfReader(f)
-            writer = PdfWriter()
-            page = reader.pages[wm_page_number]
-            logger.debug(page['/Contents'])
-            if "/Contents" in page and  isinstance(page['/Contents'], list):
-                for i, v in enumerate(page['/Contents']):
-                    tmp_reader = PdfReader(f)
-                    tmp_page = tmp_reader.pages[wm_page_number]
-                    del tmp_page['/Contents'][i]
-                    writer.add_page(tmp_page)
-                if outpath is None:
-                    p = Path(doc_path)
-                    outpath = str(p.parent / f"{p.stem}-人工识别水印.pdf")
-                with open(outpath, "wb") as f2:
-                    writer.write(f2)
-            else:
-                raise ValueError("没有找到水印，请尝试其他方式!")
+        doc: fitz.Document = fitz.open(doc_path)
+        writer: fitz.Document = fitz.open()
+        page = doc[wm_page_number]
+        keys = doc.xref_get_keys(page.xref)
+        logger.debug(keys)
+        out = doc.xref_get_key(page.xref, "Contents")
+        logger.debug(f"Contents: {out}")
+        if out[0] == 'array':
+            parts = list(out)[1][1:-1].split(" ")
+            indirect_objs = list(map(lambda x: " ".join(x), [parts[i:i+3] for i in range(0, len(parts), 3)]))
+            for i in range(len(indirect_objs)):
+                t = f'[{" ".join(indirect_objs[:i]+indirect_objs[i+1:])}]'
+                doc.xref_set_key(page.xref, "Contents", t)
+                writer.insert_pdf(doc, from_page=wm_page_number, to_page=wm_page_number)
+        if outpath is None:
+            p = Path(doc_path)
+            outpath = str(p.parent / f"{p.stem}-人工识别水印.pdf")
+        writer.save(outpath, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
-def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: str, output_path: str = None):
+@batch_process
+def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: str = "all", output_path: str = None):
     try:
-        with open(doc_path, "rb") as f:
-            reader = PdfReader(f)
-            writer = PdfWriter()
-            page_count = len(reader.pages)
-            roi_indices = parse_range(page_range, len(reader.pages))
-            for i in range(len(wm_index)):
-                if wm_index[i] < 0:
-                    wm_index[i] = page_count + wm_index[i]
-            wm_index.sort(reverse=True)
-            for page_index in roi_indices:
-                page = reader.pages[page_index]
-                for i in wm_index:
-                    logger.debug(i)
-                    del page['/Contents'][i]
-                writer.add_page(page)
-            if output_path is None:
-                p = Path(doc_path)
-                outpath = str(p.parent / f"{p.stem}-去水印版.pdf")
-            with open(outpath, "wb") as f2:
-                writer.write(f2)
+        doc: fitz.Document = fitz.open(doc_path)
+        writer: fitz.Document = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        for i in range(len(wm_index)):
+            if wm_index[i] < 0:
+                wm_index[i] = doc.page_count + wm_index[i]
+        wm_index.sort(reverse=True)
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            if page_index in roi_indices:
+                out = doc.xref_get_key(page.xref, "Contents")
+                if out[0] == 'array':
+                    parts = list(out)[1][1:-1].split(" ")
+                    indirect_objs = list(map(lambda x: " ".join(x), [parts[i:i+3] for i in range(0, len(parts), 3)]))
+                    for i in wm_index:
+                        del indirect_objs[i]                    
+                    filtered_objs = f'[{" ".join(indirect_objs)}]'
+                    doc.xref_set_key(page.xref, "Contents", filtered_objs)
+            writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
+
+        if output_path is None:
+            p = Path(doc_path)
+            outpath = str(p.parent / f"{p.stem}-去水印版.pdf")
+        writer.save(outpath, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
-
+    
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
@@ -1319,69 +1357,69 @@ def main():
     args = parser.parse_args()
     logger.debug(args)
     if args.which == "merge":
-        merge_pdf(args.input_path_list, args.sort_method, args.sort_direction, args.output)
+        merge_pdf(doc_path_list=args.input_path_list, sort_method=args.sort_method, sort_direction=args.sort_direction, output_path=args.output)
     elif args.which == "split":
         if args.mode == "chunk":
-            split_pdf_by_chunk(args.input_path, args.chunk_size, args.output)
+            split_pdf_by_chunk(doc_path=args.input_path, chunk_size=args.chunk_size, output_path=args.output)
         elif args.mode == "page":
-            split_pdf_by_page(args.input_path, args.page_range, args.output)
+            split_pdf_by_page(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
         elif args.mode == "toc":
-            split_pdf_by_toc(args.input_path, args.toc_level, args.output)
+            split_pdf_by_toc(doc_path=args.input_path, level=args.toc_level, output_path=args.output)
     elif args.which == "delete":
-        slice_pdf(args.input_path, args.page_range, args.output, is_reverse=True)
+        slice_pdf(doc_path=args.input_path, page_range=args.page_range, output_path=args.output, is_reverse=True)
     elif args.which == 'insert':
         if args.method == "blank":
-            insert_blank_pdf(args.input_path1, args.insert_pos, args.count, args.orientation, args.paper_size, args.output)
+            insert_blank_pdf(doc_path=args.input_path1, pos=args.insert_pos, count=args.count, orientation=args.orientation, paper_size=args.paper_size, output_path=args.output)
         else:
-            insert_pdf(args.input_path1, args.input_path2, args.insert_pos, args.page_range, args.output)
+            insert_pdf(doc_path1=args.input_path1, doc_path2=args.input_path2, insert_pos=args.insert_pos, page_range=args.page_range, output_path=args.output)
     elif args.which == "replace":
-        replace_pdf(args.input_path1, args.input_path2, args.src_page_range, args.dst_page_range, args.output)
+        replace_pdf(doc_path1=args.input_path1, doc_path2=args.input_path2, src_range=args.src_page_range, dst_range=args.dst_page_range, output_path=args.output)
     elif args.which == "reorder":
-        reorder_pdf(args.input_path, args.page_range, args.output)
+        reorder_pdf(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
     elif args.which == "rotate":
-        rotate_pdf(args.input_path, args.angle, args.page_range, args.output)
+        rotate_pdf(doc_path=args.input_path, angle=args.angle, page_range=args.page_range, output_path=args.output)
     elif args.which == "encrypt":
-        encrypt_pdf(args.input_path, args.user_password, args.owner_password, args.perm, args.output)
+        encrypt_pdf(doc_path=args.input_path, user_password=args.user_password, owner_password=args.owner_password, perm=args.perm, output_path=args.output)
     elif args.which == "decrypt":
-        decrypt_pdf(args.input_path, args.password, args.output)
+        decrypt_pdf(doc_path=args.input_path, password=args.password, output_path=args.output)
     elif args.which == "compress":
-        compress_pdf(args.input_path, args.output)
+        compress_pdf(doc_path=args.input_path, output_path=args.output)
     elif args.which == "resize":
         if args.method == "dim":
-            resize_pdf_by_dim(args.input_path, args.width, args.height, args.page_range, args.output)
+            resize_pdf_by_dim(doc_path=args.input_path, width=args.width, height=args.height, page_range=args.page_range, output_path=args.output)
         elif args.method == "scale":
-            resize_pdf_by_scale(args.input_path, args.scale, args.page_range, args.output)
+            resize_pdf_by_scale(doc_path=args.input_path, scale=args.scale, page_range=args.page_range, output_path=args.output)
         elif args.method == "paper_size":
-            resize_pdf_by_paper_size(args.input_path, args.paper_size, args.page_range, args.output)
+            resize_pdf_by_paper_size(doc_path=args.input_path, paper_size=args.paper_size, page_range=args.page_range, output_path=args.output)
     elif args.which == "bookmark":
         if args.bookmark_which == "add":
             if args.method == "file":
-                add_toc_from_file(args.toc, args.input_path, args.offset, args.output)
+                add_toc_from_file(toc_path=args.toc, doc_path=args.input_path, offset=args.offset, output_path=args.output)
             elif args.method == "gap":
-                add_toc_by_gap(args.input_path, args.gap, args.format, args.output)
+                add_toc_by_gap(doc_path=args.input_path, gap=args.gap, format=args.format, output_path=args.output)
         elif args.bookmark_which == "extract":
-            extract_toc(args.input_path, args.format, args.output)
+            extract_toc(doc_path=args.input_path, format=args.format, output_path=args.output)
         elif args.bookmark_which == "transform":
-            transform_toc_file(args.toc, args.add_indent, args.remove_trailing_dots, args.add_offset, args.output)
+            transform_toc_file(toc_path=args.toc, is_add_indent=args.add_indent, is_remove_trailing_dots=args.remove_trailing_dots, add_offset=args.add_offset, output_path=args.output)
     elif args.which == "extract":
         if args.type == "text":
-            extract_pdf_text(args.input_path, args.page_range, args.output)
+            extract_pdf_text(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
         elif args.type == "image":
-            extract_pdf_images(args.input_path, args.page_range, args.output)
+            extract_pdf_images(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
         else:
             raise ValueError("不支持的提取类型!")
     elif args.which == "cut":
         if args.method == "grid":
-            cut_pdf_by_grid(args.input_path, args.nrow, args.ncol, args.page_range, args.output)
+            cut_pdf_by_grid(doc_path=args.input_path, n_row=args.nrow, n_col=args.ncol, page_range=args.page_range, output_path=args.output)
         elif args.method == "breakpoints":
-            cut_pdf_by_breakpoints(args.input_path, args.h_breakpoints, args.v_breakpoints, args.page_range, args.output)
+            cut_pdf_by_breakpoints(doc_path=args.input_path, h_breakpoints=args.h_breakpoints, v_breakpoints=args.v_breakpoints, page_range=args.page_range, output_path=args.output)
     elif args.which == "combine":
-        combine_pdf_by_grid(args.input_path, args.nrow, args.ncol, args.paper_size, args.orientation, args.page_range, args.output)
+        combine_pdf_by_grid(doc_path=args.input_path, n_row=args.nrow, n_col=args.ncol, paper_size=args.paper_size, orientation=args.orientation, page_range=args.page_range, output_path=args.output)
     elif args.which == "crop":
         if args.method == "bbox":
-            crop_pdf_by_bbox(args.input_path, args.bbox, args.unit, args.keep_size, args.page_range, args.output)
+            crop_pdf_by_bbox(doc_path=args.input_path, bbox=args.bbox, unit=args.unit, keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
         elif args.method == "margin":
-            crop_pdf_by_page_margin(args.input_path, args.margin, args.unit, args.keep_size, args.page_range, args.output)
+            crop_pdf_by_page_margin(doc_path=args.input_path, margin=args.margin, unit=args.unit, keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
     elif args.which == "convert":
         pass
     elif args.which == "watermark":
@@ -1403,32 +1441,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # create_text_wartmark(
-    #     wm_text         = '内部资料',
-    #     width           = 200,
-    #     height          = 200,
-    #     font            = 'msyh.ttc',
-    #     fontsize        = 55,
-    #     angle           = -90,
-    #     text_fill_alpha = 0.3,
-    #     num_lines       = 3,
-    #     line_spacing    = 1,
-    #     multiple_mode   = False,
-    #     x_offset        = 0,
-    #     y_offset        = 0,
-    #     output_path     = r'C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\水印.pdf',
-    # )
-
-    # watermark_pdf_by_text("C:/Users/kevin/Downloads/2023考研英语一真题-去水印版.pdf", "内部资料", output_path=None, num_lines=3, line_spacing=1, multiple_mode=False, x_offset=0, y_offset=0)
-    # create_image_wartmark(
-    #     595,
-    #     842,
-    #     r"C:\Users\kevin\miniconda3\envs\ocr\Lib\site-packages\pdf2docx\gui\icon.ico",
-    #     scale=0.2,
-    #     angle=45,
-    #     opacity=0.3,
-    #     multiple_mode=True,
-    #     num_lines=3,
-    #     line_spacing=2,
-    #     word_spacing=3
-    # )

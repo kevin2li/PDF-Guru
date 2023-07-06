@@ -19,7 +19,7 @@
                 </a-form-item>
                 <div v-if="formState.type === 'text'">
                     <a-form-item name="text" label="水印文本">
-                        <a-input v-model:value="formState.text" placeholder="e.g. 内部资料" allow-clear />
+                        <a-textarea v-model:value="formState.text" placeholder="e.g. 内部资料" allow-clear />
                     </a-form-item>
                     <a-form-item name="watermark_font_size" label="字体属性">
                         <a-space size="large">
@@ -104,7 +104,7 @@
                             </a-input-number>
                         </a-space>
                     </a-form-item>
-                    <a-form-item label="位置">
+                    <a-form-item label="位置和大小">
                         <a-space size="large">
                             <a-input-number v-model:value="formState.x_offset">
                                 <template #addonBefore>
