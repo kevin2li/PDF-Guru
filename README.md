@@ -1,10 +1,3 @@
-<a name="readme-top"></a>
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-
 # PDF Guru  
 ## 项目介绍
 目前网上的PDF处理工具有很多，但是都有一些缺点：
@@ -84,8 +77,6 @@ pip install "paddleocr>=2.0.1"
 4. 在PDF Guru的“首选项”中配置ocr路径
 
 ![Alt text](assets/settings.png)
-
-
 ### 使用
 1. [PDF合并](doc/PDF%E5%90%88%E5%B9%B6.md)
 2. [PDF拆分]()

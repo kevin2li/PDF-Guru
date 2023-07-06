@@ -3,12 +3,116 @@
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="rotate" label="旋转角度">
-                <a-radio-group v-model:value="formState.degree">
-                    <a-radio :value="90">顺时针90</a-radio>
-                    <a-radio :value="180">顺时针180</a-radio>
-                    <a-radio :value="270">逆时针90</a-radio>
+            <a-form-item name="encrypt_op" label="操作" style="margin-bottom: 1.8vh;">
+                <a-radio-group button-style="solid" v-model:value="formState.op">
+                    <a-radio-button value="add">添加页眉页脚</a-radio-button>
+                    <a-radio-button value="remove">删除页眉页脚</a-radio-button>
                 </a-radio-group>
+            </a-form-item>
+            <div v-if="formState.op === 'add'">
+
+                <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;">
+                    <a-form-item name="is_set_upw" label="设置页眉" :disabled="!formState.is_set_header">
+                        <a-checkbox v-model:checked="formState.is_set_header"></a-checkbox>
+                    </a-form-item>
+                    <a-form-item name="header_left ? 'upw' : 'upw-none'" label="左侧">
+                        <a-textarea v-model:value="formState.header_left" placeholder="页眉左侧内容" allow-clear
+                            :disabled="!formState.is_set_header" />
+                    </a-form-item>
+                    <a-form-item name="header_center ? 'upw' : 'upw-none'" label="中间">
+                        <a-textarea v-model:value="formState.header_center" placeholder="页眉中间内容" allow-clear
+                            :disabled="!formState.is_set_header" />
+                    </a-form-item>
+                    <a-form-item name="header_right ? 'upw' : 'upw-none'" label="右侧">
+                        <a-textarea v-model:value="formState.header_right" placeholder="页眉右侧内容" allow-clear
+                            :disabled="!formState.is_set_header" />
+                    </a-form-item>
+                </div>
+                <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;">
+                    <a-form-item name="is_set_upw" label="设置页脚" :disabled="!formState.is_set_footer">
+                        <a-checkbox v-model:checked="formState.is_set_footer"></a-checkbox>
+                    </a-form-item>
+                    <a-form-item name="footer_left ? 'upw' : 'upw-none'" label="左侧">
+                        <a-textarea v-model:value="formState.footer_left" placeholder="页脚左侧内容" allow-clear
+                            :disabled="!formState.is_set_footer" />
+                    </a-form-item>
+                    <a-form-item name="footer_center ? 'upw' : 'upw-none'" label="中间">
+                        <a-textarea v-model:value="formState.footer_center" placeholder="页脚中间内容" allow-clear
+                            :disabled="!formState.is_set_footer" />
+                    </a-form-item>
+                    <a-form-item name="footer_right ? 'upw' : 'upw-none'" label="右侧">
+                        <a-textarea v-model:value="formState.footer_right" placeholder="页脚右侧内容" allow-clear
+                            :disabled="!formState.is_set_footer" />
+                    </a-form-item>
+                </div>
+                <a-form-item name="watermark_font_size" label="字体属性" hasFeedback>
+                    <a-space size="large">
+                        <a-select v-model:value="formState.font_family" style="width: 200px">
+                            <a-select-option value="msyh.ttc">微软雅黑</a-select-option>
+                            <a-select-option value="simsun.ttc">宋体</a-select-option>
+                            <a-select-option value="simhei.ttf">黑体</a-select-option>
+                            <a-select-option value="simkai.ttf">楷体</a-select-option>
+                            <a-select-option value="simfang.ttf">仿宋</a-select-option>
+                            <a-select-option value="SIMYOU.TTF">幼圆</a-select-option>
+                            <a-select-option value="STHUPO.TTF">华文琥珀</a-select-option>
+                            <a-select-option value="FZSTK.TTF">方正舒体</a-select-option>
+                            <a-select-option value="STZHONGS.TTF">华文中宋</a-select-option>
+                            <a-select-option value="arial.ttf">Arial</a-select-option>
+                            <a-select-option value="times.ttf">TimesNewRoman</a-select-option>
+                            <a-select-option value="calibri.ttf">Calibri</a-select-option>
+                            <a-select-option value="consola.ttf">Consola</a-select-option>
+                        </a-select>
+                        <a-tooltip>
+                            <template #title>字号</template>
+                            <a-input-number v-model:value="formState.font_size" :min="1">
+                                <template #prefix>
+                                    <font-size-outlined />
+                                </template>
+                            </a-input-number>
+                        </a-tooltip>
+                        <a-tooltip>
+                            <template #title>字体颜色</template>
+                            <a-input v-model:value="formState.font_color" placeholder="16进制字体颜色"
+                                :defaultValue="formState.font_color" allow-clear>
+                                <template #prefix>
+                                    <font-colors-outlined />
+                                </template>
+                            </a-input>
+                        </a-tooltip>
+                    </a-space>
+                </a-form-item>
+            </div>
+            <div v-if="formState.op === 'remove'">
+                <a-form-item label="删除对象">
+                    <a-checkbox-group v-model:value="formState.remove_list">
+                        <a-checkbox value="header">页眉</a-checkbox>
+                        <a-checkbox value="footer">页脚</a-checkbox>
+                    </a-checkbox-group>
+                </a-form-item>
+            </div>
+            <a-form-item name="crop.type" label="页边距(cm)">
+                <a-space size="large">
+                    <a-input-number v-model:value="formState.up" :min="0">
+                        <template #addonBefore>
+                            上
+                        </template>
+                    </a-input-number>
+                    <a-input-number v-model:value="formState.down" :min="0">
+                        <template #addonBefore>
+                            下
+                        </template>
+                    </a-input-number>
+                    <a-input-number v-model:value="formState.left" :min="0">
+                        <template #addonBefore>
+                            左
+                        </template>
+                    </a-input-number>
+                    <a-input-number v-model:value="formState.right" :min="0">
+                        <template #addonBefore>
+                            右
+                        </template>
+                    </a-input-number>
+                </a-space>
             </a-form-item>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
@@ -34,18 +138,37 @@ import { message, Modal } from 'ant-design-vue';
 import { CheckFileExists, CheckRangeFormat, RotatePDF } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import type { RotateState } from "../data";
+import { FontSizeOutlined, FontColorsOutlined } from '@ant-design/icons-vue';
+import type { HeaderAndFooterState } from "../data";
 import { handleOps } from "../data";
 export default defineComponent({
     components: {
+        FontSizeOutlined,
+        FontColorsOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<RotateState>({
+        const formState = reactive<HeaderAndFooterState>({
             input: "",
             output: "",
             page: "",
-            degree: 90,
+            op: "add",
+            is_set_header: false,
+            is_set_footer: false,
+            header_left: '',
+            header_center: '',
+            header_right: '',
+            footer_left: '',
+            footer_center: '',
+            footer_right: '',
+            up: 1.27,
+            left: 1.27,
+            down: 2.54,
+            right: 2.54,
+            font_family: 'msyh.ttc',
+            font_size: 14,
+            font_color: '#FFFFFF',
+            remove_list: []
         });
 
         const validateStatus = reactive({
@@ -122,7 +245,7 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
+            // await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
             confirmLoading.value = false;
         }
         const onFinish = async () => {

@@ -21,7 +21,7 @@
                     <a-form-item name="text" label="水印文本">
                         <a-textarea v-model:value="formState.text" placeholder="e.g. 内部资料" allow-clear />
                     </a-form-item>
-                    <a-form-item name="watermark_font_size" label="字体属性">
+                    <a-form-item name="watermark_font_size" label="字体属性" hasFeedback>
                         <a-space size="large">
                             <a-select v-model:value="formState.font_family" style="width: 200px">
                                 <a-select-option value="msyh.ttc">微软雅黑</a-select-option>
@@ -48,7 +48,7 @@
                             </a-tooltip>
                             <a-tooltip>
                                 <template #title>字体颜色</template>
-                                <a-input v-model:value="formState.font_color" placeholder="字体颜色"
+                                <a-input v-model:value="formState.font_color" placeholder="16进制字体颜色"
                                     :defaultValue="formState.font_color" allow-clear>
                                     <template #prefix>
                                         <font-colors-outlined />
@@ -254,10 +254,12 @@ export default defineComponent({
         const validateStatus = reactive({
             input: "",
             page: "",
+            font_color: "",
         });
         const validateHelp = reactive({
             input: "",
             page: "",
+            font_color: "",
         });
 
         const validateFileExists = async (_rule: Rule, value: string) => {
@@ -314,11 +316,29 @@ export default defineComponent({
                 return Promise.reject();
             });
         };
+        const validateHexColor = async (_rule: Rule, value: string) => {
+            validateStatus["font_color"] = 'validating';
+            if (value.trim() === '') {
+                validateStatus["font_color"] = 'error';
+                validateHelp["font_color"] = "请填写颜色";
+                return Promise.reject();
+            }
+            const reg = /^#[0-9a-fA-f]{6}$/;
+            if (!reg.test(value)) {
+                validateStatus["font_color"] = 'error';
+                validateHelp["font_color"] = "请填写正确的颜色";
+                return Promise.reject();
+            }
+            validateStatus["font_color"] = 'success';
+            validateHelp["font_color"] = '';
+            return Promise.resolve();
+        };
         const rules: Record<string, Rule[]> = {
             input: [{ required: true, validator: validateFileExists, trigger: 'change' }],
             page: [{ validator: validateRange, trigger: 'change' }],
             text: [{ required: true, message: "请填写水印文本", trigger: 'change' }],
             wm_path: [{ required: true, message: "请填写水印图片路径", trigger: 'change' }],
+            font_color: [{ validator: validateHexColor, trigger: 'change' }],
         };
         // 重置表单
         const resetFields = () => {

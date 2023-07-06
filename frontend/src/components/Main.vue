@@ -10,9 +10,7 @@
                     </template>
                     <a-menu-item key="insert">
                         <template #icon>
-                            <!-- <login-outlined /> -->
-                            <icon-font type="icon-twitter" />
-                            <!-- <icon-font type="icon-mergeant" /> -->
+                            <login-outlined />
                         </template>
                         {{ menuRecord['insert'] }}
                     </a-menu-item>
@@ -66,19 +64,19 @@
                     </a-menu-item>
                     <a-menu-item key="header">
                         <template #icon>
-                            <borderless-table-outlined />
+                            <credit-card-outlined />
                         </template>
                         {{ menuRecord['header'] }}
                     </a-menu-item>
                     <a-menu-item key="page_number">
                         <template #icon>
-                            <borderless-table-outlined />
+                            <tablet-outlined />
                         </template>
                         {{ menuRecord['page_number'] }}
                     </a-menu-item>
                     <a-menu-item key="background">
                         <template #icon>
-                            <borderless-table-outlined />
+                            <bg-colors-outlined />
                         </template>
                         {{ menuRecord['background'] }}
                     </a-menu-item>
@@ -86,7 +84,7 @@
                 <a-sub-menu key="protect">
                     <template #title>保护</template>
                     <template #icon>
-                        <login-outlined />
+                        <safety-certificate-outlined />
                     </template>
                     <a-menu-item key="watermark">
                         <template #icon>
@@ -104,17 +102,17 @@
                 <a-sub-menu key="other">
                     <template #title>其他</template>
                     <template #icon>
-                        <login-outlined />
+                        <appstore-outlined />
                     </template>
                     <a-menu-item key="meta">
                         <template #icon>
-                            <bars-outlined />
+                            <info-circle-outlined />
                         </template>
                         {{ menuRecord['meta'] }}
                     </a-menu-item>
                     <a-menu-item key="bookmark">
                         <template #icon>
-                            <bars-outlined />
+                            <book-outlined />
                         </template>
                         {{ menuRecord['bookmark'] }}
                     </a-menu-item>
@@ -216,6 +214,12 @@ import {
     FormOutlined,
     DeleteOutlined,
     MergeCellsOutlined,
+    InfoCircleOutlined,
+    BookOutlined,
+    CreditCardOutlined,
+    BgColorsOutlined,
+    SafetyCertificateOutlined,
+    TabletOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
@@ -274,6 +278,12 @@ export default defineComponent({
         FormOutlined,
         DeleteOutlined,
         MergeCellsOutlined,
+        InfoCircleOutlined,
+        BookOutlined,
+        CreditCardOutlined,
+        BgColorsOutlined,
+        SafetyCertificateOutlined,
+        TabletOutlined,
         IconFont,
         // form
         // 合并

@@ -3,29 +3,111 @@
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="rotate" label="旋转角度">
-                <a-radio-group v-model:value="formState.degree">
-                    <a-radio :value="90">顺时针90</a-radio>
-                    <a-radio :value="180">顺时针180</a-radio>
-                    <a-radio :value="270">逆时针90</a-radio>
-                </a-radio-group>
-            </a-form-item>
-            <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
-                label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
-            </a-form-item>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
                 :help="validateHelp.input">
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
-            </a-form-item>
-            <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" :loading="confirmLoading">确认</a-button>
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
+        <a-divider></a-divider>
+        <div>
+            <a-typography-title :level="3">结果：</a-typography-title>
+        </div>
+        <div style="margin-top: 1.5vh;">
+            <a-tabs v-model:activatekey="formState.activeKey" type="card">
+                <a-tab-pane key="1" tab="基本信息" class="tab">
+                    <div>
+                        <a-form :label-col="{ span: 3 }">
+                            <a-row>
+                                <a-col :span="12">
+                                    <a-form-item label="PDF版本">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="总页数">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="页面大小">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="文件大小">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="创建时间">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="修改时间">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="是否加密">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                </a-col>
+                                <a-col :span="12">
+                                    <a-form-item label="标题">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="作者">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="主题">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="关键字">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="创建程序">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                    <a-form-item label="制作工具">
+                                        <div>xxx</div>
+                                    </a-form-item>
+                                </a-col>
+                            </a-row>
+                        </a-form>
+                    </div>
+                </a-tab-pane>
+                <a-tab-pane key="2" tab="安全性" class="tab">
+                    <div>
+                        <a-form :label-col="{ span: 3 }">
+                            <div>
+                                <b>安全性：</b>
+                            </div>
+                            <a-form-item label="安全方法">
+                                <div>无保护</div>
+                            </a-form-item>
+                            <div>
+                                <b>文档权限：</b>
+                            </div>
+                            <a-form-item label="打印">
+                                <div>允许</div>
+                            </a-form-item>
+                            <a-form-item label="复制">
+                                <div>允许</div>
+                            </a-form-item>
+                            <a-form-item label="注释">
+                                <div>允许</div>
+                            </a-form-item>
+                            <a-form-item label="填写表单">
+                                <div>允许</div>
+                            </a-form-item>
+                            <a-form-item label="页面提取">
+                                <div>允许</div>
+                            </a-form-item>
+                            <a-form-item label="文档组合">
+                                <div>允许</div>
+                            </a-form-item>
+                        </a-form>
+                    </div>
+                </a-tab-pane>
+                <a-tab-pane key="3" tab="字体" class="tab">
+
+                </a-tab-pane>
+            </a-tabs>
+
+        </div>
     </div>
 </template>
 <script lang="ts">
@@ -34,18 +116,15 @@ import { message, Modal } from 'ant-design-vue';
 import { CheckFileExists, CheckRangeFormat, RotatePDF } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import type { RotateState } from "../data";
 import { handleOps } from "../data";
 export default defineComponent({
     components: {
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<RotateState>({
+        const formState = reactive({
             input: "",
-            output: "",
-            page: "",
-            degree: 90,
+            activeKey: "1",
         });
 
         const validateStatus = reactive({
@@ -122,7 +201,7 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
+
             confirmLoading.value = false;
         }
         const onFinish = async () => {
@@ -144,3 +223,11 @@ export default defineComponent({
     }
 })
 </script>
+<style scoped>
+.tab {
+    border: 1px solid #dddddd;
+    padding: 10px;
+    border-radius: 10px;
+    width: 85%;
+}
+</style>

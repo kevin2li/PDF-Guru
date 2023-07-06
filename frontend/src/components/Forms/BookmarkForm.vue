@@ -8,7 +8,12 @@
                     <a-radio-button value="extract">提取书签</a-radio-button>
                     <a-radio-button value="write">写入书签</a-radio-button>
                     <a-radio-button value="transform">转换书签</a-radio-button>
-                    <a-radio-button value="recognize">识别书签</a-radio-button>
+                    <a-radio-button value="recognize">
+                        <a-space>
+                            <span>识别书签</span>
+                            <a-tag color="blue">ocr</a-tag>
+                        </a-space>
+                    </a-radio-button>
                 </a-radio-group>
             </a-form-item>
             <div v-if="formState.op == 'extract'">

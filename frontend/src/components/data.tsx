@@ -195,6 +195,62 @@ interface FormState {
     output: string;
 }
 
+interface BackgroundState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
+    color: string;
+    image_path: string;
+    opacity: number;
+    x_offset: number;
+    y_offset: number;
+    degree: number;
+}
+
+interface HeaderAndFooterState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
+    is_set_header: boolean;
+    is_set_footer: boolean;
+    header_left: string;
+    header_center: string;
+    header_right: string;
+    footer_left: string;
+    footer_center: string;
+    footer_right: string;
+    font_family: string;
+    font_size: number;
+    font_color: string;
+    up: number;
+    left: number;
+    down: number;
+    right: number;
+    remove_list: string[];
+}
+
+interface PageNumberState {
+    input: string;
+    output: string;
+    page: string;
+    op: string;
+    pos: string;
+    number_style: string;
+    number_start: number;
+    custom_style: string;
+    is_custom_style: boolean;
+    align: string;
+    font_family: string;
+    font_size: number;
+    font_color: string;
+    up: number;
+    left: number;
+    down: number;
+    right: number;
+}
+
 const menuRecord: Record<string, string> = {
     "merge": "PDF合并",
     "split": "PDF拆分",
@@ -218,6 +274,7 @@ const menuRecord: Record<string, string> = {
     "meta": "查看元信息",
     "settings": "首选项"
 };
+
 const menuDesc: Record<string, string> = {
     "merge": "将多个PDF文件合并为一个PDF文件,路径支持使用通配符'*'",
     "split": "将原始PDF文件按照给定的块大小进行分割",
@@ -260,4 +317,26 @@ async function handleOps(func: any, args: any[]) {
 }
 
 export { menuRecord, menuDesc, handleOps };
-export type { FormState, InsertState, MergeState, SplitState, DeleteState, CompressState, ReorderState, CropState, CutState, ExtractState, EncryptState, WatermarkState, ConvertState, RotateState, BookmarkState, OcrState, ScaleState, PreferencesState };
+export type {
+    FormState,
+    InsertState,
+    MergeState,
+    SplitState,
+    DeleteState,
+    CompressState,
+    ReorderState,
+    CropState,
+    CutState,
+    ExtractState,
+    EncryptState,
+    WatermarkState,
+    ConvertState,
+    RotateState,
+    BookmarkState,
+    OcrState,
+    ScaleState,
+    PreferencesState,
+    BackgroundState,
+    HeaderAndFooterState,
+    PageNumberState,
+};

@@ -1127,7 +1127,50 @@ def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: st
         writer.save(outpath, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
-    
+
+def human_readable_size(size):
+    """将文件大小转换为适合人类阅读的格式"""
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if size < 1024.0:
+            return f"{size:.2f} {unit}"
+        size /= 1024.0
+    return f"{size:.2f} PB"
+
+def extract_metadata(doc_path: str, output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        out = doc.metadata
+        logger.debug(out)
+        # embfile_info = doc.embfile_info()
+        # logger.debug(embfile_info)
+
+        out = doc.chapter_count
+        logger.debug(out)
+
+        catalog = doc.pdf_catalog()
+        logger.debug(catalog)
+
+        perm = doc.permissions
+        logger.debug(perm)
+
+        metadata = {}  # make my own metadata dict
+        what, value = doc.xref_get_key(-1, "Info")  # /Info key in the trailer
+        if what != "xref":
+            pass  # PDF has no metadata
+        else:
+            xref = int(value.replace("0 R", ""))  # extract the metadata xref
+            for key in doc.xref_get_keys(xref):
+                metadata[key] = doc.xref_get_key(xref, key)[1]
+        metadata['page_count'] = doc.page_count
+        page_size = doc[-1].rect
+        metadata['page_size'] = (convert_length(page_size.width, "pt", "cm"), convert_length(page_size.height, "pt", "cm"))
+        file_size = os.path.getsize(doc_path)
+        metadata['file_size'] = human_readable_size(file_size)
+        logger.debug(metadata)
+
+    except:
+        raise ValueError(traceback.format_exc())
+
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
@@ -1440,4 +1483,5 @@ def main():
             detect_watermark_index_helper(doc_path=args.input_path, wm_page_number=args.wm_index, outpath=args.output)
 
 if __name__ == "__main__":
-    main()
+    # main()
+    extract_metadata(doc_path=r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\pdf\新东方.pdf")
