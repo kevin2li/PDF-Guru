@@ -70,7 +70,7 @@
                     </a-menu-item>
                     <a-menu-item key="page_number">
                         <template #icon>
-                            <tablet-outlined />
+                            <field-binary-outlined />
                         </template>
                         {{ menuRecord['page_number'] }}
                     </a-menu-item>
@@ -130,7 +130,7 @@
                     </a-menu-item>
                     <a-menu-item key="convert">
                         <template #icon>
-                            <export-outlined />
+                            <sync-outlined />
                         </template>
                         {{ menuRecord['convert'] }}
                     </a-menu-item>
@@ -220,6 +220,8 @@ import {
     BgColorsOutlined,
     SafetyCertificateOutlined,
     TabletOutlined,
+    FieldBinaryOutlined,
+    SyncOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
@@ -284,6 +286,8 @@ export default defineComponent({
         BgColorsOutlined,
         SafetyCertificateOutlined,
         TabletOutlined,
+        FieldBinaryOutlined,
+        SyncOutlined,
         IconFont,
         // form
         // 合并

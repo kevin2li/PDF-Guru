@@ -28,25 +28,25 @@
                 </a-form-item>
                 <a-form-item label="页码样式">
                     <a-select v-model:value="formState.number_style" style="width: 200px">
-                        <a-select-option value="1">1,2,3...</a-select-option>
-                        <a-select-option value="2">1/X</a-select-option>
-                        <a-select-option value="3">第1页</a-select-option>
-                        <a-select-option value="4">第1/X页</a-select-option>
-                        <a-select-option value="5">第1页，共X页</a-select-option>
-                        <a-select-option value="6">-1-,-2-,-3-...</a-select-option>
-                        <a-select-option value="7">第一页</a-select-option>
-                        <a-select-option value="8">第一页，共X页</a-select-option>
-                        <a-select-option value="9">I,II,III...</a-select-option>
-                        <a-select-option value="10">i,ii,iii...</a-select-option>
-                        <a-select-option value="11">A,B,C...</a-select-option>
-                        <a-select-option value="12">a,b,c...</a-select-option>
+                        <a-select-option value="0">1,2,3...</a-select-option>
+                        <a-select-option value="1">1/X</a-select-option>
+                        <a-select-option value="2">第1页</a-select-option>
+                        <a-select-option value="3">第1/X页</a-select-option>
+                        <a-select-option value="4">第1页，共X页</a-select-option>
+                        <a-select-option value="5">-1-,-2-,-3-...</a-select-option>
+                        <a-select-option value="6">第一页</a-select-option>
+                        <a-select-option value="7">第一页，共X页</a-select-option>
+                        <a-select-option value="8">I,II,III...</a-select-option>
+                        <a-select-option value="9">i,ii,iii...</a-select-option>
+                        <a-select-option value="10">A,B,C...</a-select-option>
+                        <a-select-option value="11">a,b,c...</a-select-option>
                     </a-select>
                 </a-form-item>
                 <a-form-item label="自定义页码样式">
                     <a-checkbox v-model:checked="formState.is_custom_style"></a-checkbox>
                 </a-form-item>
                 <a-form-item label="页码格式" v-if="formState.is_custom_style">
-                    <a-input v-model:value="formState.custom_style" placeholder="自定义页码格式, %p表示当前页码，#表示总页码，e.g. '第%p/#页'"
+                    <a-input v-model:value="formState.custom_style" placeholder="自定义页码格式, %p表示当前页码，%P表示总页码，e.g. '第%p/%P页'"
                         allow-clear :disabled="!formState.is_custom_style" />
                 </a-form-item>
                 <a-form-item name="watermark_font_size" label="字体属性" hasFeedback>
@@ -83,10 +83,26 @@
                                 </template>
                             </a-input>
                         </a-tooltip>
+                        <a-tooltip>
+                            <template #title>不透明度</template>
+                            <a-input-number v-model:value="formState.opacity" :min="0" :max="1" :step="0.01">
+                                <template #addonBefore>
+                                    不透明度
+                                </template>
+                            </a-input-number>
+                        </a-tooltip>
                     </a-space>
                 </a-form-item>
             </div>
-            <a-form-item name="crop.type" label="页边距(cm)">
+            <a-form-item label="页边距单位">
+                <a-radio-group v-model:value="formState.unit">
+                    <a-radio value="pt">像素</a-radio>
+                    <a-radio value="cm">厘米</a-radio>
+                    <a-radio value="mm">毫米</a-radio>
+                    <a-radio value="in">英寸</a-radio>
+                </a-radio-group>
+            </a-form-item>
+            <a-form-item name="crop.type" label="页边距">
                 <a-space size="large">
                     <a-input-number v-model:value="formState.up" :min="0">
                         <template #addonBefore>
@@ -131,7 +147,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, RotatePDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, AddPDFPageNumber, RemovePDFPageNumber } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { FontSizeOutlined, FontColorsOutlined } from '@ant-design/icons-vue';
@@ -157,11 +173,13 @@ export default defineComponent({
             align: 'center',
             font_family: 'simsun.ttc',
             font_size: 14,
-            font_color: '#FFFFFF',
+            font_color: '#000000',
             up: 1.27,
-            left: 1.27,
-            down: 2.54,
+            down: 1.27,
+            left: 2.54,
             right: 2.54,
+            opacity: 1,
+            unit: 'cm'
         });
 
         const validateStatus = reactive({
@@ -238,7 +256,41 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            // await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
+            switch (formState.op) {
+                case 'add': {
+                    let format = formState.number_style;
+                    if (formState.is_custom_style) {
+                        format = formState.custom_style;
+                    }
+                    await handleOps(AddPDFPageNumber, [
+                        formState.input,
+                        formState.output,
+                        formState.pos,
+                        formState.number_start,
+                        format,
+                        [formState.up, formState.down, formState.left, formState.right],
+                        formState.unit,
+                        formState.align,
+                        formState.font_family,
+                        formState.font_size,
+                        formState.font_color,
+                        formState.opacity,
+                        formState.page,
+                    ])
+                    break;
+                }
+                case 'remove': {
+                    await handleOps(RemovePDFPageNumber, [
+                        formState.input,
+                        formState.output,
+                        [formState.up, formState.down, formState.left, formState.right],
+                        formState.pos,
+                        formState.unit,
+                        formState.page,
+                    ])
+                    break;
+                }
+            }
             confirmLoading.value = false;
         }
         const onFinish = async () => {

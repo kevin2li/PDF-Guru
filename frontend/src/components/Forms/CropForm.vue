@@ -24,14 +24,14 @@
                             上
                         </template>
                     </a-input-number>
-                    <a-input-number v-model:value="formState.left" :min="0">
-                        <template #addonBefore>
-                            左
-                        </template>
-                    </a-input-number>
                     <a-input-number v-model:value="formState.down" :min="0">
                         <template #addonBefore>
                             下
+                        </template>
+                    </a-input-number>
+                    <a-input-number v-model:value="formState.left" :min="0">
+                        <template #addonBefore>
+                            左
                         </template>
                     </a-input-number>
                     <a-input-number v-model:value="formState.right" :min="0">

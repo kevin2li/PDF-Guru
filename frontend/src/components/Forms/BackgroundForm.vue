@@ -9,24 +9,32 @@
                     <a-radio value="image">图片</a-radio>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item name="color" label="颜色" v-show="formState.op === 'color'" hasFeedback
+            <a-form-item name="color" label="颜色" v-if="formState.op === 'color'" hasFeedback
                 :validateStatus="validateStatus.color" :help="validateHelp.color">
                 <a-input v-model:value="formState.color" placeholder="颜色16进制码, e.g. #FF0000" allow-clear />
             </a-form-item>
-            <a-form-item name="image_path" label="图片" v-show="formState.op === 'image'" hasFeedback
+            <a-form-item name="image_path" label="图片" v-if="formState.op === 'image'" hasFeedback
                 :validateStatus="validateStatus.image_path" :help="validateHelp.image_path">
                 <a-input v-model:value="formState.image_path" placeholder="图片路径" allow-clear />
             </a-form-item>
             <a-form-item name="watermark_font_opacity" label="外观">
                 <a-space size="large">
-                    <a-input-number v-model:value="formState.opacity" :min="0" :max="1" :step="0.01">
+                    <a-input-number v-model:value="formState.opacity" :min="0" :max="1" :step="0.01" style="width: 200px;">
                         <template #addonBefore>
                             不透明度
                         </template>
                     </a-input-number>
+                    <div style="width: 100px;">
+                        <a-slider v-model:value="formState.opacity" :min="0" :max="1" :step="0.01" />
+                    </div>
                     <a-input-number v-model:value="formState.degree" :min="0" :max="360">
                         <template #addonBefore>
                             旋转角度
+                        </template>
+                    </a-input-number>
+                    <a-input-number v-model:value="formState.scale" :min="0">
+                        <template #addonBefore>
+                            缩放比例
                         </template>
                     </a-input-number>
                 </a-space>
@@ -66,7 +74,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, RotatePDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, AddPDFBackgroundByColor, AddPDFBackgroundByImage } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { BackgroundState } from "../data";
@@ -80,10 +88,11 @@ export default defineComponent({
             input: "",
             output: "",
             page: "",
-            degree: 90,
+            degree: 0,
             op: 'color',
             color: '',
-            opacity: 0,
+            opacity: 1,
+            scale: 1,
             x_offset: 0,
             y_offset: 0,
             image_path: ''
@@ -154,7 +163,7 @@ export default defineComponent({
                 validateHelp["image_path"] = err;
                 return Promise.reject();
             });
-            const legal_suffix = [".png", ".jpg", ".jpeg", ".bmp", ".gif"];
+            const legal_suffix = [".png", ".jpg", ".jpeg", ".bmp", ".gif", "JPG", "PNG", "JPEG", "BMP", "GIF"];
             if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
                 validateStatus["image_path"] = 'error';
                 validateHelp["image_path"] = "仅支持图片格式的文件";
@@ -216,7 +225,36 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
+            switch (formState.op) {
+                case 'color': {
+                    await handleOps(AddPDFBackgroundByColor, [
+                        formState.input,
+                        formState.output,
+                        formState.color,
+                        formState.opacity,
+                        formState.degree,
+                        formState.x_offset,
+                        formState.y_offset,
+                        formState.page,
+                    ]);
+                    break;
+                }
+                case 'image': {
+                    await handleOps(AddPDFBackgroundByImage, [
+                        formState.input,
+                        formState.image_path,
+                        formState.output,
+                        formState.opacity,
+                        formState.degree,
+                        formState.x_offset,
+                        formState.y_offset,
+                        formState.scale,
+                        formState.page,
+                    ]);
+                }
+                default:
+                    break;
+            }
             confirmLoading.value = false;
         }
         const onFinish = async () => {

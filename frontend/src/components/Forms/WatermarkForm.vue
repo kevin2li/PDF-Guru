@@ -166,6 +166,7 @@
                 <a-form-item name="remove_method" label="去水印方法">
                     <a-radio-group v-model:value="formState.remove_method">
                         <a-radio value="type">自动查找水印去除</a-radio>
+                        <a-radio value="mask">遮罩去除水印</a-radio>
                         <a-radio value="index">人工识别水印索引</a-radio>
                     </a-radio-group>
                 </a-form-item>
@@ -182,15 +183,89 @@
                             <a-radio style="display: flex;height:30px;lineHeight:30px;" value="2">步骤二：删除水印</a-radio>
                         </a-radio-group>
                     </a-form-item>
-                    <a-form-item name="page" label="含水印页码" v-if="formState.step === '1'">
+                    <a-form-item name="wm_index" label="含水印页码" v-if="formState.step === '1'">
                         <a-input v-model:value="formState.wm_index" placeholder="包含水印的页码，1页即可"></a-input>
                     </a-form-item>
-                    <a-form-item name="page" label="水印索引" v-if="formState.step === '2'"
+                    <a-form-item name="wm_index" label="水印索引" v-if="formState.step === '2'"
                         :rules="[{ required: true, message: '请提供水印索引' }]">
                         <a-input v-model:value="formState.wm_index" placeholder="多个数字用英文逗号隔开,支持负数(表示倒数页) e.g. -1"></a-input>
                     </a-form-item>
                     <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                         label="页码范围" v-if="formState.step === '2'">
+                        <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                    </a-form-item>
+                </div>
+                <div v-if="formState.remove_method === 'mask'">
+                    <a-form-item name="type" label="遮罩类型">
+                        <a-radio-group v-model:value="formState.mask_type">
+                            <a-radio value="rect">手动指定矩形框</a-radio>
+                            <a-radio value="annot">根据矩形注释确定</a-radio>
+                        </a-radio-group>
+                    </a-form-item>
+                    <div v-if="formState.mask_type === 'rect'">
+                        <a-form-item label="单位">
+                            <a-radio-group v-model:value="formState.unit">
+                                <a-radio value="pt">像素</a-radio>
+                                <a-radio value="cm">厘米</a-radio>
+                                <a-radio value="mm">毫米</a-radio>
+                                <a-radio value="in">英寸</a-radio>
+                            </a-radio-group>
+                        </a-form-item>
+                        <a-form-item name="rect" label="矩形框">
+                            <a-space size="large">
+                                <a-input-number v-model:value="formState.x_offset">
+                                    <template #addonBefore>
+                                        左上x
+                                    </template>
+                                </a-input-number>
+                                <a-input-number v-model:value="formState.y_offset">
+                                    <template #addonBefore>
+                                        左上y
+                                    </template>
+                                </a-input-number>
+                                <a-input-number v-model:value="formState.width">
+                                    <template #addonBefore>
+                                        宽度
+                                    </template>
+                                </a-input-number>
+                                <a-input-number v-model:value="formState.height">
+                                    <template #addonBefore>
+                                        高度
+                                    </template>
+                                </a-input-number>
+                            </a-space>
+                        </a-form-item>
+
+                    </div>
+                    <div v-if="formState.mask_type === 'annot'">
+                        <a-form-item name="annot_page" label="矩形注释页码">
+                            <a-input-number v-model:value="formState.annot_page" :min="1"></a-input-number>
+                        </a-form-item>
+                    </div>
+                    <a-form-item label="遮罩属性">
+                        <a-row>
+                            <a-col :span="6">
+                                <a-input v-model:value="formState.font_color" placeholder="16进制字体颜色"
+                                    :defaultValue="formState.mask_color" allow-clear>
+                                    <template #addonBefore>
+                                        颜色
+                                    </template>
+                                </a-input>
+                            </a-col>
+                            <a-col :span="6" style="margin-left: 1.5vw;">
+                                <a-input-number v-model:value="formState.mask_opacity" :min="0" :max="1" :step="0.01">
+                                    <template #addonBefore>
+                                        不透明度
+                                    </template>
+                                </a-input-number>
+                            </a-col>
+                            <a-col :span="6">
+                                <a-slider v-model:value="formState.mask_opacity" :min="0" :max="1" :step="0.01" />
+                            </a-col>
+                        </a-row>
+                    </a-form-item>
+                    <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
+                        label="页码范围">
                         <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
                     </a-form-item>
                 </div>
@@ -212,7 +287,18 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, WatermarkPDFByText, WatermarkPDFByImage, WatermarkPDFByPDF, RemoveWatermarkByIndex, RemoveWatermarkByType, DetectWatermarkByIndex } from '../../../wailsjs/go/main/App';
+import {
+    CheckFileExists,
+    CheckRangeFormat,
+    WatermarkPDFByText,
+    WatermarkPDFByImage,
+    WatermarkPDFByPDF,
+    RemoveWatermarkByIndex,
+    RemoveWatermarkByType,
+    DetectWatermarkByIndex,
+    MaskPDFByAnnot,
+    MaskPDFByRect
+} from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { FontSizeOutlined, FontColorsOutlined } from '@ant-design/icons-vue';
@@ -221,7 +307,7 @@ import { handleOps } from "../data";
 export default defineComponent({
     components: {
         FontSizeOutlined,
-        FontColorsOutlined
+        FontColorsOutlined,
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -249,6 +335,13 @@ export default defineComponent({
             lines: 0,
             wm_path: "",
             scale: 1,
+            mask_type: 'annot',
+            unit: 'pt',
+            width: 0,
+            height: 0,
+            annot_page: 1,
+            mask_color: '#FFFFFF',
+            mask_opacity: 1,
         });
 
         const validateStatus = reactive({
@@ -382,6 +475,19 @@ export default defineComponent({
                                 case "2": {
                                     let wm_index = formState.wm_index.split(",").map((item) => parseInt(item.trim()) - 1);
                                     await handleOps(RemoveWatermarkByIndex, [formState.input, formState.output, wm_index, formState.page]);
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                        case "mask": {
+                            switch (formState.mask_type) {
+                                case "rect": {
+                                    await handleOps(MaskPDFByRect, [formState.input, formState.output, [formState.x_offset, formState.y_offset, formState.width, formState.height], formState.unit, formState.mask_color, formState.mask_opacity, 0, formState.page]);
+                                    break;
+                                }
+                                case "annot": {
+                                    await handleOps(MaskPDFByAnnot, [formState.input, formState.output, formState.annot_page - 1, formState.mask_color, formState.mask_opacity, 0, formState.page]);
                                     break;
                                 }
                             }

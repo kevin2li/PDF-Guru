@@ -103,6 +103,13 @@ interface WatermarkState {
     wm_index: string;
     wm_path: string;
     scale: number;
+    mask_type: string;
+    unit: string;
+    width: number;
+    height: number;
+    annot_page: number;
+    mask_color: string;
+    mask_opacity: number;
 }
 
 interface ConvertState {
@@ -203,6 +210,7 @@ interface BackgroundState {
     color: string;
     image_path: string;
     opacity: number;
+    scale: number;
     x_offset: number;
     y_offset: number;
     degree: number;
@@ -224,10 +232,12 @@ interface HeaderAndFooterState {
     font_family: string;
     font_size: number;
     font_color: string;
+    opacity: number;
     up: number;
     left: number;
     down: number;
     right: number;
+    unit: string;
     remove_list: string[];
 }
 
@@ -245,10 +255,12 @@ interface PageNumberState {
     font_family: string;
     font_size: number;
     font_color: string;
+    opacity: number;
     up: number;
     left: number;
     down: number;
     right: number;
+    unit: string;
 }
 
 const menuRecord: Record<string, string> = {
@@ -284,8 +296,8 @@ const menuDesc: Record<string, string> = {
     "insert": "插入或替换PDF文件的指定页面",
     "bookmark": "从原始PDF文件中提取书签信息，或将PDF书签信息写入PDF文件",
     "watermark": "将原始PDF文件按照给定的水印参数添加水印",
-    "header": "页眉页脚",
-    "background": "文档背景",
+    "header": "设置页眉页脚",
+    "background": "添加文档背景",
     "page_number": "页码设置",
     "scale": "将原始PDF文件按照给定的缩放参数进行缩放",
     "rotate": "将原始PDF文件按照给定的旋转角度进行旋转",
@@ -295,7 +307,7 @@ const menuDesc: Record<string, string> = {
     "convert": "PDF转换",
     "encrypt": "对PDF文件进行加密或解密",
     "ocr": "对PDF文件或图片(支持png、jpg格式)进行OCR识别",
-    "meta": "查看元信息",
+    "meta": "查看文档属性",
     "settings": "对软件功能进行配置"
 }
 

@@ -1211,3 +1211,373 @@ func (a *App) DetectWatermarkByIndex(inFile string, outFile string, wmIndex int)
 	}
 	return nil
 }
+
+func (a *App) MaskPDFByRect(inFile string, outFile string, rect []float32, unit string, color string, opacity float32, angle float32, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, rect: %v, unit: %s, color: %s, opacity: %f, angle: %f, pages: %s\n", inFile, outFile, rect, unit, color, opacity, angle, pages)
+	args := []string{"mask", "--type", "rect"}
+	args = append(args, "--rect")
+	for _, v := range rect {
+		args = append(args, fmt.Sprintf("%f", v))
+	}
+	if unit != "" {
+		args = append(args, "--unit", unit)
+	}
+	if color != "" {
+		args = append(args, "--color", color)
+	}
+	args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	args = append(args, "--angle", fmt.Sprintf("%f", angle))
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) MaskPDFByAnnot(inFile string, outFile string, annot_page int, color string, opacity float32, angle float32, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, annot_page: %d, color: %s, opacity: %f, angle: %f, pages: %s\n", inFile, outFile, annot_page, color, opacity, angle, pages)
+	args := []string{"mask", "--type", "annot"}
+	args = append(args, "--annot-page", fmt.Sprintf("%d", annot_page))
+	if color != "" {
+		args = append(args, "--color", color)
+	}
+	args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	args = append(args, "--angle", fmt.Sprintf("%f", angle))
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) AddPDFBackgroundByColor(inFile string, outFile string, color string, opacity float32, angle float32, x_offset float32, y_offset float32, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, color: %s, opacity: %f, angle: %f, x_offset: %f, y_offset: %f, pages: %s\n", inFile, outFile, color, opacity, angle, x_offset, y_offset, pages)
+	args := []string{"bg", "--type", "color"}
+	if color != "" {
+		args = append(args, "--color", color)
+	}
+	args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	args = append(args, "--angle", fmt.Sprintf("%f", angle))
+	args = append(args, "--x-offset", fmt.Sprintf("%f", x_offset))
+	args = append(args, "--y-offset", fmt.Sprintf("%f", y_offset))
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+
+	args = append(args, inFile)
+
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) AddPDFBackgroundByImage(inFile string, imgFile string, outFile string, opacity float32, angle float32, x_offset float32, y_offset float32, scale float32, pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, imgFile: %s, opacity: %f, angle: %f, x_offset: %f, y_offset: %f, pages: %s\n", inFile, outFile, imgFile, opacity, angle, x_offset, y_offset, pages)
+	args := []string{"bg", "--type", "image"}
+	if imgFile != "" {
+		args = append(args, "--img-path", imgFile)
+	}
+	args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	args = append(args, "--angle", fmt.Sprintf("%f", angle))
+	args = append(args, "--x-offset", fmt.Sprintf("%f", x_offset))
+	args = append(args, "--y-offset", fmt.Sprintf("%f", y_offset))
+	args = append(args, "--scale", fmt.Sprintf("%f", scale))
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+
+	args = append(args, inFile)
+
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) AddPDFHeaderAndFooter(
+	inFile string,
+	outFile string,
+	header_left string,
+	header_center string,
+	header_right string,
+	footer_left string,
+	footer_center string,
+	footer_right string,
+	margin_bbox []float32,
+	unit string,
+	font_family string,
+	font_size int,
+	font_color string,
+	opacity float32,
+	pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, header_left: %s, header_center: %s, header_right: %s, footer_left: %s, footer_center: %s, footer_right: %s, margin_bbox: %v, unit: %s, font_family: %s, font_size: %d, font_color: %s, opacity: %f, pages: %s\n", inFile, outFile, header_left, header_center, header_right, footer_left, footer_center, footer_right, margin_bbox, unit, font_family, font_size, font_color, opacity, pages)
+	args := []string{"header_footer", "--type", "add"}
+	if header_left != "" {
+		args = append(args, "--header-left", header_left)
+	}
+	if header_center != "" {
+		args = append(args, "--header-center", header_center)
+	}
+	if header_right != "" {
+		args = append(args, "--header-right", header_right)
+	}
+	if footer_left != "" {
+		args = append(args, "--footer-left", footer_left)
+	}
+	if footer_center != "" {
+		args = append(args, "--footer-center", footer_center)
+	}
+	if footer_right != "" {
+		args = append(args, "--footer-right", footer_right)
+	}
+	if len(margin_bbox) > 0 {
+		args = append(args, "--margin-bbox")
+		for _, v := range margin_bbox {
+			args = append(args, fmt.Sprintf("%f", v))
+		}
+	}
+	if unit != "" {
+		args = append(args, "--unit", unit)
+	}
+	if font_family != "" {
+		args = append(args, "--font-family", font_family)
+	}
+	if font_size != 0 {
+		args = append(args, "--font-size", fmt.Sprintf("%d", font_size))
+	}
+	if font_color != "" {
+		args = append(args, "--font-color", font_color)
+	}
+	if opacity != 0 {
+		args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	}
+	if pages != "" {
+		args = append(args, "--page-range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) AddPDFPageNumber(
+	inFile string,
+	outFile string,
+	pos string,
+	start int,
+	format string,
+	margin_bbox []float32,
+	unit string,
+	align string,
+	font_family string,
+	font_size int,
+	font_color string,
+	opacity float32,
+	pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, pos: %s, start: %d, format: %s, margin_bbox: %v, unit: %s, font_family: %s, font_size: %d, font_color: %s, opacity: %f, pages: %s\n", inFile, outFile, pos, start, format, margin_bbox, unit, font_family, font_size, font_color, opacity, pages)
+	args := []string{"page_number", "--type", "add"}
+	if pos != "" {
+		args = append(args, "--pos", pos)
+	}
+	if start != 0 {
+		args = append(args, "--start", fmt.Sprintf("%d", start))
+	}
+	if format != "" {
+		args = append(args, "--format", format)
+	}
+	if align != "" {
+		args = append(args, "--align", align)
+	}
+	if len(margin_bbox) > 0 {
+		args = append(args, "--margin-bbox")
+		for _, v := range margin_bbox {
+			args = append(args, fmt.Sprintf("%f", v))
+		}
+	}
+	if unit != "" {
+		args = append(args, "--unit", unit)
+	}
+	if font_family != "" {
+		args = append(args, "--font-family", font_family)
+	}
+	if font_size != 0 {
+		args = append(args, "--font-size", fmt.Sprintf("%d", font_size))
+	}
+	if font_color != "" {
+		args = append(args, "--font-color", font_color)
+	}
+	if opacity != 0 {
+		args = append(args, "--opacity", fmt.Sprintf("%f", opacity))
+	}
+	if pages != "" {
+		args = append(args, "--page-range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) RemovePDFHeaderAndFooter(
+	inFile string,
+	outFile string,
+	margin_bbox []float32,
+	remove_list []string,
+	unit string,
+	pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, margin_bbox: %v, remove_list: %v, unit: %s, pages: %s\n", inFile, outFile, margin_bbox, remove_list, unit, pages)
+	args := []string{"header_footer", "--type", "remove"}
+	if len(margin_bbox) > 0 {
+		args = append(args, "--margin-bbox")
+		for _, v := range margin_bbox {
+			args = append(args, fmt.Sprintf("%f", v))
+		}
+	}
+	if len(remove_list) > 0 {
+		args = append(args, "--remove")
+		args = append(args, remove_list...)
+	}
+	if unit != "" {
+		args = append(args, "--unit", unit)
+	}
+	if pages != "" {
+		args = append(args, "--page-range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) RemovePDFPageNumber(
+	inFile string,
+	outFile string,
+	margin_bbox []float32,
+	pos string,
+	unit string,
+	pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, margin_bbox: %v, pos: %s, unit: %s, pages: %s\n", inFile, outFile, margin_bbox, pos, unit, pages)
+	args := []string{"page_number", "--type", "remove"}
+	if len(margin_bbox) > 0 {
+		args = append(args, "--margin-bbox")
+		for _, v := range margin_bbox {
+			args = append(args, fmt.Sprintf("%f", v))
+		}
+	}
+	if pos != "" {
+		args = append(args, "--pos", pos)
+	}
+	if unit != "" {
+		args = append(args, "--unit", unit)
+	}
+	if pages != "" {
+		args = append(args, "--page-range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}

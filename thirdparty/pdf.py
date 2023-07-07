@@ -124,6 +124,81 @@ def hex_to_rgb(hex_color):
     rgb_color = colorsys.rgb_to_hsv(r/255, g/255, b/255)
     return tuple(round(c * 255) for c in colorsys.hsv_to_rgb(*rgb_color))
 
+# 阿拉伯数字转罗马数字
+def num_to_roman(num):
+    roman_map = {1: 'I', 4: 'IV', 5: 'V', 9: 'IX', 10: 'X', 40: 'XL', 50: 'L', 90: 'XC', 100: 'C', 400: 'CD', 500: 'D', 900: 'CM', 1000: 'M'}
+    result = ''
+    for value, symbol in sorted(roman_map.items(), reverse=True):
+        while num >= value:
+            result += symbol
+            num -= value
+    return result
+
+# 将阿拉伯数字转换为字母表
+def num_to_letter(num):
+    if num <= 0:
+        return ""
+    # 将数字转换为 0-25 的范围
+    num -= 1
+    quotient, remainder = divmod(num, 26)
+    # 递归转换前面的部分
+    prefix = num_to_letter(quotient)
+    # 将当前位转换为字母
+    letter = chr(ord('A') + remainder)
+    # 拼接前缀和当前字母
+    return prefix + letter
+
+
+def num_to_chinese(num):
+    """将阿拉伯数字转换为中文数字"""
+    CHINESE_NUMBERS = {
+        0: "零", 1: "一", 2: "二", 3: "三", 4: "四", 5: "五",
+        6: "六", 7: "七", 8: "八", 9: "九", 10: "十"
+    }
+    if num == 0:
+        return CHINESE_NUMBERS[num]
+
+    result = ""
+    if num >= 100000000:  # 亿
+        quotient, remainder = divmod(num, 100000000)
+        result += num_to_chinese(quotient) + "亿"
+        num = remainder
+
+    if num >= 10000:  # 万
+        quotient, remainder = divmod(num, 10000)
+        result += num_to_chinese(quotient) + "万"
+        num = remainder
+
+    if num >= 1000:  # 千
+        quotient, remainder = divmod(num, 1000)
+        result += CHINESE_NUMBERS[quotient] + "千"
+        num = remainder
+
+    if num >= 100:  # 百
+        quotient, remainder = divmod(num, 100)
+        result += CHINESE_NUMBERS[quotient] + "百"
+        num = remainder
+
+    if num >= 10:  # 十
+        quotient, remainder = divmod(num, 10)
+        if quotient > 1:
+            result += CHINESE_NUMBERS[quotient]
+        result += "十"
+        num = remainder
+
+    if num > 0:
+        result += CHINESE_NUMBERS[num]
+
+    return result
+
+def human_readable_size(size):
+    """将文件大小转换为适合人类阅读的格式"""
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if size < 1024.0:
+            return f"{size:.2f} {unit}"
+        size /= 1024.0
+    return f"{size:.2f} PB"
+
 def batch_process(func):
     def wrapper(*args, **kwargs):
         logger.debug(args)
@@ -856,22 +931,22 @@ def convert_images_to_pdf(input_path: str, output_path: str = None):
     raise NotImplementedError
 
 def create_text_wartmark(
-        wm_text:str,
-        width: Union[int, float],
-        height: Union[int, float],
-        font: str = "msyh.ttc",
-        fontsize: int = 55,
-        angle: Union[int, float] = 45,
+        wm_text              : str,
+        width                : Union[int, float],
+        height               : Union[int, float],
+        font                 : str = "msyh.ttc",
+        fontsize             : int = 55,
+        angle                : Union[int, float] = 45,
         text_stroke_color_rgb: Tuple[int, int, int] = (0, 1, 0),
-        text_fill_color_rgb: Tuple[int, int, int] = (1, 0, 0),
-        text_fill_alpha: Union[int, float] = 0.3,
-        num_lines: Union[int, float] = 1,
-        line_spacing: Union[int, float] = 2,
-        word_spacing: Union[int, float] = 2,
-        x_offset: Union[int, float] = 0,
-        y_offset: Union[int, float] = 0,
-        multiple_mode: bool = False,
-        output_path:str = None,
+        text_fill_color_rgb  : Tuple[int, int, int] = (1, 0, 0),
+        text_fill_alpha      : Union[int, float] = 0.3,
+        num_lines            : Union[int, float] = 1,
+        line_spacing         : Union[int, float] = 2,
+        word_spacing         : Union[int, float] = 2,
+        x_offset             : Union[int, float] = 0,
+        y_offset             : Union[int, float] = 0,
+        multiple_mode        : bool = False,
+        output_path          : str = None,
     ) -> None:
     if output_path is None:
         output_path = "watermark.pdf"
@@ -912,19 +987,19 @@ def create_text_wartmark(
     c.save()
 
 def create_image_wartmark(
-        width: Union[int, float],
-        height: Union[int, float],
+        width        : Union[int, float],
+        height       : Union[int, float],
         wm_image_path: str,
-        angle: Union[int, float] = 0,
-        scale: Union[int, float] = 1,
-        opacity: Union[int, float] = 1,
-        num_lines: Union[int, float] = 1,
-        word_spacing: Union[int, float] = 0.1,
-        line_spacing: Union[int, float] = 2,
-        x_offset: Union[int, float] = 0,
-        y_offset: Union[int, float] = 0,
+        angle        : Union[int, float] = 0,
+        scale        : Union[int, float] = 1,
+        opacity      : Union[int, float] = 1,
+        num_lines    : Union[int, float] = 1,
+        word_spacing : Union[int, float] = 0.1,
+        line_spacing : Union[int, float] = 2,
+        x_offset     : Union[int, float] = 0,
+        y_offset     : Union[int, float] = 0,
         multiple_mode: bool = False,
-        output_path: str = None,
+        output_path  : str = None,
     ):
     try:
         if output_path is None:
@@ -932,18 +1007,10 @@ def create_image_wartmark(
         c = canvas.Canvas(output_path,pagesize=(width, height))
         diagonal_length = math.sqrt(width**2 + height**2) # diagonal length of the paper
         wm_image = Image.open(wm_image_path)
-        # if opacity:
-        alpha = Image.new("L", wm_image.size, int(255*opacity))
-        wm_image.putalpha(alpha)
-        wm_path = str(Path(output_path).parent / "tmp_wm.png")
-        wm_image.save(wm_path)
-        logger.debug(wm_path)
-        # else:
-        #     wm_path = wm_image_path
-        logger.debug(wm_image.size)
         wm_width, wm_height = wm_image.size[0]*scale, wm_image.size[1]*scale
         gap = word_spacing*wm_width
         c.translate(width/2, height/2)
+        c.setFillAlpha(opacity)
         c.rotate(angle)
         if multiple_mode:
             start_y_list = list(map(lambda x: x*wm_height*(line_spacing+1), range(num_lines)))
@@ -953,12 +1020,13 @@ def create_image_wartmark(
             for start_y in start_y_list:
                 start_x = -diagonal_length + x_offset
                 while start_x < diagonal_length:
-                    c.drawImage(wm_path, start_x, start_y, width=wm_width, height=wm_height)
+                    c.drawImage(wm_image_path, start_x, start_y, width=wm_width, height=wm_height)
                     start_x += wm_width + gap
         else:
-            start_x = - wm_width/2 + x_offset
-            start_y = - wm_height/2 + y_offset
-            c.drawImage(wm_path, start_x, start_y, width=wm_width, height=wm_height)
+            start_x = -wm_width/2 + x_offset
+            start_y = -wm_height/2 + y_offset
+            c.drawImage(wm_image_path, start_x, start_y, width=wm_width, height=wm_height)
+        c.showPage()
         c.save()
     except:
         raise ValueError(traceback.format_exc())
@@ -972,24 +1040,17 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
         tmp_wm_path = str(p.parent / "tmp_wm.pdf")
         create_text_wartmark(wm_text=wm_text, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
         wm_doc: fitz.Document = fitz.open(tmp_wm_path)
-        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for page_index in range(doc.page_count):
-            if page_index not in roi_indices:
-                writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
-                continue
-            else:
+            if page_index in roi_indices:
                 page: fitz.Page = doc[page_index]
-                new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
-                new_page.show_pdf_page(new_page.rect, doc, page.number)
-                new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
-                new_page.clean_contents()
+                page.show_pdf_page(page.rect, wm_doc, 0, overlay=False)
+                page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        writer.save(output_path)
+        doc.save(output_path)
         wm_doc.close()
         doc.close()
-        writer.close()
         os.remove(tmp_wm_path)
     except:
         raise ValueError(traceback.format_exc())
@@ -1003,20 +1064,16 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
         tmp_wm_path = str(p.parent / "tmp_wm.pdf")
         create_image_wartmark(wm_image_path=wm_path, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
         wm_doc = fitz.open(tmp_wm_path)
-        writer = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for i in roi_indices:
             page: fitz.Page = doc[i]
-            new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
-            new_page.show_pdf_page(new_page.rect, doc, page.number)
-            new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
-            new_page.clean_contents()
+            page.show_pdf_page(page.rect, wm_doc, 0, overlay=False)
+            page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        writer.save(output_path)
+        doc.save(output_path)
         wm_doc.close()
         doc.close()
-        writer.close()
         os.remove(tmp_wm_path)
     except:
         raise ValueError(traceback.format_exc())
@@ -1026,30 +1083,23 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
     try:
         doc: fitz.Document = fitz.open(doc_path)
         wm_doc: fitz.Document = fitz.open(wm_doc_path)
-        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for i in roi_indices:
             page: fitz.Page = doc[i]
-            new_page: fitz.Page = writer.new_page(width=page.rect.width, height=page.rect.height)
-            new_page.show_pdf_page(new_page.rect, doc, page.number)
-            new_page.show_pdf_page(new_page.rect, wm_doc, 0, overlay=False)
-            new_page.clean_contents()
+            page.show_pdf_page(page.rect, wm_doc, 0, overlay=False)
         if output_path is None:
             p = Path(doc_path)
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        writer.save(output_path)
+        doc.save(output_path)
         wm_doc.close()
         doc.close()
-        writer.close()
     except:
         raise ValueError(traceback.format_exc())
-
 
 @batch_process
 def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for page_index in range(doc.page_count):
             page: fitz.Page = doc[page_index]
@@ -1066,11 +1116,10 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
                             i2 = stream.find(b"EMC", i1)  # end of definition
                             stream[i1 : i2+3] = b""  # remove the full definition source "/Artifact ... EMC"
                         doc.update_stream(xref, stream)
-            writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
@@ -1078,7 +1127,6 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
 def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        writer: fitz.Document = fitz.open()
         page = doc[wm_page_number]
         keys = doc.xref_get_keys(page.xref)
         logger.debug(keys)
@@ -1090,11 +1138,10 @@ def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: s
             for i in range(len(indirect_objs)):
                 t = f'[{" ".join(indirect_objs[:i]+indirect_objs[i+1:])}]'
                 doc.xref_set_key(page.xref, "Contents", t)
-                writer.insert_pdf(doc, from_page=wm_page_number, to_page=wm_page_number)
         if outpath is None:
             p = Path(doc_path)
             outpath = str(p.parent / f"{p.stem}-人工识别水印.pdf")
-        writer.save(outpath, garbage=3, deflate=True)
+        doc.save(outpath, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
@@ -1102,7 +1149,6 @@ def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: s
 def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for i in range(len(wm_index)):
             if wm_index[i] < 0:
@@ -1119,22 +1165,447 @@ def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: st
                         del indirect_objs[i]                    
                     filtered_objs = f'[{" ".join(indirect_objs)}]'
                     doc.xref_set_key(page.xref, "Contents", filtered_objs)
-            writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
-
         if output_path is None:
             p = Path(doc_path)
             outpath = str(p.parent / f"{p.stem}-去水印版.pdf")
-        writer.save(outpath, garbage=3, deflate=True)
+        doc.save(outpath, garbage=3, deflate=True)
     except:
         raise ValueError(traceback.format_exc())
 
-def human_readable_size(size):
-    """将文件大小转换为适合人类阅读的格式"""
-    for unit in ["B", "KB", "MB", "GB", "TB"]:
-        if size < 1024.0:
-            return f"{size:.2f} {unit}"
-        size /= 1024.0
-    return f"{size:.2f} PB"
+# def insert_header_and_footer(
+#         doc_path   : str,
+#         content    : str,
+#         is_header  : bool = False,
+#         margin_bbox: List[float] = [1.27, 1.27, 2.54, 2.54],      # [top, bottom, left, right]
+#         font_family: str = "msyh.ttc",
+#         font_size  : float = 11,
+#         font_color : str = "#000000",
+#         opacity    : str = 1,
+#         align      : str = "center",
+#         page_range : str = "all",
+#         unit       : str = "cm",
+#         output_path: str = None
+#     ):
+#     try:
+#         doc: fitz.Document = fitz.open(doc_path)
+#         roi_indices = parse_range(page_range, doc.page_count)
+#         fontpath = str(Path(os.environ['WINDIR']) / "fonts" / font_family)
+#         align = {"left": fitz.TEXT_ALIGN_LEFT, "center": fitz.TEXT_ALIGN_CENTER, "right": fitz.TEXT_ALIGN_RIGHT}[align]
+#         margin_bbox = [convert_length(x, unit, "pt") for x in margin_bbox]
+#         logger.debug(margin_bbox)
+#         font_color = [v/255. for v in hex_to_rgb(font_color)]
+#         logger.debug(font_color)
+#         if is_header:
+#             bbox = [margin_bbox[2], 0, doc[-1].rect.width-margin_bbox[3], margin_bbox[0]]
+#         else:
+#             bbox = [margin_bbox[2], doc[-1].rect.height-margin_bbox[1], doc[-1].rect.width-margin_bbox[3], doc[-1].rect.height]
+#         logger.debug(bbox)
+#         for page_index in range(doc.page_count):
+#             page = doc[page_index]
+#             if page_index in roi_indices:
+#                 page.insert_textbox(bbox, content, fontsize=font_size, fontname=font_family, fontfile=fontpath, color=font_color, fill_opacity=opacity, align=align, rotate=0)
+#         if output_path is None:
+#             p = Path(doc_path)
+#             output_path = str(p.parent / f"{p.stem}-加页眉页脚.pdf")
+#         doc.save(output_path, garbage=3, deflate=True)
+#     except:
+#         raise ValueError(traceback.format_exc())
+
+def create_header_and_footer_mask(
+        width       : float,
+        height      : float,
+        content_list: List[str],
+        margin_bbox : List[float] = [1.27, 1.27, 2.54, 2.54], # [top, bottom, left, right]
+        font_family : str = "msyh.ttc",
+        font_size   : float = 11,
+        font_color  : str = "#000000",
+        opacity     : str = 1,
+        unit        : str = "cm",
+        output_path : str = None
+):
+    try:
+        if output_path is None:
+            output_path = "tmp_hf.pdf"
+        c = canvas.Canvas(output_path,pagesize=(width, height))
+        fontpath = str(Path(os.environ['WINDIR']) / "fonts" / font_family)
+        pdfmetrics.registerFont(TTFont('custom_font', fontpath))
+        font_color = [v/255. for v in hex_to_rgb(font_color)]
+        margin_bbox = [convert_length(x, unit, "pt") for x in margin_bbox]
+        c.setFont("custom_font", font_size)
+        c.setStrokeColorRGB(*font_color)
+        c.setFillColorRGB(*font_color)
+        c.setFillAlpha(opacity)
+        c.setLineWidth(width-margin_bbox[3]-margin_bbox[2])
+        for i, content in enumerate(content_list):
+            if content.strip() == "":
+                continue
+            parts = content.split("\n")
+            string_height = c.stringWidth(parts[0][0], "custom_font", font_size)
+            if i < 3: # 页眉
+                parts = parts[::-1]
+                if i == 0:
+                    for j, part in enumerate(parts):
+                        c.drawString(margin_bbox[2], height-margin_bbox[0]+j*string_height, part)
+                elif i == 1:
+                    for j, part in enumerate(parts):
+                        c.drawCentredString(width/2, height-margin_bbox[0]+j*string_height, part)
+                elif i == 2:
+                    for j, part in enumerate(parts):
+                        c.drawRightString(width-margin_bbox[3], height-margin_bbox[0]+j*string_height, part)
+            else: # 页脚
+                if i == 3:
+                    for j, part in enumerate(parts, 1):
+                        c.drawString(margin_bbox[2], margin_bbox[1]-j*string_height, part)
+                elif i == 4:
+                    for j, part in enumerate(parts, 1):
+                        c.drawCentredString(width/2, margin_bbox[1]-j*string_height, part)
+                elif i == 5:
+                    for j, part in enumerate(parts, 1):
+                        c.drawRightString(width-margin_bbox[3], margin_bbox[1]-j*string_height, part)
+        c.showPage()
+        c.save()
+    except:
+        raise ValueError(traceback.format_exc())
+
+def insert_header_and_footer(
+        doc_path   : str,
+        content_list    : List[str],
+        margin_bbox: List[float] = [1.27, 1.27, 2.54, 2.54],      # [top, bottom, left, right]
+        font_family: str = "msyh.ttc",
+        font_size  : float = 11,
+        font_color : str = "#000000",
+        opacity    : str = 1,
+        page_range : str = "all",
+        unit       : str = "cm",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        width, height = doc[-1].rect.width, doc[-1].rect.height
+        p = Path(doc_path)
+        # 生成页眉页脚pdf(相比page.insert_text,此方法生成体积更小)
+        hf_output_path = str(p.parent / "tmp_hf.pdf")
+        create_header_and_footer_mask(width=width, height=height, content_list=content_list, margin_bbox=margin_bbox,font_family=font_family, font_size=font_size, font_color=font_color, opacity=opacity, unit=unit, output_path=hf_output_path)
+        # 插入页眉页脚
+        hf_doc = fitz.open(hf_output_path)
+        roi_indicies = parse_range(page_range, doc.page_count)
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            if page_index in roi_indicies:
+                page.show_pdf_page(page.rect, hf_doc, 0, overlay=False)
+                page.clean_contents()
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-加页眉页脚.pdf")
+        doc.save(output_path, garbage=3, deflate=True)
+        doc.close()
+        hf_doc.close()
+        os.remove(hf_output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def insert_page_number(
+        doc_path   : str,
+        format     : str,
+        pos        : str        = "footer",
+        start      : int         = 0,
+        margin_bbox: List[float] = [1.27, 1.27, 2.54, 2.54],
+        font_family: str         = "msyh.ttc",
+        font_size  : float      = 11,
+        font_color : str        = "#000000",
+        opacity    : str        = 1,
+        align      : str        = "center",
+        page_range : str        = "all",
+        unit       : str        = "cm",
+        output_path: str         = None
+    ):
+    """ 页码样式
+    {
+        "0":"1,2,3...",
+        "1":"1/X",
+        "2":"第1页",
+        "3":"第1/X页",
+        "4":"第1页，共X页",
+        "5":"-1-,-2-,-3-...",
+        "6":"第一页",
+        "7":"第一页，共X页",
+        "8":"I,II,III...",
+        "9":"i,ii,iii...",
+        "10":"A,B,C...",
+        "11":"a,b,c...",
+    }
+    """
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        pno = start
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            if page_index in roi_indices:
+                if format == "0":
+                    content = f"{pno}"
+                elif format == "1":
+                    content = f"{pno}/{doc.page_count}"
+                elif format == "2":
+                    content = f"第{pno}页"
+                elif format == "3":
+                    content = f"第{pno}/{doc.page_count}页"
+                elif format == "4":
+                    content = f"第{pno}页，共{doc.page_count}页"
+                elif format == "5":
+                    content = f"-{pno}-"
+                elif format == "6":
+                    content = f"第{num_to_chinese(pno)}页"
+                elif format == "7":
+                    content = f"第{num_to_chinese(pno)}页，共{num_to_chinese(doc.page_count)}页"
+                elif format == "8":
+                    content = f"{num_to_roman(pno)}"
+                elif format == "9":
+                    content = f"{num_to_roman(pno).lower()}"
+                elif format == "10":
+                    content = f"{num_to_letter(pno)}"
+                elif format == "11":
+                    content = f"{num_to_letter(pno).lower()}"
+                else:
+                    content = format.replace("%p", str(pno)).replace("%P", str(doc.page_count))
+                pno += 1
+                hf_output_path = str(Path(doc_path).parent / f"tmp_hf.pdf")
+                content_list = [""]*6
+                if pos == "header":
+                    if align == "left":
+                        content_list[0] = content
+                    elif align == "center":
+                        content_list[1] = content
+                    elif align == "right":
+                        content_list[2] = content
+                else:
+                    if align == "left":
+                        content_list[3] = content
+                    elif align == "center":
+                        content_list[4] = content
+                    elif align == "right":
+                        content_list[5] = content
+                create_header_and_footer_mask(width=page.rect.width, height=page.rect.height, content_list=content_list, margin_bbox=margin_bbox,font_family=font_family, font_size=font_size, font_color=font_color, opacity=opacity, unit=unit, output_path=hf_output_path)
+                hf_doc: fitz.Document = fitz.open(hf_output_path)
+                page.show_pdf_page(page.rect, hf_doc, 0, overlay=True)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-加页码.pdf")
+        doc.save(output_path, garbage=3, deflate=True)
+        hf_doc.close()
+        doc.close()
+        os.remove(hf_output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_list: List[str] = ['header', 'footer'], unit: str = "cm", page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        width, height = doc[-1].rect.width, doc[-1].rect.height
+        roi_indices = parse_range(page_range, doc.page_count)
+        margin_bbox = [convert_length(x, unit, "pt") for x in margin_bbox]
+        p = Path(doc_path)
+        mask_doc_path = str(p.parent / "tmp_mask.pdf")
+        c = canvas.Canvas(mask_doc_path,pagesize=(width, height))
+        color = [v/255. for v in hex_to_rgb("#FFFFFF")]
+        bbox_list = []
+        if "header" in remove_list:
+            bbox_list.append([margin_bbox[2], height-margin_bbox[0], width-margin_bbox[2]-margin_bbox[3], margin_bbox[0]]) # left_bottom_x, left_bottom_y, w, h
+        if "footer" in remove_list:
+            bbox_list.append([margin_bbox[2], 0, width-margin_bbox[2]-margin_bbox[3], margin_bbox[1]])
+        for bbox in bbox_list:
+            c.setStrokeColorRGB(*color)
+            c.setFillColorRGB(*color)
+            c.rect(*bbox, fill=True, stroke=False)
+        c.showPage()
+        c.save()
+        mask_doc = fitz.open(mask_doc_path)
+        for page_index in range(doc.page_count):
+            if page_index in roi_indices:
+                page = doc[page_index]
+                page.show_pdf_page(page.rect, mask_doc, 0, overlay=True)
+                page.clean_contents()
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-去页眉页脚.pdf")
+        doc.save(output_path, garbage=3, deflate=True)
+        doc.close()
+        mask_doc.close()
+        os.remove(mask_doc_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def remove_page_number(doc_path: str, margin_bbox: List[float], pos: str = "footer", unit: str = "cm", page_range: str = "all", output_path: str = None):
+    try:
+        remove_header_and_footer(doc_path=doc_path, margin_bbox=margin_bbox, remove_list=[pos], unit=unit, page_range=page_range, output_path=output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def add_doc_background_by_color(
+        doc_path   : str,
+        color      : str = "#FFFFFF",
+        opacity    : float = 1,
+        angle      : float = 0,
+        x_offset   : float = 0,
+        y_offset   : float = 0,
+        page_range : str = "all",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        color = [v/255. for v in hex_to_rgb(color)]
+        width = doc[-1].rect.width
+        height = doc[-1].rect.height
+        logger.debug(doc[-1].rect)
+        p = Path(doc_path)
+        bg_output_path = str(p.parent / "tmp_bg.pdf")
+        c = canvas.Canvas(bg_output_path, pagesize=(width, height))
+        c.setStrokeColorRGB(*color)
+        c.setFillColorRGB(*color)
+        c.setFillAlpha(opacity)
+        c.translate(width/2, height/2)
+        c.rotate(angle)
+        c.rect(-width/2+x_offset, -height/2+y_offset, width, height, fill=True, stroke=False)
+        c.showPage()
+        c.save()
+        
+        bg_doc = fitz.open(bg_output_path)
+        roi_indicies = parse_range(page_range, doc.page_count)
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            if page_index in roi_indicies:
+                # page.show_pdf_page(page.rect, bg_doc, 0, overlay=False)
+                page.show_pdf_page(page.rect, bg_doc, 0, overlay=True)
+                page.clean_contents()
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-加背景.pdf")
+        doc.save(output_path, garbage=3, deflate=True)
+        doc.close()
+        bg_doc.close()
+        os.remove(bg_output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def add_doc_background_by_image(
+        doc_path   : str,
+        img_path   : str,
+        opacity    : float = 1,
+        angle      : float = 0,
+        x_offset   : float = 0,
+        y_offset   : float = 0,
+        scale      : float = 1,
+        page_range : str = "all",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        width = doc[-1].rect.width
+        height = doc[-1].rect.height
+        logger.debug(doc[-1].rect)
+        p = Path(doc_path)
+        bg_output_path = str(p.parent / "tmp_bg.pdf")
+        
+        c = canvas.Canvas(bg_output_path, pagesize=(width, height))
+        c.setFillAlpha(opacity)
+        c.translate(width/2, height/2)
+        c.rotate(angle)
+        img = Image.open(img_path)
+        img_width, img_height = img.size
+        scaled_w, scaled_h = img_width*scale, img_height*scale
+        c.drawImage(img_path, -scaled_w/2+x_offset, -scaled_h/2+y_offset, width=scaled_w, height=scaled_h)
+        c.showPage()
+        c.save()
+
+        bg_doc = fitz.open(bg_output_path)
+        roi_indicies = parse_range(page_range, doc.page_count)
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            if page_index in roi_indicies:
+                page.show_pdf_page(page.rect, bg_doc, 0, overlay=False)
+                page.clean_contents()
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-加背景.pdf")
+        doc.save(output_path, garbage=3, deflate=True)
+        doc.close()
+        bg_doc.close()
+        os.remove(bg_output_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def mask_pdf_by_rectangle(
+        doc_path   : str,
+        bbox_list  : List[List[float]],
+        color      : str = "#FFFFFF",
+        opacity    : float = 1,
+        angle      : float = 0,
+        overlay    : bool = True,
+        page_range : str = "all",
+        unit       : str = "pt",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        width, height = doc[-1].rect.width, doc[-1].rect.height
+        p = Path(doc_path)
+        mask_doc_path = str(p.parent / "tmp_mask.pdf")
+        c = canvas.Canvas(mask_doc_path,pagesize=(width, height))
+        color = [v/255. for v in hex_to_rgb(color)]
+        for bbox in bbox_list:
+            bbox = [convert_length(x, unit, "pt") for x in bbox]
+            bbox[1], bbox[3] = height-bbox[1], height-bbox[3]
+            c.setStrokeColorRGB(*color)
+            c.setFillColorRGB(*color)
+            c.setFillAlpha(opacity)
+            c.rotate(angle)
+            box_w, box_h = bbox[2]-bbox[0], bbox[3]-bbox[1]
+            c.rect(bbox[0], bbox[1], box_w, box_h, fill=True, stroke=False)
+        c.showPage()
+        c.save()
+
+        mask_doc: fitz.Document = fitz.open(mask_doc_path)
+        roi_indicies = parse_range(page_range, doc.page_count)
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            if page_index in roi_indicies:
+                page.show_pdf_page(page.rect, mask_doc, 0, overlay=overlay)
+                page.clean_contents()
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-加遮罩.pdf")
+        doc.save(output_path, garbage=3, deflate=True)
+        doc.close()
+        mask_doc.close()
+        os.remove(mask_doc_path)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def mask_pdf_by_rectangle_annot(
+        doc_path   : str,
+        annot_page : int = 0,
+        color      : str = "#FFFFFF",
+        opacity    : float = 1,
+        angle      : float = 0,
+        page_range : str = "all",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        page = doc[annot_page]
+        rect_list = []
+        for annot in page.annots():
+            if annot.type[0] == 4: # Square
+                rect_list.append(annot.rect)
+            page.delete_annot(annot)
+        logger.debug(rect_list)
+        if rect_list:
+            p = Path(doc_path)
+            clean_doc_path = str(p.parent / "tmp_clean.pdf")
+            doc.save(clean_doc_path, garbage=3, deflate=True)
+            if output_path is None:
+                output_path = str(p.parent / f"{p.stem}-批注遮罩版.pdf")
+            mask_pdf_by_rectangle(clean_doc_path, rect_list, color=color, opacity=opacity, angle=angle, page_range=page_range, output_path=output_path)
+            os.remove(clean_doc_path)
+        else:
+            raise ValueError("没有找到矩形注释!")
+    except:
+        raise ValueError(traceback.format_exc())
 
 def extract_metadata(doc_path: str, output_path: str = None):
     try:
@@ -1397,6 +1868,74 @@ def main():
     convert_parser.add_argument("--target-type", type=str, choices=['png', "svg", "docx"], default="png", help="目标类型")
     convert_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
+    # 遮罩子命令
+    mask_parser = sub_parsers.add_parser("mask", help="遮罩", description="遮罩pdf文件")
+    mask_parser.set_defaults(which='mask')
+    mask_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    mask_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    mask_parser.add_argument("--type", type=str, choices=['rect', 'annot'], default="rectangle", help="遮罩类型")
+    mask_parser.add_argument("--bbox", type=float, nargs=4, action='append', help="遮罩框")
+    mask_parser.add_argument("--color", type=str, default="#FFFFFF", help="遮罩颜色")
+    mask_parser.add_argument("--opacity", type=float, default=0.5, help="遮罩不透明度")
+    mask_parser.add_argument("--angle", type=float, default=0, help="遮罩旋转角度")
+    mask_parser.add_argument("--unit", type=str, choices=['pt', 'mm', 'cm', 'in'], default="pt", help="单位")
+    mask_parser.add_argument("--annot-page", type=int, default=0, help="批注所在页码")
+    mask_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 背景子命令
+    bg_parser = sub_parsers.add_parser("bg", help="背景", description="添加背景")
+    bg_parser.set_defaults(which='bg')
+    bg_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    bg_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    bg_parser.add_argument("--type", type=str, choices=['color', 'image'], default="color", help="背景类型")
+    bg_parser.add_argument("--color", type=str, default="#FFFFFF", help="背景颜色")
+    bg_parser.add_argument("--opacity", type=float, default=0.5, help="背景不透明度")
+    bg_parser.add_argument("--angle", type=float, default=0, help="背景旋转角度")
+    bg_parser.add_argument("--x-offset", type=float, default=0, help="背景x轴偏移量")
+    bg_parser.add_argument("--y-offset", type=float, default=0, help="背景y轴偏移量")
+    bg_parser.add_argument("--scale", type=float, default=1, help="背景缩放比例")
+    bg_parser.add_argument("--img-path", type=str, help="背景图片路径")
+    bg_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 页眉页脚子命令
+    header_footer_parser = sub_parsers.add_parser("header_footer", help="页眉页脚", description="添加页眉页脚")
+    header_footer_parser.set_defaults(which='header_footer')
+    header_footer_parser.add_argument("--type", type=str, choices=['add', 'remove'], default="add", help="操作类型")
+    header_footer_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    header_footer_parser.add_argument("--page-range", type=str, default="all", help="页码范围")
+    header_footer_parser.add_argument("--header-left", type=str, help="页眉左侧内容")
+    header_footer_parser.add_argument("--header-center", type=str, help="页眉中间内容")
+    header_footer_parser.add_argument("--header-right", type=str, help="页眉右侧内容")
+    header_footer_parser.add_argument("--footer-left", type=str, help="页脚左侧内容")
+    header_footer_parser.add_argument("--footer-center", type=str, help="页脚中间内容")
+    header_footer_parser.add_argument("--footer-right", type=str, help="页脚右侧内容")
+    header_footer_parser.add_argument("--font-family", type=str, help="字体类型")
+    header_footer_parser.add_argument("--font-size", type=int, default=10, help="字体大小")
+    header_footer_parser.add_argument("--font-color", type=str, default="#000000", help="字体颜色")
+    header_footer_parser.add_argument("--opacity", type=float, default=1, help="字体不透明度")
+    header_footer_parser.add_argument("--margin-bbox", type=float, nargs=4, default=[1.27, 1.27, 2.54, 2.54], help="页眉页脚边框, [上,下,左,右]")
+    header_footer_parser.add_argument("--unit", type=str, choices=['pt', 'mm', 'cm', 'in'], default="cm", help="单位")
+    header_footer_parser.add_argument("--remove", type=str, nargs="+", default=['header', 'footer'], help="删除页眉页脚")
+    header_footer_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 页码子命令
+    page_number_parser = sub_parsers.add_parser("page_number", help="页码", description="添加页码")
+    page_number_parser.set_defaults(which='page_number')
+    page_number_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    page_number_parser.add_argument("--type", type=str, choices=['add', 'remove'], default="add", help="操作类型")
+    page_number_parser.add_argument("--page-range", type=str, default="all", help="页码范围")
+    page_number_parser.add_argument("--start", type=int, default=1, help="起始页码")
+    page_number_parser.add_argument("--format", type=str, default="第%p页", help="页码格式")
+    page_number_parser.add_argument("--pos", type=str, choices=['header', 'footer'], default="footer", help="页码位置")
+    page_number_parser.add_argument("--align", type=str, choices=['left', 'center', 'right'], default="right", help="页码对齐方式")
+    page_number_parser.add_argument("--font-family", type=str, help="字体类型")
+    page_number_parser.add_argument("--font-size", type=int, default=10, help="字体大小")
+    page_number_parser.add_argument("--font-color", type=str, default="#000000", help="字体颜色")
+    page_number_parser.add_argument("--opacity", type=float, default=1, help="字体不透明度")
+    page_number_parser.add_argument("--margin-bbox", type=float, nargs=4, help="页眉页脚边框, [上,下,左,右]")
+    page_number_parser.add_argument("--unit", type=str, choices=['pt', 'mm', 'cm', 'in'], default="pt", help="单位")
+    page_number_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
     args = parser.parse_args()
     logger.debug(args)
     if args.which == "merge":
@@ -1481,7 +2020,47 @@ def main():
                 remove_watermark_by_index(doc_path=args.input_path, wm_index=args.wm_index, page_range=args.page_range, output_path=args.output)
         elif args.watermark_which == "detect":
             detect_watermark_index_helper(doc_path=args.input_path, wm_page_number=args.wm_index, outpath=args.output)
+    elif args.which == "mask":
+        if args.type == "rect":
+            mask_pdf_by_rectangle(doc_path=args.input_path, bbox=args.bbox, color=args.color, opacity=args.opacity, angle=args.angle, unit=args.unit, page_range=args.page_range, output_path=args.output)
+        elif args.type == "annot":
+            mask_pdf_by_rectangle_annot(doc_path=args.input_path, annot_page=args.annot_page, color=args.color, opacity=args.opacity, angle=args.angle, page_range=args.page_range, output_path=args.output)
+    elif args.which == "bg":
+        if args.type == "color":
+            add_doc_background_by_color(doc_path=args.input_path, color=args.color, opacity=args.opacity, angle=args.angle, x_offset=args.x_offset, y_offset=args.y_offset, page_range=args.page_range, output_path=args.output)
+        elif args.type == "image":
+            add_doc_background_by_image(doc_path=args.input_path, img_path=args.img_path, opacity=args.opacity, angle=args.angle, x_offset=args.x_offset, y_offset=args.y_offset, scale=args.scale, page_range=args.page_range, output_path=args.output)
+    elif args.which == "header_footer":
+        if args.type == "add":
+            content_list = [args.header_left, args.header_center, args.header_right, args.footer_left, args.footer_center, args.footer_right]
+            insert_header_and_footer(doc_path=args.input_path, content_list=content_list, font_family=args.font_family, font_size=args.font_size, font_color=args.font_color, opacity=args.opacity, margin_bbox=args.margin_bbox, page_range=args.page_range, unit=args.unit, output_path=args.output)
+        elif args.type == "remove":
+            remove_header_and_footer(doc_path=args.input_path, margin_bbox=args.margin_bbox, remove_list=args.remove, unit=args.unit, page_range=args.page_range, output_path=args.output)
+    elif args.which == "page_number":
+        if args.type == "add":
+            insert_page_number(doc_path=args.input_path, format=args.format, pos=args.pos, start=args.start, margin_bbox=args.margin_bbox, font_family=args.font_family, font_size=args.font_size, font_color=args.font_color, opacity=args.opacity, align=args.align, page_range=args.page_range, unit=args.unit, output_path=args.output)
+        elif args.type == "remove":
+            remove_page_number(doc_path=args.input_path, margin_bbox=args.margin_bbox, pos=args.pos, unit=args.unit, page_range=args.page_range, output_path=args.output)
 
 if __name__ == "__main__":
-    # main()
-    extract_metadata(doc_path=r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\pdf\新东方.pdf")
+    main()
+    # extract_metadata(doc_path=r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\pdf\新东方.pdf")
+    # create_text_watermark("")
+    # insert_header_and_footer(
+    #     doc_path=r"C:\Users\kevin\code\wails_demo\gui_project\thirdparty\watermark.pdf",
+    #     content="页眉页脚测试",
+    #     is_header=True,
+    #     margin_bbox=[1.27, 1.27, 2.54, 2.54],
+    #     font_size=12,
+    #     align="right"
+    # )
+    # add_doc_background_by_color(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", "#FFFFFF", opacity=1, angle=0, x_offset=300, y_offset=100)
+    # insert_page_number(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", format="8", opacity=1, margin_bbox=[1,1,2.54,2.54])
+    # insert_header_and_footer(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", "第一行\n测试文本", align="left", is_header=True)
+    # insert_header_and_footer(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", "测试文本", align="center", is_header=True)
+    # insert_header_and_footer(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版-加页眉页脚.pdf", "测试文本2", align="left")
+    # create_header_and_footer_mask(width=595, height=842, content="塞进塞进丁三洞口", is_header=True)
+    # mask_pdf_by_rectangle(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", bbox=[5,5,10,10], color="#FFFFFF", opacity=1, angle=0, unit='cm')
+    # mask_pdf_by_rectangle_annot(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版-加遮罩.pdf")
+    # mask_pdf_by_rectangle_annot(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-遮罩.pdf", 21)
+    # add_doc_background_by_image(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", r"C:\Users\kevin\Downloads\DSC_1571.JPG", scale=0.07, opacity=0.6, angle=30)

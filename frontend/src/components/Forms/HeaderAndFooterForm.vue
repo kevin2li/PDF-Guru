@@ -81,6 +81,17 @@
                         </a-tooltip>
                     </a-space>
                 </a-form-item>
+                <a-form-item label="不透明度">
+                    <a-row>
+                        <a-col :span="3">
+                            <a-input-number v-model:value="formState.opacity" :min="0" :max="1" :step="0.01">
+                            </a-input-number>
+                        </a-col>
+                        <a-col :span="5">
+                            <a-slider v-model:value="formState.opacity" :min="0" :max="1" :step="0.01" />
+                        </a-col>
+                    </a-row>
+                </a-form-item>
             </div>
             <div v-if="formState.op === 'remove'">
                 <a-form-item label="删除对象">
@@ -90,7 +101,15 @@
                     </a-checkbox-group>
                 </a-form-item>
             </div>
-            <a-form-item name="crop.type" label="页边距(cm)">
+            <a-form-item label="页边距单位">
+                <a-radio-group v-model:value="formState.unit">
+                    <a-radio value="pt">像素</a-radio>
+                    <a-radio value="cm">厘米</a-radio>
+                    <a-radio value="mm">毫米</a-radio>
+                    <a-radio value="in">英寸</a-radio>
+                </a-radio-group>
+            </a-form-item>
+            <a-form-item name="crop.type" label="页边距">
                 <a-space size="large">
                     <a-input-number v-model:value="formState.up" :min="0">
                         <template #addonBefore>
@@ -135,7 +154,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, RotatePDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, AddPDFHeaderAndFooter, RemovePDFHeaderAndFooter } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { FontSizeOutlined, FontColorsOutlined } from '@ant-design/icons-vue';
@@ -162,12 +181,14 @@ export default defineComponent({
             footer_center: '',
             footer_right: '',
             up: 1.27,
-            left: 1.27,
-            down: 2.54,
+            left: 2.54,
+            down: 1.27,
             right: 2.54,
+            unit: 'cm',
             font_family: 'msyh.ttc',
-            font_size: 14,
-            font_color: '#FFFFFF',
+            font_size: 11,
+            font_color: '#000000',
+            opacity: 1,
             remove_list: []
         });
 
@@ -245,7 +266,40 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            // await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
+            switch (formState.op) {
+                case "add": {
+                    await handleOps(AddPDFHeaderAndFooter, [
+                        formState.input,
+                        formState.output,
+                        formState.header_left,
+                        formState.header_center,
+                        formState.header_right,
+                        formState.footer_left,
+                        formState.footer_center,
+                        formState.footer_right,
+                        [formState.up, formState.down, formState.left, formState.right],
+                        formState.unit,
+                        formState.font_family,
+                        formState.font_size,
+                        formState.font_color,
+                        formState.opacity,
+                        formState.page,
+                    ]);
+                    break;
+                }
+                case "remove":{
+                    await handleOps(RemovePDFHeaderAndFooter, [
+                        formState.input,
+                        formState.output,
+                        [formState.up, formState.down, formState.left, formState.right],
+                        formState.remove_list,
+                        formState.unit,
+                        formState.page,
+                    ])
+                    break;
+                }
+            }
+
             confirmLoading.value = false;
         }
         const onFinish = async () => {
