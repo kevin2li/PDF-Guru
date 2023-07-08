@@ -117,6 +117,7 @@ interface ConvertState {
     output: string;
     page: string;
     type: string;
+    dpi: number;
 }
 interface CompressState {
     input: string;

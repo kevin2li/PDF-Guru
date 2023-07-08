@@ -1581,3 +1581,32 @@ func (a *App) RemovePDFPageNumber(
 	}
 	return nil
 }
+
+func (a *App) ConvertPDF2PNG(
+	inFile string,
+	outFile string,
+	dpi int,
+	pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, dpi: %d, pages: %s\n", inFile, outFile, dpi, pages)
+	args := []string{"convert", "--source-type", "pdf", "--target-type", "png"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}

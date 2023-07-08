@@ -906,30 +906,6 @@ def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "
     except:
         raise ValueError(traceback.format_exc())
 
-@batch_process
-def convert_pdf_to_images(doc_path: str, page_range: str = 'all', output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    if page_range=="all":
-        roi_indices = list(range(len(doc)))
-    else:
-        roi_indices = parse_range(page_range)
-
-    if output_path is None:
-        output_dir = p.parent / "PDF转图片"
-    else:
-        output_dir = Path(output_path)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    for page_index in roi_indices:
-        page: fitz.Page = doc[page_index]
-        pix = page.get_pixmap()
-        savepath = str(output_dir / f"page-{page.number+1}.png")
-        pix.pil_save(savepath, quality=100, dpi=(1800,1800))
-
-
-def convert_images_to_pdf(input_path: str, output_path: str = None):
-    raise NotImplementedError
-
 def create_text_wartmark(
         wm_text              : str,
         width                : Union[int, float],
@@ -1267,6 +1243,7 @@ def create_header_and_footer_mask(
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def insert_header_and_footer(
         doc_path   : str,
         content_list    : List[str],
@@ -1303,6 +1280,7 @@ def insert_header_and_footer(
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def insert_page_number(
         doc_path   : str,
         format     : str,
@@ -1397,6 +1375,7 @@ def insert_page_number(
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_list: List[str] = ['header', 'footer'], unit: str = "cm", page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1433,12 +1412,14 @@ def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_li
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def remove_page_number(doc_path: str, margin_bbox: List[float], pos: str = "footer", unit: str = "cm", page_range: str = "all", output_path: str = None):
     try:
         remove_header_and_footer(doc_path=doc_path, margin_bbox=margin_bbox, remove_list=[pos], unit=unit, page_range=page_range, output_path=output_path)
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def add_doc_background_by_color(
         doc_path   : str,
         color      : str = "#FFFFFF",
@@ -1484,6 +1465,7 @@ def add_doc_background_by_color(
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def add_doc_background_by_image(
         doc_path   : str,
         img_path   : str,
@@ -1530,6 +1512,7 @@ def add_doc_background_by_image(
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def mask_pdf_by_rectangle(
         doc_path   : str,
         bbox_list  : List[List[float]],
@@ -1576,6 +1559,7 @@ def mask_pdf_by_rectangle(
     except:
         raise ValueError(traceback.format_exc())
 
+@batch_process
 def mask_pdf_by_rectangle_annot(
         doc_path   : str,
         annot_page : int = 0,
@@ -1606,6 +1590,86 @@ def mask_pdf_by_rectangle_annot(
             raise ValueError("没有找到矩形注释!")
     except:
         raise ValueError(traceback.format_exc())
+
+
+def convert_pdf2png(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        if output_path is None:
+            p = Path(doc_path)
+            output_dir = p.parent / f"{p.stem}-png"
+            output_dir.mkdir(exist_ok=True, parents=True)
+        else:
+            output_dir = Path(output_path)
+            output_dir.mkdir(exist_ok=True, parents=True)
+        for i in roi_indices:
+            page = doc[i]
+            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+            pix.set_dpi(dpi, dpi)
+            pix.save(str(output_dir / f"page-{i+1}.png"))
+    except:
+        raise ValueError(traceback.format_exc())
+
+def convert_pdf2svg(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        if output_path is None:
+            p = Path(doc_path)
+            output_dir = p.parent / f"{p.stem}-png"
+            output_dir.mkdir(exist_ok=True, parents=True)
+        else:
+            output_dir = Path(output_path)
+            output_dir.mkdir(exist_ok=True, parents=True)
+        for i in roi_indices:
+            page = doc[i]
+            out = page.get_svg_image(matrix=fitz.Matrix(dpi/72, dpi/72))
+            with open(str(output_dir / f"page-{i+1}.svg"), "w") as f:
+                f.write(out)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def convert_anydoc2pdf(input_path: str, output_path: str = None):
+    """
+    supported document types: PDF, XPS, EPUB, MOBI, FB2, CBZ, SVG
+    # supported image types: JPG/JPEG, PNG, BMP, GIF, TIFF, PNM, PGM, PBM, PPM, PAM, JXR, JPX/JP2, PSD
+    """
+    doc = fitz.open(input_path)
+    b = doc.convert_to_pdf()  # convert to pdf
+    pdf = fitz.open("pdf", b)  # open as pdf
+
+    toc= doc.het_toc()  # table of contents of input
+    pdf.set_toc(toc)  # simply set it for output
+    meta = doc.metadata  # read and set metadata
+    if not meta["producer"]:
+        meta["producer"] = "PyMuPDF v" + fitz.VersionBind
+
+    if not meta["creator"]:
+        meta["creator"] = "PyMuPDF PDF converter"
+    meta["modDate"] = fitz.get_pdf_now()
+    meta["creationDate"] = meta["modDate"]
+    pdf.set_metadata(meta)
+
+    # now process the links
+    link_cnti = 0
+    link_skip = 0
+    for pinput in doc:  # iterate through input pages
+        links = pinput.get_links()  # get list of links
+        link_cnti += len(links)  # count how many
+        pout = pdf[pinput.number]  # read corresp. output page
+        for l in links:  # iterate though the links
+            if l["kind"] == fitz.LINK_NAMED:  # we do not handle named links
+                print("named link page", pinput.number, l)
+                link_skip += 1  # count them
+                continue
+            pout.insert_link(l)  # simply output the others
+
+    # save the conversion result
+    if output_path is None:
+        p = Path(input_path)
+        output_path = str(p.parent / f"{p.stem}.pdf")
+    pdf.save(output_path + ".pdf", garbage=4, deflate=True)
 
 def extract_metadata(doc_path: str, output_path: str = None):
     try:
@@ -1866,6 +1930,7 @@ def main():
     convert_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
     convert_parser.add_argument("--source-type", type=str, choices=["pdf", 'png', "jpg", "svg", "docx"], default="pdf", help="源类型")
     convert_parser.add_argument("--target-type", type=str, choices=['png', "svg", "docx"], default="png", help="目标类型")
+    convert_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
     convert_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     # 遮罩子命令
@@ -2003,7 +2068,11 @@ def main():
         elif args.method == "margin":
             crop_pdf_by_page_margin(doc_path=args.input_path, margin=args.margin, unit=args.unit, keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
     elif args.which == "convert":
-        pass
+        if args.source_type == "pdf":
+            if args.target_type == "png":
+                convert_pdf2png(args.input_path, args.dpi, args.page_range, args.output)
+        elif args.target_type == "pdf":
+            pass
     elif args.which == "watermark":
         if args.watermark_which == "add":
             if args.type == "text":
@@ -2043,7 +2112,7 @@ def main():
             remove_page_number(doc_path=args.input_path, margin_bbox=args.margin_bbox, pos=args.pos, unit=args.unit, page_range=args.page_range, output_path=args.output)
 
 if __name__ == "__main__":
-    main()
+    # main()
     # extract_metadata(doc_path=r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\pdf\新东方.pdf")
     # create_text_watermark("")
     # insert_header_and_footer(
@@ -2064,3 +2133,6 @@ if __name__ == "__main__":
     # mask_pdf_by_rectangle_annot(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版-加遮罩.pdf")
     # mask_pdf_by_rectangle_annot(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-遮罩.pdf", 21)
     # add_doc_background_by_image(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", r"C:\Users\kevin\Downloads\DSC_1571.JPG", scale=0.07, opacity=0.6, angle=30)
+    # convert_pdf2png(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", dpi=600)
+    convert_pdf2svg(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", dpi=300)
+    # convert_any2pdf(r"C:\Users\kevin\Downloads\2022年中级注册安全工程师《专业实务-建筑》考试真题及答案解析-去水印版-png\page-2.png")

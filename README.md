@@ -109,4 +109,5 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 
 * [wails](https://github.com/wailsapp/wails)
 * [PyMuPDF](https://pymupdf.readthedocs.io/en/latest/)
+* [ReportLab](https://www.reportlab.com)
 * [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)

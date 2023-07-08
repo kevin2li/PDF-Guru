@@ -24,6 +24,8 @@ export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertPDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
+export function ConvertPDF2PNG(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
+
 export function CropPDFByBBOX(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
 
 export function CropPDFByMargin(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;

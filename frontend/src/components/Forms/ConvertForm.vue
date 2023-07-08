@@ -18,6 +18,11 @@
                     </a-select-opt-group>
                 </a-select>
             </a-form-item>
+            <div v-if="formState.type === 'pdf2png'">
+                <a-form-item name="dpi" label="分辨率">
+                    <a-input-number v-model:value="formState.dpi" style="width: 200px" min="1" max="1000" />
+                </a-form-item>
+            </div>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围" v-if="formState.type.startsWith('pdf')">
                 <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-3,9-10" allow-clear />
@@ -39,7 +44,7 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, ConvertPDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, ConvertPDF2PNG } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { ConvertState } from "../data";
@@ -54,6 +59,7 @@ export default defineComponent({
             output: "",
             page: "",
             type: "pdf2png",
+            dpi: 300,
         });
 
         const validateStatus = reactive({
@@ -130,7 +136,20 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(ConvertPDF, [formState.input, formState.output, formState.type, formState.page]);
+            switch (formState.type) {
+                case "pdf2png": {
+                    await handleOps(ConvertPDF2PNG, [
+                        formState.input,
+                        formState.output,
+                        formState.dpi,
+                        formState.page,
+                    ])
+                    break;
+                }
+                case "png2pdf": {
+                    break;
+                }
+            }
             confirmLoading.value = false;
         }
         const onFinish = async () => {
