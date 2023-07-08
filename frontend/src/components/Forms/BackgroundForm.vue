@@ -11,7 +11,11 @@
             </a-form-item>
             <a-form-item name="color" label="颜色" v-if="formState.op === 'color'" hasFeedback
                 :validateStatus="validateStatus.color" :help="validateHelp.color">
-                <a-input v-model:value="formState.color" placeholder="颜色16进制码, e.g. #FF0000" allow-clear />
+                <a-input v-model:value="formState.color" style="width:300px" placeholder="颜色16进制码, e.g. #FF0000"
+                    allow-clear />
+                <a
+                    :style="{ background: formState.color, border: '1px solid black', marginLeft: '20px' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
+
             </a-form-item>
             <a-form-item name="image_path" label="图片" v-if="formState.op === 'image'" hasFeedback
                 :validateStatus="validateStatus.image_path" :help="validateHelp.image_path">
@@ -90,7 +94,7 @@ export default defineComponent({
             page: "",
             degree: 0,
             op: 'color',
-            color: '',
+            color: '#FFFFFF',
             opacity: 1,
             scale: 1,
             x_offset: 0,

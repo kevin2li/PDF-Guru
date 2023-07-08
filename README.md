@@ -1,11 +1,27 @@
+
+
 # PDF Guru  
+<p align="left">
+ <img src="./assets/logo.png" align="middle" width = "200"/>
+</p>
+
+<p align="left">
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/license-AGPL%203-dfd.svg"></a>
+    <a href="https://github.com/kevin2li/PDF-Guru/releases"><img src="https://img.shields.io/github/v/release/kevin2li/PDF-Guru?color=ffa"></a>
+    <a href=""><img src="https://img.shields.io/badge/python-3.10+-aff.svg"></a>
+    <a href=""><img src="https://img.shields.io/badge/os-win%2C%20mac-pink.svg"></a>
+</p>
+
 ## 项目介绍
-目前网上的PDF处理工具有很多，但是都有一些缺点：
+[PDF Guru](https://github.com/kevin2li/PDF-Guru)是一个通用型PDF文件处理工具，包含PDF合并、拆分、旋转、水印、加密、转换等20多项常用功能，完全开源，个人免费使用，界面简洁，简单易用。
+
+
+虽然目前网上关于PDF处理的工具有很多，但是都有一些缺点：
 1. 专业的PDF编辑软件对于高级一点的功能（添加水印、页面编辑等）需要收费或限制功能
 2. 在线PDF工具类网站需要上传PDF到服务器处理再下载，有泄露隐私风险
 3. 各大编程语言的PDF处理库虽然可以免费实现一些高级功能，但是需要一定的编程经验，使用没有图形界面程序方便
 4. 部分小众工具虽然可以满足部分特殊需求，但是功能较为单一
-5. ...
+
 
 由于PDF处理是一个很常见的需求，为了绕开上述这些限制，提高工作效率，诞生了此项目。
 
@@ -16,40 +32,19 @@
 4. 开源免费
 5. 界面简洁，使用简单
 6. 体积小巧，绿色免安装，随用随开
-7. ...
-
-
-## 功能特性
-
-[PDF Guru](https://github.com/kevin2li/PDF-Guru)是一个通用型PDF文件处理工具，包含20多项常用功能，完全开源，界面简洁，使用方便。
-
-![Alt text](assets/merge.png)
-
-软件支持的操作有(包括但不限于)：
-
-* PDF合并: 将多个PDF文件合并为一个文件,支持对要合并的多个文件按照文件名、创建时间、修改时间等进行排序后再合并
-* PDF拆分: 支持均匀分块、自定义范围、根据目录拆分等多种拆分方式。
-* PDF页面删除：支持删除指定范围的页面，支持批处理操作
-* PDF页面插入: 在指定位置插入另一个PDF文件(的部分页面)
-* PDF页面替换: 将指定范围的页面用另一个PDF文件(的指定范围页面)替换
-* PDF页面旋转: 支持旋转指定范围的页面，支持批处理
-* PDF页面裁剪: 支持裁剪指定范围的页面，支持批处理
-* PDF页面分割: 支持均匀分割、自定义分割等多种分割方式
-* PDF页面重排: 支持重新调整页面排列顺序,支持批处理
-* PDF页面缩放: 支持缩放指定范围的页面,支持批处理
-* PDF书签：提取书签、添加书签、OCR识别书签等
-* PDF压缩: 支持对PDF文件进行压缩,支持批处理
-* PDF提取: 提取文本、字体、图片、表格等
-* PDF转换: 支持pdf转图片、图片转pdf、pdf转docx等多种格式转换
-* PDF加解密: 支持设置打开密码和权限密码，也支持对加密PDF解密
-* PDF水印: 支持添加文本、图片水印,也支持去除常见水印
-* OCR识别: 支持对PDF页面进行OCR识别，支持双栏识别
+7. 插件化：根据需要选择是否安装额外组件，减小安装包体积
 
 ## 上手指南
 ### 安装
 去[Releases]()版块下载对应平台的安装包安装即可。
 
-**额外设置(可选)**  
+<details open>
+<summary><h3>额外安装(可选)</h3></summary>
+软件中大部分功能可直接使用，无需安装额外东西，但是部分功能如ocr相关功能等因打包进来会导致安装包太大，共有需要的用户自行安装依赖环境。需要额外安装的功能会在软件中用蓝色标签标注，如下：
+
+![Alt text](assets/tag.png)
+
+<h4>Python环境</h4>
 
 如果你需要使用到OCR相关功能(识别PDF书签、提取表格等)，可以继续此部分的设置。
 
@@ -77,25 +72,172 @@ pip install "paddleocr>=2.0.1"
 4. 在PDF Guru的“首选项”中配置ocr路径
 
 ![Alt text](assets/settings.png)
-### 使用
-1. [PDF合并](doc/PDF%E5%90%88%E5%B9%B6.md)
-2. [PDF拆分]()
-3. [PDF删除]()
-4. [PDF重排]()
-5. [PDF插入]()
-5. [PDF替换]()
-5. [PDF书签]()
-5. [PDF缩放]()
-5. [PDF水印]()
-5. [PDF旋转]()
-5. [PDF裁剪]()
-5. [PDF分割]()
-5. [PDF提取]()
-5. [PDF压缩]()
-5. [PDF转换]()
-5. [PDF加解密]()
-5. [OCR识别]()
 
+<h4>Pandoc</h4>
+
+Pandoc是一种开源的命令行工具，可用于将各种文档格式之间进行转换。
+
+https://pandoc.org/installing.html
+
+如果看到带有`pandoc`标记的功能，需要先安装pandoc
+</details>
+
+### 使用
+
+**总体说明**：
+
+1. 页码格式
+
+|举例|含义|
+|-|-|
+|1|第1页|
+|1-3|第1-3页(包含第3页)|
+|1-N|第1页到最后一页(包含最后一页)|
+|1-3,9-10|第1-3页和第9-10页，注意使用英文逗号分隔多个页码区间|
+
+2. 路径格式
+
+全部使用绝对路径，类似：`C:\Users\kevin\Downloads\test.txt`。
+
+Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝对路径。
+
+软件会自动检测路径是否存在，不合法的路径将不会被通过，也不会进行继续的处理。
+
+如果想批量操作，可以使用通配符`*`。例如批量对PDF文件进行旋转，路径可以填`C:\Users\kevin\Downloads\*.pdf`，将会匹配`C:\Users\kevin\Downloads`目录下所有的PDF文件。除少数功能(插入/替换等)外，大部分都支持批量操作。
+
+**具体功能**：
+
+1. PDF插入/替换
+
+插入：支持插入空白页和插入其他文件两种选项。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708204539.png)
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708210009.png)
+
+替换：用目标PDF的指定页码范围来替换源PDF中指定的页码范围(此处的页码范围只支持`1`或`1-3`两种方式)
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205859.png)
+
+2. PDF合并
+
+将多个PDF文件合并为一个整体PDF文件，支持自定义排序方式。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205254.png)
+
+3. PDF拆分
+
+将大的PDF文件拆分为若干个小的文件，支持多种拆分方式，如均匀分块、自定义范围、按目录级别拆分等。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205316.png)
+
+4. PDF旋转
+
+将PDF指定页面范围进行旋转。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205331.png)
+
+5. PDF删除
+
+删除PDF中的指定页面。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205347.png)
+
+6. PDF重排
+
+对PDF的页面顺序进行重排列。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205403.png)
+
+7. PDF裁剪
+
+对PDF页面进行裁剪。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205419.png)
+
+8. PDF缩放
+
+对PDF页面进行缩放。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205432.png)
+
+9. PDF分割
+
+将PDF页面拆分成若干个子页面，支持网格均匀分割和自定义分割方式。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205451.png)
+
+10. PDF组合
+
+将多个PDF页面合并为单个页面。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205507.png)
+
+11. 页眉页脚
+
+设置PDF的页眉页脚。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205534.png)
+
+12. 页码设置
+
+为PDF文件添加页码，内置了多种页码样式，也支持自定义页码样式。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205551.png)
+
+13. 文档背景
+
+为PDF文档设置背景，支持使用颜色和图片作为背景。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205609.png)
+
+14. PDF水印
+
+为PDF文档添加水印，也提供了多种方式去除PDF文档水印(仅为提升阅读体验使用，切勿滥用侵权)
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205623.png)
+
+15. PDF加密/解密
+
+给PDF文档设置密码，包括打开密码和权限密码。也支持对PDF文档进行解密并恢复权限。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205642.png)
+
+16. PDF书签
+
+支持提取PDF书签、写入PDF书签，甚至使用ocr技术自动识别PDF书签(需要额外安装paddleocr环境)
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205703.png)
+
+17. PDF提取
+
+提取PDF文档中的页面、文本、图片等
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205719.png)
+
+18. PDF压缩
+
+对PDF文档进行压缩减小体积。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205739.png)
+
+19. PDF转换
+
+提供PDF与其他格式之间的转换。部分转换需要pandoc(需要额外安装)的支持。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205754.png)
+
+20. OCR识别
+
+对PDF页面进行OCR识别，也支持对图片的OCR识别。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205809.png)
+
+21. 首选项
+
+对于额外安装的功能需要在此处进行配置，即填写外部工具的可执行文件路径。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708205834.png)
 
 ## Authors
 

@@ -55,6 +55,8 @@
                                     </template>
                                 </a-input>
                             </a-tooltip>
+                            <a
+                                :style="{ background: formState.font_color, border: '1px solid black', marginLeft: '-15px' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
                         </a-space>
                     </a-form-item>
                     <a-form-item name="watermark_font_opacity" label="水印属性">
@@ -245,12 +247,16 @@
                     <a-form-item label="遮罩属性">
                         <a-row>
                             <a-col :span="6">
-                                <a-input v-model:value="formState.font_color" placeholder="16进制字体颜色"
-                                    :defaultValue="formState.mask_color" allow-clear>
-                                    <template #addonBefore>
-                                        颜色
-                                    </template>
-                                </a-input>
+                                <a-space>
+                                    <a-input v-model:value="formState.mask_color" placeholder="16进制字体颜色"
+                                        :defaultValue="formState.mask_color" allow-clear>
+                                        <template #addonBefore>
+                                            颜色
+                                        </template>
+                                    </a-input>
+                                    <a
+                                        :style="{ background: formState.mask_color, border: '1px solid black' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
+                                </a-space>
                             </a-col>
                             <a-col :span="6" style="margin-left: 1.5vw;">
                                 <a-input-number v-model:value="formState.mask_opacity" :min="0" :max="1" :step="0.01">
@@ -342,6 +348,14 @@ export default defineComponent({
             annot_page: 1,
             mask_color: '#FFFFFF',
             mask_opacity: 1,
+        });
+
+        const color_picker_state = reactive({
+            showcolorpicker: false,
+            color: "#59c7f9",
+            suckerCanvas: null,
+            suckerArea: [],
+            isSucking: false,
         });
 
         const validateStatus = reactive({
@@ -483,7 +497,7 @@ export default defineComponent({
                         case "mask": {
                             switch (formState.mask_type) {
                                 case "rect": {
-                                    await handleOps(MaskPDFByRect, [formState.input, formState.output, [formState.x_offset, formState.y_offset, formState.width, formState.height], formState.unit, formState.mask_color, formState.mask_opacity, 0, formState.page]);
+                                    await handleOps(MaskPDFByRect, [formState.input, formState.output, [formState.x_offset, formState.y_offset, formState.x_offset + formState.width, formState.y_offset + formState.height], formState.unit, formState.mask_color, formState.mask_opacity, 0, formState.page]);
                                     break;
                                 }
                                 case "annot": {
@@ -514,7 +528,18 @@ export default defineComponent({
                 await submit();
             }
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
+        return {
+            formState,
+            color_picker_state,
+            rules,
+            formRef,
+            validateStatus,
+            validateHelp,
+            confirmLoading,
+            resetFields,
+            onFinish,
+            onFinishFailed,
+        };
     }
 })
 </script>

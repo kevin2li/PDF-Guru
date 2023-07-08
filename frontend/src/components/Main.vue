@@ -104,12 +104,12 @@
                     <template #icon>
                         <appstore-outlined />
                     </template>
-                    <a-menu-item key="meta">
+                    <!-- <a-menu-item key="meta">
                         <template #icon>
                             <info-circle-outlined />
                         </template>
                         {{ menuRecord['meta'] }}
-                    </a-menu-item>
+                    </a-menu-item> -->
                     <a-menu-item key="bookmark">
                         <template #icon>
                             <book-outlined />
@@ -178,7 +178,7 @@
                     <HeaderAndFooterForm v-if="state.selectedKeys.at(0) === 'header'" />
                     <PageNumberForm v-if="state.selectedKeys.at(0) === 'page_number'" />
                     <BackgroundForm v-if="state.selectedKeys.at(0) === 'background'" />
-                    <MetaForm v-if="state.selectedKeys.at(0) === 'meta'" />
+                    <!-- <MetaForm v-if="state.selectedKeys.at(0) === 'meta'" /> -->
                 </div>
             </div>
         </a-col>

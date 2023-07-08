@@ -3,4 +3,5 @@ node_modules
 frontend/dist
 *.pdf
 *tmp*
+*log*
 config.json
