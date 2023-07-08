@@ -64,21 +64,71 @@ def ppstructure_analysis(input_path: str):
     result = structure_engine(img)
     return result
 
-def parse_range(page_range: str, is_multiple: bool = False):
-    # e.g.: "1-3,5-6,7-10", "1,4-5"
+def parse_range(page_range: str, page_count: int, is_multi_range: bool = False, is_reverse: bool = False, is_unique: bool = True):
+    # e.g.: "1-3,5-6,7-10", "1,4-5", "3-N", "even", "odd"
     page_range = page_range.strip()
-    parts = page_range.split(",")
-    roi_indices = []
-    for part in parts:
-        out = list(map(int, part.split("-")))
-        if len(out) == 2:
-            roi_indices.append(list(range(out[0]-1, out[1])))
-        elif len(out) == 1:
-            roi_indices.append([out[0]-1])
-    if is_multiple:
+    if page_range in ["all", ""]:
+        roi_indices = list(range(page_count))
         return roi_indices
-    result = [j for i in roi_indices for j in i]
-    return result
+    if page_range == "even":
+        roi_indices = list(range(0, page_count, 2))
+        return roi_indices
+    if page_range == "odd":
+        roi_indices = list(range(1, page_count, 2))
+        return roi_indices
+    
+    roi_indices = []
+    parts = page_range.split(",")
+    neg_count = sum([p.startswith("!") for p in parts])
+    pos_count = len(parts) - neg_count
+    if neg_count > 0 and pos_count > 0:
+        raise ValueError("页码格式错误：不能同时使用正向选择和反向选择语法")
+    if pos_count > 0:
+        for part in parts:
+            part = part.strip()
+            if re.match("^!?(\d+|N)(\-(\d+|N))?$", part) is None:
+                raise ValueError("页码格式错误!")
+            out = part.split("-")
+            if len(out) == 1:
+                if out[0] == "N":
+                    roi_indices.append([page_count-1])
+                else:
+                    roi_indices.append([int(out[0])-1])
+            elif len(out) == 2:
+                if out[1] == "N":
+                    roi_indices.append(list(range(int(out[0])-1, page_count)))
+                else:
+                    roi_indices.append(list(range(int(out[0])-1, int(out[1]))))
+        if is_multi_range:
+            return roi_indices
+        roi_indices = [i for v in roi_indices for i in v]
+        if is_unique:
+            roi_indices = list(set(roi_indices))
+            roi_indices.sort()
+    if neg_count > 0:
+        for part in parts:
+            part = part.strip()
+            if re.match("^!?(\d+|N)(\-(\d+|N))?$", part) is None:
+                raise ValueError("页码格式错误!")
+            out = part[1:].split("-")
+            if len(out) == 1:
+                roi_indices.append([int(out[0])-1])
+            elif len(out) == 2:
+                if out[1] == "N":
+                    roi_indices.append(list(range(int(out[0])-1, page_count)))
+                else:
+                    roi_indices.append(list(range(int(out[0])-1, int(out[1]))))
+        if is_multi_range:
+            return roi_indices
+        roi_indices = [i for v in roi_indices for i in v]
+        if is_unique:
+            roi_indices = list(set(range(page_count)) - set(roi_indices))
+            roi_indices.sort()
+    if is_reverse:
+        roi_indices = list(set(range(page_count)) - set(roi_indices))
+        roi_indices.sort()
+    return roi_indices
+
 
 def center_y(elem):
     return (elem[0][0][1]+elem[0][3][1])/2
@@ -167,10 +217,10 @@ def ocr_from_pdf(doc_path: str, page_range: str = 'all', lang: str = 'ch', outpu
         ocr_engine = ocr_engine_en
     else:
         raise ValueError("不支持的语言")
-
-    for page_index in tqdm(roi_indices): # iterate over pdf pages
-        page = doc[page_index] # get the page
-        pix: fitz.Pixmap = page.get_pixmap()  # render page to an image
+    dpi = 300
+    for page_index in tqdm(roi_indices):
+        page = doc[page_index]
+        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
         img = np.frombuffer(pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, pix.n))
         cur_output_path = output_path / f"{page_index+1}-OCR.txt"
         result = None
@@ -234,11 +284,11 @@ def add_toc_from_ocr(doc_path: str, lang: str='ch', use_double_columns: bool = F
     tmp_dir.mkdir(parents=True, exist_ok=True)
     
     toc = []
+    dpi = 300
     for page in tqdm(doc, total=doc.page_count):
-        pix: fitz.Pixmap = page.get_pixmap()  # render page to an image
+        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
         savepath = str(tmp_dir / f"page-{page.number+1}.png")
-        # pix.save(savepath)  # store image as a PNG
-        pix.pil_save(savepath, quality=100, dpi=(1800,1800))
+        pix.save(savepath)
         result = extract_title(savepath, lang, use_double_columns)
         for item in result:
             pos, (title, prob) = item
@@ -261,23 +311,65 @@ def add_toc_from_ocr(doc_path: str, lang: str='ch', use_double_columns: bool = F
     doc.save(output_path)
     shutil.rmtree(tmp_dir)
 
+def extract_item_from_pdf(doc_path: str, page_range: str = 'all', type: str = "figure", output_dir: str = None):
+    """
+    suupported types: figure, table, equation, title, text
+    """
+    doc: fitz.Document = fitz.open(doc_path)
+    p = Path(doc_path)
+    tmp_dir = p.parent / 'tmp'
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+    if output_dir is None:
+        output_dir = p.parent / type
+    else:
+        output_dir = Path(output_dir) / type
+    output_dir.mkdir(parents=True, exist_ok=True)
+    roi_indices = parse_range(page_range)
+    dpi = 300
+    for page_index in tqdm(roi_indices, total=len(roi_indices)):
+        page = doc[page_index]
+        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+        savepath = str(tmp_dir / f"page-{page.number+1}.png")
+        pix.save(savepath)
+        result = ppstructure_analysis(savepath)
+        result = [v for v in result if v['type']==type]
+        
+        idx = 1
+        for item in result:
+            im_show = Image.fromarray(item['img'])
+            im_show.save(str(output_dir / f"page-{page.number+1}-{type}-{idx}.png"))
+            idx += 1
+
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
+    
+    # OCR识别
     ocr_parser = sub_parsers.add_parser("ocr", help="ocr识别")
-    ocr_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    ocr_parser.set_defaults(which='ocr')
+    ocr_parser.add_argument("input_path", type=str, help="输入文件路径")
     ocr_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     ocr_parser.add_argument("--lang", type=str, default="ch", choices=['ch', 'en'], help="识别语言")
     ocr_parser.add_argument("--range", type=str, default="", help="页码范围")
     ocr_parser.add_argument("--use-double-column", action="store_true", help="是否双栏")
     ocr_parser.add_argument("--offset", type=int, default=5, help="识别为同一行的偏移量")
-    ocr_parser.set_defaults(which='ocr')
 
+    # 书签识别
     bookmark_parser = sub_parsers.add_parser("bookmark", help="书签识别")
     bookmark_parser.set_defaults(which='bookmark')
+    bookmark_parser.add_argument("input_path", type=str, help="输入文件路径")
+    bookmark_parser.add_argument("-l", "--lang", type=str, default="ch", choices=['ch', 'en', 'fr', 'german', 'it', 'japan', 'korean', 'ru', 'chinese_cht'], dest="lang", help="pdf语言")
+    bookmark_parser.add_argument("-d", "--double-columns", action="store_true", dest='use_double_column', default=False, help="是否双栏")
+    bookmark_parser.add_argument("-r", "--range", type=str, default="all", dest="page_range", help="指定页面范围,例如: '1-3,7-19'")
+    bookmark_parser.add_argument("-o", "--output", type=str, default=None, dest="output_path", help="结果保存路径")
 
+    # 信息提取
     extract_parser = sub_parsers.add_parser("extract", help="图片、表格提取等")
     extract_parser.set_defaults(which='extract')
+    extract_parser.add_argument("input_path", type=str, help="输入文件路径")
+    extract_parser.add_argument("--type", type=str, default="figure", choices=['figure', 'table', 'equation', 'title', 'text'], help="提取类型")
+    extract_parser.add_argument("--range", type=str, default="all", dest="page_range", help="指定页面范围,例如: '1-3,7-19'")
+    extract_parser.add_argument("-o", "--output", type=str, default=None, dest="output_dir", help="结果保存路径")
 
     args = parser.parse_args()
     if args.which == "ocr":
@@ -288,11 +380,10 @@ def main():
             ocr_from_pdf(args.input_path, args.range, args.lang, args.output, args.offset, args.use_double_column)
         else:
             raise ValueError("不支持的文件格式")
-
+    elif args.which == "bookmark":
+        add_toc_from_ocr(args.input_path, lang=args.lang, use_double_columns=args.use_double_column, output_path=args.output_path)
+    elif args.which == "extract":
+        extract_item_from_pdf(args.input_path, args.page_range, args.type, args.output)
 
 if __name__ == "__main__":
     main()
-    # input_path = "C:\\Users\\kevin\\Downloads\\Snipaste_2023-06-29_09-51-08.png"
-    # lang = 'ch'
-    # output_path = "output"
-    # ocr_from_image(input_path, lang)

@@ -4,17 +4,64 @@
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="convert_type" label="转换类型">
-                <a-select v-model:value="formState.type" style="width: 200px">
+                <a-select v-model:value="formState.type" style="width: 300px">
                     <a-select-opt-group label="PDF转其他">
                         <a-select-option value="pdf2png">pdf转png</a-select-option>
                         <a-select-option value="pdf2svg">pdf转svg</a-select-option>
-                        <a-select-option value="pdf2html">pdf转html</a-select-option>
-                        <a-select-option value="pdf2word">pdf转word</a-select-option>
+                        <!-- <a-select-option value="pdf2html">pdf转html</a-select-option> -->
+                        <a-select-option value="pdf2docx">
+                            pdf转docx
+                            <a-tag color="blue">python</a-tag>
+                        </a-select-option>
                     </a-select-opt-group>
                     <a-select-opt-group label="其他转PDF">
                         <a-select-option value="png2pdf">png转pdf</a-select-option>
                         <a-select-option value="svg2pdf">svg转pdf</a-select-option>
-                        <a-select-option value="word2pdf">word转pdf</a-select-option>
+                        <a-select-option value="equb2pdf">equb转pdf</a-select-option>
+                        <a-select-option value="mobi2pdf">mobi转pdf</a-select-option>
+                        <a-select-option value="md2pdf">
+                            markdown转pdf
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <!-- <a-select-option value="docx2pdf">word转pdf</a-select-option> -->
+                    </a-select-opt-group>
+                    <a-select-opt-group label="其他转换">
+                        <a-select-option value="md2docx">
+                            markdown转docx
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <a-select-option value="docx2md">
+                            docx转markown
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <a-select-option value="md2tex">
+                            markdown转latex
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <a-select-option value="tex2md">
+                            latex转markdown
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <a-select-option value="md2html">
+                            markdown转html
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <a-select-option value="md2js">
+                            markdown转reveal.js
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <a-select-option value="html2md">
+                            html转markdown
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <a-select-option value="tex2pdf">
+                            latex转pdf
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
+                        <a-select-option value="equb2pdf">
+                            equb转pdf
+                            <a-tag color="blue">pandoc</a-tag>
+                        </a-select-option>
                     </a-select-opt-group>
                 </a-select>
             </a-form-item>
@@ -44,7 +91,21 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, ConvertPDF2PNG } from '../../../wailsjs/go/main/App';
+import {
+    CheckFileExists,
+    CheckRangeFormat,
+    ConvertPDF2PNG,
+    ConvertPDF2SVG,
+    ConvertPNG2PDF,
+    ConvertSVG2PDF,
+    ConvertEqub2PDF,
+    ConvertMobi2PDF,
+    ConvertPDF2Docx,
+    ConvertMd2Docx,
+    ConvertMd2PDF,
+    ConvertMd2Html,
+    ConvertMd2Tex,
+} from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { ConvertState } from "../data";
@@ -60,6 +121,7 @@ export default defineComponent({
             page: "",
             type: "pdf2png",
             dpi: 300,
+            is_merge: false,
         });
 
         const validateStatus = reactive({
@@ -93,12 +155,6 @@ export default defineComponent({
                 validateHelp["input"] = err;
                 return Promise.reject();
             });
-            const legal_suffix = [".pdf"];
-            if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
-                validateStatus["input"] = 'error';
-                validateHelp["input"] = "仅支持pdf格式的文件";
-                return Promise.reject();
-            }
         };
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';
@@ -147,6 +203,80 @@ export default defineComponent({
                     break;
                 }
                 case "png2pdf": {
+                    await handleOps(ConvertPNG2PDF, [
+                        formState.input,
+                        formState.output,
+                        formState.is_merge,
+                        formState.page,
+                    ])
+                    break;
+                }
+                case "pdf2svg": {
+                    await handleOps(ConvertPDF2SVG, [
+                        formState.input,
+                        formState.output,
+                        formState.dpi,
+                        formState.page,
+                    ])
+                    break;
+                }
+                case "svg2pdf": {
+                    await handleOps(ConvertSVG2PDF, [
+                        formState.input,
+                        formState.output,
+                        formState.is_merge,
+                        formState.page,
+                    ])
+                    break;
+                }
+                case "equb2pdf": {
+                    await handleOps(ConvertEqub2PDF, [
+                        formState.input,
+                        formState.output,
+                    ])
+                    break;
+                }
+                case "mobi2pdf": {
+                    await handleOps(ConvertMobi2PDF, [
+                        formState.input,
+                        formState.output,
+                    ])
+                    break;
+                }
+                case "pdf2docx": {
+                    await handleOps(ConvertPDF2Docx, [
+                        formState.input,
+                        formState.output,
+                    ])
+                    break;
+                }
+                // pandoc
+                case "md2docx": {
+                    await handleOps(ConvertMd2Docx, [
+                        formState.input,
+                        formState.output,
+                    ])
+                    break;
+                }
+                case "md2pdf": {
+                    await handleOps(ConvertMd2PDF, [
+                        formState.input,
+                        formState.output,
+                    ])
+                    break;
+                }
+                case "md2html": {
+                    await handleOps(ConvertMd2Html, [
+                        formState.input,
+                        formState.output,
+                    ])
+                    break;
+                }
+                case "md2tex": {
+                    await handleOps(ConvertMd2Tex, [
+                        formState.input,
+                        formState.output,
+                    ])
                     break;
                 }
             }

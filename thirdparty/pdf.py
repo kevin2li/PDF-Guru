@@ -1630,16 +1630,55 @@ def convert_pdf2svg(doc_path: str, dpi: int = 300, page_range: str = "all", outp
     except:
         raise ValueError(traceback.format_exc())
 
+def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, output_path: str = None):
+    try:
+        if isinstance(input_path, str):
+            path_list = [input_path]
+        else:
+            path_list = input_path
+        if is_merge:
+            writer: fitz.Document = fitz.open()
+            for path in path_list:
+                with open(path, 'r') as f:
+                    img = fitz.open(path)
+                    pdfbytes = img.convert_to_pdf()
+                    pdf = fitz.open('pdf', pdfbytes) 
+                    rect = img[0].rect
+                    page = writer.new_page(width=rect.width, height=rect.height)
+                    page.show_pdf_page(rect, pdf, 0)
+            if output_path is None:
+                p = Path(path_list[0])
+                output_path = str(p.parent / f"{p.stem}(等)-合并.pdf")
+            writer.save(output_path, garbage=3, deflate=True)
+        else:
+            if output_path is None:
+                p = Path(path_list[0])
+                output_dir = p.parent / f"{p.stem}(等)-pdf"
+                output_dir.mkdir(exist_ok=True, parents=True)
+            else:
+                output_dir = Path(output_path)
+                output_dir.mkdir(exist_ok=True, parents=True)
+            for path in path_list:
+                with open(path, 'r') as f:
+                    img = fitz.open(path)
+                    pdfbytes = img.convert_to_pdf()
+                    pdf = fitz.open('pdf', pdfbytes) 
+                    pdf.save(str(output_dir / f"{Path(path).stem}.pdf"), garbage=3, deflate=True)
+    except:
+        raise ValueError(traceback.format_exc())
+
+def convert_png2pdf(input_path: Union[str, List[str]], is_merge: bool = True, output_path: str = None):
+    convert_svg2pdf(input_path, is_merge, output_path)
+
 def convert_anydoc2pdf(input_path: str, output_path: str = None):
     """
     supported document types: PDF, XPS, EPUB, MOBI, FB2, CBZ, SVG
-    # supported image types: JPG/JPEG, PNG, BMP, GIF, TIFF, PNM, PGM, PBM, PPM, PAM, JXR, JPX/JP2, PSD
     """
     doc = fitz.open(input_path)
     b = doc.convert_to_pdf()  # convert to pdf
     pdf = fitz.open("pdf", b)  # open as pdf
 
-    toc= doc.het_toc()  # table of contents of input
+    toc= doc.get_toc()  # table of contents of input
     pdf.set_toc(toc)  # simply set it for output
     meta = doc.metadata  # read and set metadata
     if not meta["producer"]:
@@ -1669,7 +1708,9 @@ def convert_anydoc2pdf(input_path: str, output_path: str = None):
     if output_path is None:
         p = Path(input_path)
         output_path = str(p.parent / f"{p.stem}.pdf")
-    pdf.save(output_path + ".pdf", garbage=4, deflate=True)
+    pdf.save(output_path, garbage=4, deflate=True)
+
+
 
 def extract_metadata(doc_path: str, output_path: str = None):
     try:
@@ -1928,9 +1969,10 @@ def main():
     convert_parser.set_defaults(which='convert')
     convert_parser.add_argument("input_path", type=str, help="pdf文件路径")
     convert_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
-    convert_parser.add_argument("--source-type", type=str, choices=["pdf", 'png', "jpg", "svg", "docx"], default="pdf", help="源类型")
-    convert_parser.add_argument("--target-type", type=str, choices=['png', "svg", "docx"], default="png", help="目标类型")
+    convert_parser.add_argument("--source-type", type=str, default="pdf", help="源类型")
+    convert_parser.add_argument("--target-type", type=str, default="png", help="目标类型")
     convert_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
+    convert_parser.add_argument("--is_merge", action="store_true", help="是否合并")
     convert_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     # 遮罩子命令
@@ -2070,9 +2112,18 @@ def main():
     elif args.which == "convert":
         if args.source_type == "pdf":
             if args.target_type == "png":
-                convert_pdf2png(args.input_path, args.dpi, args.page_range, args.output)
+                convert_pdf2png(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
+            elif args.target_type == "svg":
+                convert_pdf2svg(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
         elif args.target_type == "pdf":
-            pass
+            if args.source_type == "png":
+                convert_png2pdf(input_path=args.input_path, is_merge=args.is_merge,output_path=args.output)
+            elif args.source_type == "svg":
+                convert_svg2pdf(input_path=args.input_path, is_merge=args.is_merge,output_path=args.output)
+            elif args.source_type == "mobi":
+                convert_anydoc2pdf(input_path=args.input_path, output_path=args.output)
+            elif args.source_type == "equb":
+                convert_anydoc2pdf(input_path=args.input_path, output_path=args.output)
     elif args.which == "watermark":
         if args.watermark_which == "add":
             if args.type == "text":
@@ -2112,27 +2163,4 @@ def main():
             remove_page_number(doc_path=args.input_path, margin_bbox=args.margin_bbox, pos=args.pos, unit=args.unit, page_range=args.page_range, output_path=args.output)
 
 if __name__ == "__main__":
-    # main()
-    # extract_metadata(doc_path=r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\pdf\新东方.pdf")
-    # create_text_watermark("")
-    # insert_header_and_footer(
-    #     doc_path=r"C:\Users\kevin\code\wails_demo\gui_project\thirdparty\watermark.pdf",
-    #     content="页眉页脚测试",
-    #     is_header=True,
-    #     margin_bbox=[1.27, 1.27, 2.54, 2.54],
-    #     font_size=12,
-    #     align="right"
-    # )
-    # add_doc_background_by_color(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", "#FFFFFF", opacity=1, angle=0, x_offset=300, y_offset=100)
-    # insert_page_number(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", format="8", opacity=1, margin_bbox=[1,1,2.54,2.54])
-    # insert_header_and_footer(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", "第一行\n测试文本", align="left", is_header=True)
-    # insert_header_and_footer(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", "测试文本", align="center", is_header=True)
-    # insert_header_and_footer(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版-加页眉页脚.pdf", "测试文本2", align="left")
-    # create_header_and_footer_mask(width=595, height=842, content="塞进塞进丁三洞口", is_header=True)
-    # mask_pdf_by_rectangle(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", bbox=[5,5,10,10], color="#FFFFFF", opacity=1, angle=0, unit='cm')
-    # mask_pdf_by_rectangle_annot(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版-加遮罩.pdf")
-    # mask_pdf_by_rectangle_annot(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\九章算法-遮罩.pdf", 21)
-    # add_doc_background_by_image(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", r"C:\Users\kevin\Downloads\DSC_1571.JPG", scale=0.07, opacity=0.6, angle=30)
-    # convert_pdf2png(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", dpi=600)
-    convert_pdf2svg(r"C:\Users\kevin\Downloads\pdfcpu_0.4.1_Windows_x86_64\2023考研英语一真题-去水印版.pdf", dpi=300)
-    # convert_any2pdf(r"C:\Users\kevin\Downloads\2022年中级注册安全工程师《专业实务-建筑》考试真题及答案解析-去水印版-png\page-2.png")
+    main()

@@ -36,14 +36,14 @@ func (a *App) startup(ctx context.Context) {
 // My app part
 type MyConfig struct {
 	PdfPath    string `json:"pdf_path"`
-	OcrPath    string `json:"ocr_path"`
+	PythonPath string `json:"python_path"`
 	PandocPath string `json:"pandoc_path"`
 }
 
-func (a *App) SaveConfig(pdfPath string, ocrPath string, pandocPath string) error {
+func (a *App) SaveConfig(pdfPath string, pythonPath string, pandocPath string) error {
 	var config MyConfig
 	config.PdfPath = pdfPath
-	config.OcrPath = ocrPath
+	config.PythonPath = pythonPath
 	config.PandocPath = pandocPath
 	jsonData, err := json.Marshal(config)
 	if err != nil {
@@ -928,7 +928,72 @@ func (a *App) OCR(inFile string, outFile string, pages string, lang string, doub
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command(config.OcrPath, args...)
+	cmd := exec.Command(config.PythonPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) OCRPDFBookmark(inFile string, outFile string, pages string, lang string, doubleColumn bool) error {
+	fmt.Printf("inFile: %s, outFile: %s, pages: %s, lang: %s, doubleColumn: %v\n", inFile, outFile, pages, lang, doubleColumn)
+	if _, err := os.Stat(inFile); os.IsNotExist(err) {
+		fmt.Println(err)
+		return err
+	}
+	path, err := os.Executable()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return err
+	}
+	path = filepath.Join(filepath.Dir(path), "ocr.py")
+	args := []string{path, "bookmark"}
+	if lang != "" {
+		args = append(args, "--lang", lang)
+	}
+	if doubleColumn {
+		args = append(args, "--double-column")
+	}
+	if pages != "" {
+		args = append(args, "--range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PythonPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) OCRExtract(inFile string, outFile string, pages string, extractType string) error {
+	fmt.Printf("inFile: %s, outFile: %s, pages: %s, extractType: %s\n", inFile, outFile, pages, extractType)
+	args := []string{"ocr", "extract"}
+	if extractType != "" {
+		args = append(args, "--type", extractType)
+	}
+	if pages != "" {
+		args = append(args, "--range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PythonPath, args...)
 	err = CheckCmdError(cmd)
 	if err != nil {
 		return err
@@ -1610,3 +1675,343 @@ func (a *App) ConvertPDF2PNG(
 	}
 	return nil
 }
+
+func (a *App) ConvertPDF2SVG(
+	inFile string,
+	outFile string,
+	dpi int,
+	pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, dpi: %d, pages: %s\n", inFile, outFile, dpi, pages)
+	args := []string{"convert", "--source-type", "pdf", "--target-type", "svg"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertPNG2PDF(
+	inFile string,
+	outFile string,
+	isMerge bool,
+	pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, isMerge: %v, pages: %s\n", inFile, outFile, isMerge, pages)
+	args := []string{"convert", "--source-type", "png", "--target-type", "pdf"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if isMerge {
+		args = append(args, "--merge")
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertSVG2PDF(
+	inFile string,
+	outFile string,
+	isMerge bool,
+	pages string) error {
+	fmt.Printf("inFile: %s, outFile: %s, isMerge: %v, pages: %s\n", inFile, outFile, isMerge, pages)
+	args := []string{"convert", "--source-type", "svg", "--target-type", "pdf"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if isMerge {
+		args = append(args, "--merge")
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertMobi2PDF(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	args := []string{"convert", "--source-type", "mobi", "--target-type", "pdf"}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertEqub2PDF(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	args := []string{"convert", "--source-type", "equb", "--target-type", "pdf"}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertPDF2Docx(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	path, err := os.Executable()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return err
+	}
+	path = filepath.Join(filepath.Dir(path), "convert.py")
+	args := []string{path, "--source-type", "pdf", "--target-type", "docx"}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	fmt.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PythonPath, args...)
+
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Pandoc convert
+
+func (a *App) ConvertMd2Docx(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	if outFile == "" {
+		outFile = strings.TrimSuffix(inFile, filepath.Ext(inFile)) + ".docx"
+	}
+	args := []string{"-s", inFile, "-o", outFile}
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PandocPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertMd2Tex(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	if outFile == "" {
+		outFile = strings.TrimSuffix(inFile, filepath.Ext(inFile)) + ".tex"
+	}
+	args := []string{"-s", inFile, "-o", outFile}
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PandocPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertMd2Html(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	if outFile == "" {
+		outFile = strings.TrimSuffix(inFile, filepath.Ext(inFile)) + ".html"
+	}
+	args := []string{"-s", inFile, "-o", outFile}
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PandocPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertMd2PDF(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	if outFile == "" {
+		outFile = strings.TrimSuffix(inFile, filepath.Ext(inFile)) + ".pdf"
+	}
+	args := []string{"-s", inFile, "-o", outFile}
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PandocPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertMd2RevealJs(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	if outFile == "" {
+		outFile = strings.TrimSuffix(inFile, filepath.Ext(inFile)) + ".pdf"
+	}
+	args := []string{"-s", inFile, "-t", "revealjs", "-o", outFile}
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PandocPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertDocx2Md(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	if outFile == "" {
+		outFile = strings.TrimSuffix(inFile, filepath.Ext(inFile)) + ".md"
+	}
+	args := []string{"-s", inFile, "-o", outFile}
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PandocPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertHtml2Md(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	if outFile == "" {
+		outFile = strings.TrimSuffix(inFile, filepath.Ext(inFile)) + ".md"
+	}
+	args := []string{"-s", inFile, "-o", outFile}
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PandocPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) ConvertTex2Md(
+	inFile string,
+	outFile string,
+) error {
+	fmt.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
+	if outFile == "" {
+		outFile = strings.TrimSuffix(inFile, filepath.Ext(inFile)) + ".md"
+	}
+	args := []string{"-s", inFile, "-o", outFile}
+	config, err := a.LoadConfig()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(config.PandocPath, args...)
+	err = CheckCmdError(cmd)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+

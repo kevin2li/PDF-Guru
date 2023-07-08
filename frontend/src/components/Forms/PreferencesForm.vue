@@ -3,14 +3,14 @@
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="ocr_path" label="ocr路径" hasFeedback :validateStatus="validateStatus.ocr_path"
-                :help="validateHelp.ocr_path">
-                <a-input v-model:value="formState.ocr_path" placeholder="填写ocr路径" :disabled="!formState.allow_modify"
+            <a-form-item name="python_path" label="python路径" hasFeedback :validateStatus="validateStatus.python_path"
+                :help="validateHelp.python_path">
+                <a-input v-model:value="formState.python_path" placeholder="填写python路径" :disabled="!formState.allow_modify"
                     allow-clear></a-input>
             </a-form-item>
             <a-form-item name="pandoc_path" label="pandoc路径" hasFeedback :validateStatus="validateStatus.pandoc_path"
                 :help="validateHelp.pandoc_path">
-                <a-input v-model:value="formState.pandoc_path" placeholder="填写ocr路径" :disabled="!formState.allow_modify"
+                <a-input v-model:value="formState.pandoc_path" placeholder="填写pandoc路径" :disabled="!formState.allow_modify"
                     allow-clear></a-input>
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
@@ -37,24 +37,24 @@ export default defineComponent({
         const formRef = ref<FormInstance>();
         const formState = reactive<PreferencesState>({
             pdf_path: "",
-            ocr_path: "",
+            python_path: "",
             pandoc_path: "",
             allow_modify: false,
         });
         const button_text = ref("修改");
         const validateStatus = reactive({
-            ocr_path: "",
+            python_path: "",
             pandoc_path: "",
         });
         const validateHelp = reactive({
-            ocr_path: "",
+            python_path: "",
             pandoc_path: "",
         });
         const loadConfig = async () => {
             await LoadConfig().then((res: any) => {
                 console.log({ res });
                 formState.pdf_path = res.pdf_path;
-                formState.ocr_path = res.ocr_path;
+                formState.python_path = res.python_path;
                 formState.pandoc_path = res.pandoc_path;
             }).catch((err: any) => {
                 console.log({ err });
@@ -96,7 +96,7 @@ export default defineComponent({
         };
 
         const rules: Record<string, Rule[]> = {
-            ocr_path: [{ validator: validateFileExists, trigger: 'change' }],
+            python_path: [{ validator: validateFileExists, trigger: 'change' }],
             pandoc_path: [{ validator: validateFileExists, trigger: 'change' }],
         };
         // 重置表单
@@ -110,7 +110,7 @@ export default defineComponent({
             formState.allow_modify = !formState.allow_modify;
             button_text.value = formState.allow_modify ? "保存" : "修改";
             if (!formState.allow_modify) {
-                await SaveConfig(formState.pdf_path, formState.ocr_path, formState.pandoc_path).then((res: any) => {
+                await SaveConfig(formState.pdf_path, formState.python_path, formState.pandoc_path).then((res: any) => {
                     console.log({ res });
                     message.success("保存成功");
                 }).catch((err: any) => {

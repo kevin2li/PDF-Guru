@@ -42,12 +42,68 @@ export function CompressPDF(arg1, arg2) {
   return window['go']['main']['App']['CompressPDF'](arg1, arg2);
 }
 
+export function ConvertDocx2Md(arg1, arg2) {
+  return window['go']['main']['App']['ConvertDocx2Md'](arg1, arg2);
+}
+
+export function ConvertEqub2PDF(arg1, arg2) {
+  return window['go']['main']['App']['ConvertEqub2PDF'](arg1, arg2);
+}
+
+export function ConvertHtml2Md(arg1, arg2) {
+  return window['go']['main']['App']['ConvertHtml2Md'](arg1, arg2);
+}
+
+export function ConvertMd2Docx(arg1, arg2) {
+  return window['go']['main']['App']['ConvertMd2Docx'](arg1, arg2);
+}
+
+export function ConvertMd2Html(arg1, arg2) {
+  return window['go']['main']['App']['ConvertMd2Html'](arg1, arg2);
+}
+
+export function ConvertMd2PDF(arg1, arg2) {
+  return window['go']['main']['App']['ConvertMd2PDF'](arg1, arg2);
+}
+
+export function ConvertMd2RevealJs(arg1, arg2) {
+  return window['go']['main']['App']['ConvertMd2RevealJs'](arg1, arg2);
+}
+
+export function ConvertMd2Tex(arg1, arg2) {
+  return window['go']['main']['App']['ConvertMd2Tex'](arg1, arg2);
+}
+
+export function ConvertMobi2PDF(arg1, arg2) {
+  return window['go']['main']['App']['ConvertMobi2PDF'](arg1, arg2);
+}
+
 export function ConvertPDF(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ConvertPDF'](arg1, arg2, arg3, arg4);
 }
 
+export function ConvertPDF2Docx(arg1, arg2) {
+  return window['go']['main']['App']['ConvertPDF2Docx'](arg1, arg2);
+}
+
 export function ConvertPDF2PNG(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ConvertPDF2PNG'](arg1, arg2, arg3, arg4);
+}
+
+export function ConvertPDF2SVG(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ConvertPDF2SVG'](arg1, arg2, arg3, arg4);
+}
+
+export function ConvertPNG2PDF(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ConvertPNG2PDF'](arg1, arg2, arg3, arg4);
+}
+
+export function ConvertSVG2PDF(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['ConvertSVG2PDF'](arg1, arg2, arg3, arg4);
+}
+
+export function ConvertTex2Md(arg1, arg2) {
+  return window['go']['main']['App']['ConvertTex2Md'](arg1, arg2);
 }
 
 export function CropPDFByBBOX(arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -120,6 +176,14 @@ export function MergePDF(arg1, arg2, arg3, arg4) {
 
 export function OCR(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['OCR'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function OCRExtract(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['OCRExtract'](arg1, arg2, arg3, arg4);
+}
+
+export function OCRPDFBookmark(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['OCRPDFBookmark'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function RemovePDFHeaderAndFooter(arg1, arg2, arg3, arg4, arg5, arg6) {

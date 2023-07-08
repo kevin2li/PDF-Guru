@@ -2,7 +2,7 @@ export namespace main {
 	
 	export class MyConfig {
 	    pdf_path: string;
-	    ocr_path: string;
+	    python_path: string;
 	    pandoc_path: string;
 	
 	    static createFrom(source: any = {}) {
@@ -12,7 +12,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.pdf_path = source["pdf_path"];
-	        this.ocr_path = source["ocr_path"];
+	        this.python_path = source["python_path"];
 	        this.pandoc_path = source["pandoc_path"];
 	    }
 	}

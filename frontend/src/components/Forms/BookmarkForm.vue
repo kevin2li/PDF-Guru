@@ -11,7 +11,7 @@
                     <a-radio-button value="recognize">
                         <a-space>
                             <span>识别书签</span>
-                            <a-tag color="blue">ocr</a-tag>
+                            <a-tag color="blue">python</a-tag>
                         </a-space>
                     </a-radio-button>
                 </a-radio-group>
@@ -88,7 +88,15 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, ExtractBookmark, WriteBookmarkByFile, TransformBookmark, WriteBookmarkByGap } from '../../../wailsjs/go/main/App';
+import {
+    CheckFileExists,
+    CheckRangeFormat,
+    ExtractBookmark,
+    WriteBookmarkByFile,
+    TransformBookmark,
+    WriteBookmarkByGap,
+    OCRPDFBookmark,
+} from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { BookmarkState } from "../data";
@@ -221,6 +229,10 @@ export default defineComponent({
                 }
                 case "transform": {
                     await handleOps(TransformBookmark, [formState.input, formState.output, formState.transform_indent, formState.transform_offset, formState.transform_dots]);
+                    break;
+                }
+                case "recognize": {
+                    await handleOps(OCRPDFBookmark, [formState.input, formState.output, formState.page, formState.ocr_lang, formState.ocr_double_column]);
                     break;
                 }
             }

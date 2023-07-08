@@ -22,9 +22,37 @@ export function CombinePDFByGrid(arg1:string,arg2:string,arg3:number,arg4:number
 
 export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
+export function ConvertDocx2Md(arg1:string,arg2:string):Promise<void>;
+
+export function ConvertEqub2PDF(arg1:string,arg2:string):Promise<void>;
+
+export function ConvertHtml2Md(arg1:string,arg2:string):Promise<void>;
+
+export function ConvertMd2Docx(arg1:string,arg2:string):Promise<void>;
+
+export function ConvertMd2Html(arg1:string,arg2:string):Promise<void>;
+
+export function ConvertMd2PDF(arg1:string,arg2:string):Promise<void>;
+
+export function ConvertMd2RevealJs(arg1:string,arg2:string):Promise<void>;
+
+export function ConvertMd2Tex(arg1:string,arg2:string):Promise<void>;
+
+export function ConvertMobi2PDF(arg1:string,arg2:string):Promise<void>;
+
 export function ConvertPDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
+export function ConvertPDF2Docx(arg1:string,arg2:string):Promise<void>;
+
 export function ConvertPDF2PNG(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
+
+export function ConvertPDF2SVG(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
+
+export function ConvertPNG2PDF(arg1:string,arg2:string,arg3:boolean,arg4:string):Promise<void>;
+
+export function ConvertSVG2PDF(arg1:string,arg2:string,arg3:boolean,arg4:string):Promise<void>;
+
+export function ConvertTex2Md(arg1:string,arg2:string):Promise<void>;
 
 export function CropPDFByBBOX(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
 
@@ -61,6 +89,10 @@ export function MaskPDFByRect(arg1:string,arg2:string,arg3:Array<number>,arg4:st
 export function MergePDF(arg1:Array<string>,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function OCR(arg1:string,arg2:string,arg3:string,arg4:string,arg5:boolean):Promise<void>;
+
+export function OCRExtract(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
+export function OCRPDFBookmark(arg1:string,arg2:string,arg3:string,arg4:string,arg5:boolean):Promise<void>;
 
 export function RemovePDFHeaderAndFooter(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<string>,arg5:string,arg6:string):Promise<void>;
 

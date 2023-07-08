@@ -118,6 +118,7 @@ interface ConvertState {
     page: string;
     type: string;
     dpi: number;
+    is_merge: boolean;
 }
 interface CompressState {
     input: string;
@@ -180,7 +181,7 @@ interface ScaleState {
 
 interface PreferencesState {
     pdf_path: string;
-    ocr_path: string;
+    python_path: string;
     pandoc_path: string;
     allow_modify: boolean;
 }
