@@ -36,19 +36,19 @@
 
 ## 上手指南
 ### 安装
-去[Releases]()版块下载对应平台的安装包安装即可。
+去[Releases](https://github.com/kevin2li/PDF-Guru/releases)版块下载对应平台的安装包安装即可。
 
 <details open>
-<summary><h3>额外安装(可选)</h3></summary>
+<summary><h4>额外安装(可选)</h4></summary>
 软件中大部分功能可直接使用，无需安装额外东西，但是部分功能如ocr相关功能等因打包进来会导致安装包太大，共有需要的用户自行安装依赖环境。需要额外安装的功能会在软件中用蓝色标签标注，如下：
 
-![Alt text](assets/tag.png)
+![tag](assets/tag.png)
 
 <h4>Python环境</h4>
 
 如果你需要使用到OCR相关功能(识别PDF书签、提取表格等)，可以继续此部分的设置。
 
-项目使用了[PaddleOCR]()提供ocr文字识别服务，因此需要安装paddleocr环境，并在软件“首选项”中指定虚拟环境中python解释器路径。具体步骤如下：
+项目使用了[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)提供ocr文字识别服务，因此需要安装paddleocr环境，并在软件“首选项”中指定虚拟环境中python解释器路径。具体步骤如下：
 
 1. 安装python环境(推荐[miniconda](https://docs.conda.io/en/latest/miniconda.html))
 2. 创建虚拟环境,并安装paddleocr
@@ -93,9 +93,13 @@ https://pandoc.org/installing.html
 |1|第1页|
 |1-3|第1-3页(包含第3页)|
 |1-N|第1页到最后一页(包含最后一页)|
-|1-3,9-10|第1-3页和第9-10页，注意使用英文逗号分隔多个页码区间|
+|1-3,7,9-10|第1-3页、第7页和第9-10页，注意使用英文逗号分隔多个页码区间|
 
-2. 路径格式
+2. 页码编号
+
+所有需要填页码的地方都是从1开始编号
+
+3. 路径格式
 
 全部使用绝对路径，类似：`C:\Users\kevin\Downloads\test.txt`。
 
@@ -104,6 +108,11 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 软件会自动检测路径是否存在，不合法的路径将不会被通过，也不会进行继续的处理。
 
 如果想批量操作，可以使用通配符`*`。例如批量对PDF文件进行旋转，路径可以填`C:\Users\kevin\Downloads\*.pdf`，将会匹配`C:\Users\kevin\Downloads`目录下所有的PDF文件。除少数功能(插入/替换等)外，大部分都支持批量操作。
+
+4. 坐标
+
+所有需要填坐标的地方(如设置页边距、锚框等)都是以左上角点为原点。
+
 
 **具体功能**：
 
@@ -123,7 +132,7 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 
 将多个PDF文件合并为一个整体PDF文件，支持自定义排序方式。
 
-![](https://minio.kevin2li.top/image-bed/blog/20230708205254.png)
+![](https://minio.kevin2li.top/image-bed/blog/20230708212822.png)
 
 3. PDF拆分
 
@@ -195,7 +204,13 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 
 为PDF文档添加水印，也提供了多种方式去除PDF文档水印(仅为提升阅读体验使用，切勿滥用侵权)
 
+添加水印：支持文本、图片、PDF文档三种形式的水印添加，其中文本水印支持字体、字号、颜色、不透明度等多种属性控制，支持设置多行水印等。
+
 ![](https://minio.kevin2li.top/image-bed/blog/20230708205623.png)
+
+去除水印：支持多种水印去除方式，可根据实际情况选择合适的方式(不保证绝对有效)。
+
+![](https://minio.kevin2li.top/image-bed/blog/20230708212957.png)
 
 15. PDF加密/解密
 
@@ -245,7 +260,7 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 
 ## License
 
-This project is licensed under the GPL-3.0 License - see the `LICENSE` file for details
+This project is licensed under the AGPL-3.0 License - see the `LICENSE` file for details
 
 ## Acknowledgments
 

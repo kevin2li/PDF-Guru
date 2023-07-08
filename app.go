@@ -1371,7 +1371,7 @@ func (a *App) DetectWatermarkByIndex(inFile string, outFile string, wmIndex int)
 func (a *App) MaskPDFByRect(inFile string, outFile string, rect []float32, unit string, color string, opacity float32, angle float32, pages string) error {
 	log.Printf("inFile: %s, outFile: %s, rect: %v, unit: %s, color: %s, opacity: %f, angle: %f, pages: %s\n", inFile, outFile, rect, unit, color, opacity, angle, pages)
 	args := []string{"mask", "--type", "rect"}
-	args = append(args, "--rect")
+	args = append(args, "--bbox")
 	for _, v := range rect {
 		args = append(args, fmt.Sprintf("%f", v))
 	}

@@ -103,8 +103,8 @@ def convert_length(length, from_unit, to_unit):
     """
     将长度从一个单位转换为另一个单位
     :param length: 长度值
-    :param from_unit: 原单位，可选值："pt"、"cm"、"mm"、"in"、"px"
-    :param to_unit: 目标单位，可选值："pt"、"cm"、"mm"、"in"、"px"
+    :param from_unit: 原单位，可选值："pt"、"cm"、"mm"、"in"
+    :param to_unit: 目标单位，可选值："pt"、"cm"、"mm"、"in"
     :param dpi: 屏幕或打印机的分辨率，默认为每英寸72个点（即标准屏幕分辨率）
     :return: 转换后的长度值
     """
@@ -1532,6 +1532,8 @@ def mask_pdf_by_rectangle(
         mask_doc_path = str(p.parent / "tmp_mask.pdf")
         c = canvas.Canvas(mask_doc_path,pagesize=(width, height))
         color = [v/255. for v in hex_to_rgb(color)]
+        logger.debug(bbox_list)
+        logger.debug(doc[-1].rect)
         for bbox in bbox_list:
             bbox = [convert_length(x, unit, "pt") for x in bbox]
             bbox[1], bbox[3] = height-bbox[1], height-bbox[3]
@@ -1585,7 +1587,7 @@ def mask_pdf_by_rectangle_annot(
             doc.save(clean_doc_path, garbage=3, deflate=True)
             if output_path is None:
                 output_path = str(p.parent / f"{p.stem}-批注遮罩版.pdf")
-            mask_pdf_by_rectangle(clean_doc_path, rect_list, color=color, opacity=opacity, angle=angle, page_range=page_range, output_path=output_path)
+            mask_pdf_by_rectangle(doc_path=clean_doc_path, bbox_list=rect_list, color=color, opacity=opacity, angle=angle, page_range=page_range, output_path=output_path)
             os.remove(clean_doc_path)
         else:
             raise ValueError("没有找到矩形注释!")
@@ -2143,7 +2145,7 @@ def main():
             detect_watermark_index_helper(doc_path=args.input_path, wm_page_number=args.wm_index, outpath=args.output)
     elif args.which == "mask":
         if args.type == "rect":
-            mask_pdf_by_rectangle(doc_path=args.input_path, bbox=args.bbox, color=args.color, opacity=args.opacity, angle=args.angle, unit=args.unit, page_range=args.page_range, output_path=args.output)
+            mask_pdf_by_rectangle(doc_path=args.input_path, bbox_list=args.bbox, color=args.color, opacity=args.opacity, angle=args.angle, unit=args.unit, page_range=args.page_range, output_path=args.output)
         elif args.type == "annot":
             mask_pdf_by_rectangle_annot(doc_path=args.input_path, annot_page=args.annot_page, color=args.color, opacity=args.opacity, angle=args.angle, page_range=args.page_range, output_path=args.output)
     elif args.which == "bg":
