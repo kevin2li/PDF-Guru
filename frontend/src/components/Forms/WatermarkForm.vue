@@ -167,9 +167,9 @@
             <div v-if="formState.op === 'remove'">
                 <a-form-item name="remove_method" label="去水印方法">
                     <a-radio-group v-model:value="formState.remove_method">
-                        <a-radio value="type">自动查找水印去除</a-radio>
-                        <a-radio value="mask">遮罩去除水印</a-radio>
-                        <a-radio value="index">人工识别水印索引</a-radio>
+                        <a-radio value="type">类型水印</a-radio>
+                        <a-radio value="mask">遮罩水印</a-radio>
+                        <a-radio value="index">内容水印</a-radio>
                     </a-radio-group>
                 </a-form-item>
                 <div v-if="formState.remove_method === 'type'">

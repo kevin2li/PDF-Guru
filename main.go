@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 
+	"github.com/pkg/errors"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -31,6 +32,7 @@ func main() {
 	})
 
 	if err != nil {
+		err = errors.Wrap(err, "")
 		println("Error:", err.Error())
 	}
 }

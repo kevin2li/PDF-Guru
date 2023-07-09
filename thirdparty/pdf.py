@@ -17,6 +17,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 logger.add("pdf.log", rotation="1 week", retention="10 days", level="DEBUG", encoding="utf-8")
+cmd_output_path = "cmd_output.json"
 
 # 工具类函数
 def parse_range(page_range: str, page_count: int, is_multi_range: bool = False, is_reverse: bool = False, is_unique: bool = True):
@@ -98,6 +99,10 @@ def range_compress(arr):
             start = end = arr[i]
     result.append([start, end])
     return result
+
+def dump_json(path, obj):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False)
 
 def convert_length(length, from_unit, to_unit):
     """
@@ -233,7 +238,8 @@ def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, i
         tmp_doc.save(str(output_dir / f"{p.stem}-切片.pdf"), garbage=3, deflate=True)
     except:
         logger.error(f"roi_indices: {roi_indices}")
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
@@ -251,8 +257,10 @@ def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
             tmp_doc:fitz.Document = fitz.open()
             tmp_doc.insert_pdf(doc, from_page=i, to_page=min(i+chunk_size, doc.page_count)-1)
             tmp_doc.save(savepath, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str = None):
@@ -272,8 +280,10 @@ def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str =
             for part in parts:
                 tmp_doc.insert_pdf(doc, from_page=part[0], to_page=part[1])
             tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"), garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
@@ -311,8 +321,8 @@ def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
             tmp_doc.set_toc(tmp_toc)
             tmp_doc.save(str(output_dir / f"{title}.pdf"), garbage=3, deflate=True)
     except:
-        logger.debug(p)
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None):
@@ -326,8 +336,10 @@ def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None)
         for i in roi_indices:
             tmp_doc.insert_pdf(doc, from_page=i, to_page=i)
         tmp_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def insert_blank_pdf(doc_path: str, pos: int, count: int, orientation: str, paper_size: str, output_path: str = None):
@@ -347,8 +359,10 @@ def insert_blank_pdf(doc_path: str, pos: int, count: int, orientation: str, pape
             tmp_doc.new_page(-1, width=fmt.width, height=fmt.height)
         tmp_doc.insert_pdf(doc, from_page=pos-1, to_page=-1)
         tmp_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: int, page_range: str = "all", output_path: str = None):
     try:
@@ -368,8 +382,10 @@ def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: int, page_range: str 
             tmp_doc.insert_pdf(doc2, from_page=i, to_page=i)
         tmp_doc.insert_pdf(doc1, from_page=insert_pos-1, to_page=n1-1)
         tmp_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def replace_pdf(doc_path1: str, doc_path2: str, src_range: str = "all", dst_range: str = "all", output_path: str = None):
     try:
@@ -379,7 +395,9 @@ def replace_pdf(doc_path1: str, doc_path2: str, src_range: str = "all", dst_rang
         dst_range = dst_range.strip()
         n1, n2 = doc1.page_count, doc2.page_count
         if re.match("^!?(\d+|N)(\-(\d+|N))?$", src_range) is None:
-            raise ValueError("源页码格式错误!")
+            logger.error(f"src_range: {src_range}, 源页码格式错误")
+            dump_json(cmd_output_path, {"status": "error", "message": "源页码格式错误!"})
+            return
         if output_path is None:
             p = Path(doc_path1)
             output_path = str(p.parent / f"{p.stem}-替换.pdf")
@@ -404,9 +422,13 @@ def replace_pdf(doc_path1: str, doc_path2: str, src_range: str = "all", dst_rang
                 tmp_doc.insert_pdf(doc1, from_page=a, to_page=n1-1)
             tmp_doc.save(output_path, garbage=3, deflate=True)
         else:
-            raise ValueError("页码格式错误!")
+            logger.error("页码格式错误")
+            dump_json(cmd_output_path, {"status": "error", "message": "页码格式错误!"})
+            return
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direction: str = "asc", output_path: str = None):
     try:
@@ -449,8 +471,10 @@ def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direc
             p = Path(doc_path_list[0])
             output_path = str(p.parent / f"合并.pdf")
         doc.save(output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: str = None):
@@ -465,8 +489,10 @@ def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: 
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-旋转.pdf")
         doc.save(output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str = "pt", keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
@@ -490,8 +516,10 @@ def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str =
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
         tmp_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], unit: str = "pt", keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
@@ -515,8 +543,10 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
         tmp_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "all", output_path: str = None):
@@ -538,8 +568,10 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "al
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-网格分割.pdf")
         tmp_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoints: List[float], page_range: str = "all", output_path: str = None):
@@ -571,8 +603,10 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-自定义分割.pdf")
         tmp_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4", orientation: str = "portrait", page_range: str = "all", output_path: str = None):
@@ -603,8 +637,10 @@ def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4"
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-网格组合.pdf")
         tmp_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str = None):
@@ -628,8 +664,10 @@ def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str 
                 savepath = str(Path(output_path) / f"{page_index+1}-{i+1}.png")
                 pix.save(savepath) # save the image as PNG
                 pix = None
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def extract_pdf_text(doc_path: str, page_range: str = "all", output_path: str = None):
@@ -648,8 +686,10 @@ def extract_pdf_text(doc_path: str, page_range: str = "all", output_path: str = 
             savepath = str(Path(output_path) / f"{page_index+1}.txt")
             with open(savepath, "w", encoding="utf-8") as f:
                 f.write(text)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def title_preprocess(title: str):
     """提取标题层级和标题内容
@@ -691,7 +731,7 @@ def title_preprocess(title: str):
         return res
     except:
         
-        return {'level': 1, "text": title}
+        dump_json(cmd_output_path, {'level': 1, "text": title})
 
 @batch_process
 def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: str = None):
@@ -860,8 +900,10 @@ def resize_pdf_by_dim(doc_path: str, width: float, height: float, page_range: st
             new_page: fitz.Page = new_doc.new_page(width=width, height=height)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
         new_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", output_path: str = None):
@@ -880,8 +922,10 @@ def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", ou
             new_page: fitz.Page = new_doc.new_page(width=page.rect.width*scale, height=page.rect.height*scale)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
         new_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "all", output_path: str = None):
@@ -904,8 +948,10 @@ def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "
             new_page: fitz.Page = new_doc.new_page(width=fmt.width, height=fmt.height)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
         new_doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def create_text_wartmark(
         wm_text              : str,
@@ -1005,8 +1051,10 @@ def create_image_wartmark(
             c.drawImage(wm_image_path, start_x, start_y, width=wm_width, height=wm_height)
         c.showPage()
         c.save()
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", output_path: str = None, **args):
@@ -1029,8 +1077,10 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
         wm_doc.close()
         doc.close()
         os.remove(tmp_wm_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all", output_path: str = None, **args):
@@ -1052,8 +1102,10 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
         wm_doc.close()
         doc.close()
         os.remove(tmp_wm_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all", output_path: str = None):
@@ -1070,40 +1122,53 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
         doc.save(output_path)
         wm_doc.close()
         doc.close()
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
+        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
+        WATERMARK_FLAG = False
         for page_index in range(doc.page_count):
             page: fitz.Page = doc[page_index]
-            if page in roi_indices:
+            if page_index in roi_indices:
                 page.clean_contents()
                 xref = page.get_contents()[0]
                 stream = doc.xref_stream(xref)
                 if stream:
                     stream = bytearray(stream)
                     if stream.find(b"/Subtype/Watermark"):
+                        WATERMARK_FLAG = True
                         while True:
                             i1 = stream.find(b"/Artifact")  # start of definition
                             if i1 < 0: break  # none more left: done
                             i2 = stream.find(b"EMC", i1)  # end of definition
                             stream[i1 : i2+3] = b""  # remove the full definition source "/Artifact ... EMC"
                         doc.update_stream(xref, stream)
+            writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
+        if not WATERMARK_FLAG:
+            logger.error("该文件没有找到水印!")
+            dump_json(cmd_output_path, {"status": "error", "message": "该文件没有找到水印!"})
+            return
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
+        writer: fitz.Document = fitz.open()
         page = doc[wm_page_number]
         keys = doc.xref_get_keys(page.xref)
         logger.debug(keys)
@@ -1115,17 +1180,26 @@ def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: s
             for i in range(len(indirect_objs)):
                 t = f'[{" ".join(indirect_objs[:i]+indirect_objs[i+1:])}]'
                 doc.xref_set_key(page.xref, "Contents", t)
+                writer.insert_pdf(doc, from_page=wm_page_number, to_page=wm_page_number)
         if outpath is None:
             p = Path(doc_path)
-            outpath = str(p.parent / f"{p.stem}-人工识别水印.pdf")
-        doc.save(outpath, garbage=3, deflate=True)
+            outpath = str(p.parent / f"{p.stem}-识别水印索引.pdf")
+        if writer.page_count > 0:
+            writer.save(outpath, garbage=3, deflate=True)
+        else:
+            logger.error("该文件没有找到水印!")
+            dump_json(cmd_output_path, {"status": "error", "message": "该文件没有找到水印!"})
+            return
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
-
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+    
 @batch_process
 def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
+        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for i in range(len(wm_index)):
             if wm_index[i] < 0:
@@ -1142,12 +1216,15 @@ def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: st
                         del indirect_objs[i]                    
                     filtered_objs = f'[{" ".join(indirect_objs)}]'
                     doc.xref_set_key(page.xref, "Contents", filtered_objs)
+            writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
         if output_path is None:
             p = Path(doc_path)
-            outpath = str(p.parent / f"{p.stem}-去水印版.pdf")
-        doc.save(outpath, garbage=3, deflate=True)
+            output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
+        writer.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 # def insert_header_and_footer(
 #         doc_path   : str,
@@ -1241,8 +1318,10 @@ def create_header_and_footer_mask(
                         c.drawRightString(width-margin_bbox[3], margin_bbox[1]-j*string_height, part)
         c.showPage()
         c.save()
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def insert_header_and_footer(
@@ -1278,8 +1357,10 @@ def insert_header_and_footer(
         doc.close()
         hf_doc.close()
         os.remove(hf_output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def insert_page_number(
@@ -1373,8 +1454,10 @@ def insert_page_number(
         hf_doc.close()
         doc.close()
         os.remove(hf_output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_list: List[str] = ['header', 'footer'], unit: str = "cm", page_range: str = "all", output_path: str = None):
@@ -1410,15 +1493,19 @@ def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_li
         doc.close()
         mask_doc.close()
         os.remove(mask_doc_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def remove_page_number(doc_path: str, margin_bbox: List[float], pos: str = "footer", unit: str = "cm", page_range: str = "all", output_path: str = None):
     try:
         remove_header_and_footer(doc_path=doc_path, margin_bbox=margin_bbox, remove_list=[pos], unit=unit, page_range=page_range, output_path=output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def add_doc_background_by_color(
@@ -1454,8 +1541,7 @@ def add_doc_background_by_color(
         for page_index in range(doc.page_count):
             page = doc[page_index]
             if page_index in roi_indicies:
-                # page.show_pdf_page(page.rect, bg_doc, 0, overlay=False)
-                page.show_pdf_page(page.rect, bg_doc, 0, overlay=True)
+                page.show_pdf_page(page.rect, bg_doc, 0, overlay=False)
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加背景.pdf")
@@ -1463,8 +1549,10 @@ def add_doc_background_by_color(
         doc.close()
         bg_doc.close()
         os.remove(bg_output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def add_doc_background_by_image(
@@ -1510,8 +1598,10 @@ def add_doc_background_by_image(
         doc.close()
         bg_doc.close()
         os.remove(bg_output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def mask_pdf_by_rectangle(
@@ -1559,8 +1649,10 @@ def mask_pdf_by_rectangle(
         doc.close()
         mask_doc.close()
         os.remove(mask_doc_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def mask_pdf_by_rectangle_annot(
@@ -1590,9 +1682,13 @@ def mask_pdf_by_rectangle_annot(
             mask_pdf_by_rectangle(doc_path=clean_doc_path, bbox_list=rect_list, color=color, opacity=opacity, angle=angle, page_range=page_range, output_path=output_path)
             os.remove(clean_doc_path)
         else:
-            raise ValueError("没有找到矩形注释!")
+            logger.error("没有找到矩形注释!")
+            dump_json(cmd_output_path, {"status": "error", "message": "没有找到矩形注释!"})
+            return
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 
 def convert_pdf2png(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
@@ -1611,8 +1707,10 @@ def convert_pdf2png(doc_path: str, dpi: int = 300, page_range: str = "all", outp
             pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
             pix.set_dpi(dpi, dpi)
             pix.save(str(output_dir / f"page-{i+1}.png"))
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def convert_pdf2svg(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
     try:
@@ -1630,8 +1728,10 @@ def convert_pdf2svg(doc_path: str, dpi: int = 300, page_range: str = "all", outp
             out = page.get_svg_image(matrix=fitz.Matrix(dpi/72, dpi/72))
             with open(str(output_dir / f"page-{i+1}.svg"), "w") as f:
                 f.write(out)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, output_path: str = None):
     try:
@@ -1667,8 +1767,10 @@ def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, ou
                     pdfbytes = img.convert_to_pdf()
                     pdf = fitz.open('pdf', pdfbytes) 
                     pdf.save(str(output_dir / f"{Path(path).stem}.pdf"), garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def convert_png2pdf(input_path: Union[str, List[str]], is_merge: bool = True, output_path: str = None):
     convert_svg2pdf(input_path, is_merge, output_path)
@@ -1702,7 +1804,7 @@ def convert_anydoc2pdf(input_path: str, output_path: str = None):
         pout = pdf[pinput.number]  # read corresp. output page
         for l in links:  # iterate though the links
             if l["kind"] == fitz.LINK_NAMED:  # we do not handle named links
-                print("named link page", pinput.number, l)
+                logger.info("named link page", pinput.number, l)
                 link_skip += 1  # count them
                 continue
             pout.insert_link(l)  # simply output the others
@@ -1746,9 +1848,10 @@ def extract_metadata(doc_path: str, output_path: str = None):
         file_size = os.path.getsize(doc_path)
         metadata['file_size'] = human_readable_size(file_size)
         logger.debug(metadata)
-
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def main():
     parser = argparse.ArgumentParser()

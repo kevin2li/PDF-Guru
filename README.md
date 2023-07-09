@@ -32,6 +32,16 @@
 6. 体积小巧，绿色免安装，随用随开
 7. 插件化：根据需要选择是否安装额外组件，减小安装包体积
 
+- [PDF Guru](#pdf-guru)
+  - [项目介绍](#项目介绍)
+  - [上手指南](#上手指南)
+    - [安装](#安装)
+    - [使用](#使用)
+  - [Authors](#authors)
+  - [License](#license)
+  - [Acknowledgments](#acknowledgments)
+
+
 ## 上手指南
 ### 安装
 
@@ -73,7 +83,7 @@ pnpm install
 # 安装后端环境
 cd thirdparty
 pip install pymupdf reportlab pillow loguru pyinstaller
-pyinstall -F -w pdf.py
+pyinstaller -F -w pdf.py
 
 cd .. # 切到根目录
 wails dev # 开发预览

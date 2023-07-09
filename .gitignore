@@ -5,3 +5,4 @@ frontend/dist
 *tmp*
 *log*
 config.json
+cmd_output.json

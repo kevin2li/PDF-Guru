@@ -96,8 +96,10 @@ def convert_docx2pdf(doc_path: str, output_path: str = None):
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}.pdf")
         convert(doc_path, output_path)
+        print({"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        print({"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def convert_pdf2docx(doc_path: str, page_range: str = "all", output_path: str = None):
@@ -111,8 +113,10 @@ def convert_pdf2docx(doc_path: str, page_range: str = "all", output_path: str = 
             output_path = str(p.parent / f"{p.stem}.docx")
         cv.convert(output_path, pages=roi_indices)
         cv.close()
+        print({"status": "success", "message": ""})
     except:
-        raise ValueError(traceback.format_exc())
+        logger.error(traceback.format_exc())
+        print({"status": "error", "message": traceback.format_exc()})
 
 def main():
     parser = argparse.ArgumentParser(description="Convert functions")
