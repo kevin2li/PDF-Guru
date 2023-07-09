@@ -58,6 +58,8 @@
 go version
 
 # 确认 "~/go/bin" 位于PATH环境变量中
+echo "export PATH=$PATH:$HOME/go/bin" >> $HOME/.bashrc
+source $HOME/.bashrc
 echo $PATH | grep go/bin
 
 # 确认nodejs安装成功
@@ -75,6 +77,8 @@ Windows：
 git clone https://github.com/kevin2li/PDF-Guru.git
 cd PDF-Guru
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+go mod tidy
 
 # 安装前端依赖
 cd frontend

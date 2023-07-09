@@ -1,3 +1,6 @@
+//go:build windows
+// +build windows
+
 package main
 
 import (
@@ -148,6 +151,7 @@ func CheckCmdError(cmd *exec.Cmd) error {
 }
 
 func GetCmdStatusAndMessage(cmd *exec.Cmd) error {
+	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	out, err := cmd.Output()
 	if err != nil {
 		err = errors.Wrap(err, "get cmd output error")
@@ -344,7 +348,6 @@ func (a *App) SplitPDFByChunk(inFile string, chunkSize int, outDir string) error
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -372,7 +375,6 @@ func (a *App) SplitPDFByBookmark(inFile string, tocLevel string, outDir string) 
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -400,7 +402,6 @@ func (a *App) SplitPDFByPage(inFile string, pages string, outDir string) error {
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -427,7 +428,6 @@ func (a *App) DeletePDF(inFile string, outFile string, pagesStr string) error {
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -459,7 +459,6 @@ func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages 
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -492,7 +491,6 @@ func (a *App) InsertBlankPDF(inFile string, outFile string, insertPos int, paper
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -524,7 +522,6 @@ func (a *App) ReplacePDF(inFile1 string, inFile2 string, srcPages string, dstPag
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -555,7 +552,6 @@ func (a *App) RotatePDF(inFile string, outFile string, rotation int, pagesStr st
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -583,7 +579,6 @@ func (a *App) ReorderPDF(inFile string, outFile string, pagesStr string) error {
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -616,7 +611,6 @@ func (a *App) MergePDF(inFiles []string, outFile string, sortMethod string, sort
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -646,7 +640,6 @@ func (a *App) ScalePDFByPaperSize(inFile string, outFile string, paperSize strin
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -674,7 +667,6 @@ func (a *App) ScalePDFByScale(inFile string, outFile string, scale float32, page
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -703,7 +695,6 @@ func (a *App) ScalePDFByDim(inFile string, outFile string, width float32, height
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -743,7 +734,6 @@ func (a *App) EncryptPDF(inFile string, outFile string, upw string, opw string, 
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -773,7 +763,6 @@ func (a *App) DecryptPDF(inFile string, outFile string, passwd string) error {
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -803,7 +792,6 @@ func (a *App) ExtractBookmark(inFile string, outFile string, format string) erro
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -840,7 +828,6 @@ func (a *App) WriteBookmarkByFile(inFile string, outFile string, tocFile string,
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -871,7 +858,6 @@ func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format 
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -907,7 +893,6 @@ func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, a
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -965,7 +950,6 @@ func (a *App) WatermarkPDFByText(inFile string, outFile string, markText string,
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1010,7 +994,6 @@ func (a *App) WatermarkPDFByImage(inFile string, outFile string, wmPath string, 
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1045,7 +1028,6 @@ func (a *App) WatermarkPDFByPDF(inFile string, outFile string, wmPath string, pa
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1089,7 +1071,6 @@ func (a *App) OCR(inFile string, outFile string, pages string, lang string, doub
 		return err
 	}
 	cmd := exec.Command(config.PythonPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1133,7 +1114,6 @@ func (a *App) OCRPDFBookmark(inFile string, outFile string, pages string, lang s
 		return err
 	}
 	cmd := exec.Command(config.PythonPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1163,7 +1143,6 @@ func (a *App) OCRExtract(inFile string, outFile string, pages string, extractTyp
 		return err
 	}
 	cmd := exec.Command(config.PythonPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1190,7 +1169,6 @@ func (a *App) ExtractTextFromPDF(inFile string, outFile string, pages string) er
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1217,7 +1195,6 @@ func (a *App) ExtractImageFromPDF(inFile string, outFile string, pages string) e
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1246,7 +1223,6 @@ func (a *App) CutPDFByGrid(inFile string, outFile string, row int, col int, page
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1285,7 +1261,6 @@ func (a *App) CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1320,7 +1295,6 @@ func (a *App) CombinePDFByGrid(inFile string, outFile string, row int, col int, 
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1357,7 +1331,6 @@ func (a *App) CropPDFByBBOX(inFile string, outFile string, bbox []float32, unit 
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1394,7 +1367,6 @@ func (a *App) CropPDFByMargin(inFile string, outFile string, margin []float32, u
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1421,9 +1393,8 @@ func (a *App) RemoveWatermarkByType(inFile string, outFile string, pages string)
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
-	// err = CheckCmdError(cmd)
-	err = GetCmdStatusAndMessage(cmd)
+
+	// err = CheckCmdError(cmd)	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
 		err = errors.Wrap(err, "")
@@ -1454,7 +1425,6 @@ func (a *App) RemoveWatermarkByIndex(inFile string, outFile string, wmIndex []in
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1480,7 +1450,6 @@ func (a *App) DetectWatermarkByIndex(inFile string, outFile string, wmIndex int)
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1520,7 +1489,6 @@ func (a *App) MaskPDFByRect(inFile string, outFile string, rect []float32, unit 
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1554,7 +1522,6 @@ func (a *App) MaskPDFByAnnot(inFile string, outFile string, annot_page int, colo
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1590,8 +1557,6 @@ func (a *App) AddPDFBackgroundByColor(inFile string, outFile string, color strin
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1628,8 +1593,6 @@ func (a *App) AddPDFBackgroundByImage(inFile string, imgFile string, outFile str
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1711,8 +1674,6 @@ func (a *App) AddPDFHeaderAndFooter(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1786,8 +1747,6 @@ func (a *App) AddPDFPageNumber(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1834,8 +1793,6 @@ func (a *App) RemovePDFHeaderAndFooter(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1881,8 +1838,6 @@ func (a *App) RemovePDFPageNumber(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1914,8 +1869,6 @@ func (a *App) ConvertPDF2PNG(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1947,8 +1900,6 @@ func (a *App) ConvertPDF2SVG(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -1982,8 +1933,6 @@ func (a *App) ConvertPNG2PDF(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -2017,8 +1966,6 @@ func (a *App) ConvertSVG2PDF(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -2045,8 +1992,6 @@ func (a *App) ConvertMobi2PDF(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -2073,8 +2018,6 @@ func (a *App) ConvertEqub2PDF(
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -2108,8 +2051,6 @@ func (a *App) ConvertPDF2Docx(
 		return err
 	}
 	cmd := exec.Command(config.PythonPath, args...)
-
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	err = GetCmdStatusAndMessage(cmd)
 
 	if err != nil {
@@ -2136,7 +2077,7 @@ func (a *App) ConvertMd2Docx(
 		return err
 	}
 	cmd := exec.Command(config.PandocPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
+
 	err = CheckCmdError(cmd)
 
 	if err != nil {
@@ -2161,7 +2102,7 @@ func (a *App) ConvertMd2Tex(
 		return err
 	}
 	cmd := exec.Command(config.PandocPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
+
 	err = CheckCmdError(cmd)
 
 	if err != nil {
@@ -2186,7 +2127,7 @@ func (a *App) ConvertMd2Html(
 		return err
 	}
 	cmd := exec.Command(config.PandocPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
+
 	err = CheckCmdError(cmd)
 
 	if err != nil {
@@ -2211,7 +2152,7 @@ func (a *App) ConvertMd2PDF(
 		return err
 	}
 	cmd := exec.Command(config.PandocPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
+
 	err = CheckCmdError(cmd)
 
 	if err != nil {
@@ -2236,7 +2177,7 @@ func (a *App) ConvertMd2RevealJs(
 		return err
 	}
 	cmd := exec.Command(config.PandocPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
+
 	err = CheckCmdError(cmd)
 
 	if err != nil {
@@ -2261,7 +2202,7 @@ func (a *App) ConvertDocx2Md(
 		return err
 	}
 	cmd := exec.Command(config.PandocPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
+
 	err = CheckCmdError(cmd)
 
 	if err != nil {
@@ -2286,7 +2227,7 @@ func (a *App) ConvertHtml2Md(
 		return err
 	}
 	cmd := exec.Command(config.PandocPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
+
 	err = CheckCmdError(cmd)
 
 	if err != nil {
@@ -2311,7 +2252,7 @@ func (a *App) ConvertTex2Md(
 		return err
 	}
 	cmd := exec.Command(config.PandocPath, args...)
-	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
+
 	err = CheckCmdError(cmd)
 
 	if err != nil {
