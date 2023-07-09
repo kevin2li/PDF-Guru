@@ -1,5 +1,3 @@
-
-
 # PDF Guru  
 <p align="left">
  <img src="./assets/logo.png" align="middle" width = "200"/>
@@ -36,11 +34,57 @@
 
 ## 上手指南
 ### 安装
+
+- 二进制安装
+
 去[Releases](https://github.com/kevin2li/PDF-Guru/releases)版块下载对应平台的安装包安装即可。
 
-<details open>
+- 编译安装
+
+1. 安装[go](https://go.dev/dl/)环境和[node](https://nodejs.org/en/download/)环境和[python](https://docs.conda.io/en/latest/miniconda.html)环境
+
+```bash
+# 确认go安装成功
+go version
+
+# 确认 "~/go/bin" 位于PATH环境变量中
+echo $PATH | grep go/bin
+
+# 确认nodejs安装成功
+npm --version
+
+# 安装pnpm
+npm install -g pnpm
+```
+
+2. 编译项目
+
+Windows：
+
+```bash
+git clone https://github.com/kevin2li/PDF-Guru.git
+cd PDF-Guru
+go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+# 安装前端依赖
+cd frontend
+pnpm install
+
+# 安装后端环境
+cd thirdparty
+pip install pymupdf reportlab pillow loguru pyinstaller
+pyinstall -F -w pdf.py
+
+cd .. # 切到根目录
+wails dev # 开发预览
+wails build # 编译
+```
+
+将`pdf.exe`、`PDF Guru.exe`、`ocr.py`、`convert.py`放在一个文件夹下，运行`PDF Guru.exe`即可。
+
+<details close>
 <summary><h4>额外安装(可选)</h4></summary>
-软件中大部分功能可直接使用，无需安装额外东西，但是部分功能如ocr相关功能等因打包进来会导致安装包太大，共有需要的用户自行安装依赖环境。需要额外安装的功能会在软件中用蓝色标签标注，如下：
+软件中大部分功能可直接使用，无需安装额外东西，但是部分功能如ocr相关功能等因打包进来会导致安装包太大，供有需要的用户自行安装依赖环境。需要额外安装的功能会在软件中用蓝色标签标注，如下：
 
 ![tag](assets/tag.png)
 
@@ -71,7 +115,7 @@ pip install "paddleocr>=2.0.1"
 
 4. 在PDF Guru的“首选项”中配置ocr路径
 
-![Alt text](assets/settings.png)
+![首选项](assets/settings.png)
 
 <h4>Pandoc</h4>
 
@@ -111,7 +155,7 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 
 4. 坐标
 
-所有需要填坐标的地方(如设置页边距、锚框等)都是以左上角点为原点。
+所有需要填坐标的地方(如设置锚框等)都是以左上角点为原点。
 
 
 **具体功能**：
