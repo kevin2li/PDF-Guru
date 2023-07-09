@@ -10,63 +10,77 @@
                     <a-radio-button value="custom">自定义长宽</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item name="ratio" label="缩放比例" v-if="formState.op === 'ratio'">
-                <a-input-number v-model:value="formState.ratio" :min="0"></a-input-number>
-            </a-form-item>
-            <a-form-item name="paper_size" label="纸张大小" v-if="formState.op === 'common'">
-                <a-select v-model:value="formState.paper_size" style="width: 200px">
-                    <a-select-option value="a0">A0</a-select-option>
-                    <a-select-option value="a1">A1</a-select-option>
-                    <a-select-option value="a2">A2</a-select-option>
-                    <a-select-option value="a3">A3</a-select-option>
-                    <a-select-option value="a4">A4</a-select-option>
-                    <a-select-option value="a5">A5</a-select-option>
-                    <a-select-option value="a6">A6</a-select-option>
-                    <a-select-option value="a7">A7</a-select-option>
-                    <a-select-option value="a8">A8</a-select-option>
-                    <a-select-option value="a9">A9</a-select-option>
-                    <a-select-option value="a10">A10</a-select-option>
-                    <a-select-option value="b0">B0</a-select-option>
-                    <a-select-option value="b1">B1</a-select-option>
-                    <a-select-option value="b2">B2</a-select-option>
-                    <a-select-option value="b3">B3</a-select-option>
-                    <a-select-option value="b4">B4</a-select-option>
-                    <a-select-option value="b5">B5</a-select-option>
-                    <a-select-option value="b6">B6</a-select-option>
-                    <a-select-option value="b7">B7</a-select-option>
-                    <a-select-option value="b8">B8</a-select-option>
-                    <a-select-option value="b9">B9</a-select-option>
-                    <a-select-option value="b10">B10</a-select-option>
-                    <a-select-option value="c0">C0</a-select-option>
-                    <a-select-option value="c1">C1</a-select-option>
-                    <a-select-option value="c2">C2</a-select-option>
-                    <a-select-option value="c3">C3</a-select-option>
-                    <a-select-option value="c4">C4</a-select-option>
-                    <a-select-option value="c5">C5</a-select-option>
-                    <a-select-option value="c6">C6</a-select-option>
-                    <a-select-option value="c7">C7</a-select-option>
-                    <a-select-option value="c8">C8</a-select-option>
-                    <a-select-option value="c9">C9</a-select-option>
-                    <a-select-option value="c10">C10</a-select-option>
-                    <a-select-option value="card-4x6">card-4x6</a-select-option>
-                    <a-select-option value="card-5x7">card-5x7</a-select-option>
-                    <a-select-option value="commercial">commercial</a-select-option>
-                    <a-select-option value="executive">executive</a-select-option>
-                    <a-select-option value="invoice">invoice</a-select-option>
-                    <a-select-option value="ledger">ledger</a-select-option>
-                    <a-select-option value="legal">legal</a-select-option>
-                    <a-select-option value="legal-13">legal-13</a-select-option>
-                    <a-select-option value="letter">letter</a-select-option>
-                    <a-select-option value="monarch">monarch</a-select-option>
-                    <a-select-option value="tabloid-extra">tabloid-extra</a-select-option>
-                </a-select>
-            </a-form-item>
-            <a-form-item name="width" label="宽度" v-if="formState.op === 'custom'">
-                <a-input-number v-model:value="formState.width" :min="0"></a-input-number>
-            </a-form-item>
-            <a-form-item name="height" label="高度" v-if="formState.op === 'custom'">
-                <a-input-number v-model:value="formState.height" :min="0"></a-input-number>
-            </a-form-item>
+            <div v-if="formState.op === 'ratio'">
+                <a-form-item name="ratio" label="缩放比例">
+                    <a-input-number v-model:value="formState.ratio" :min="0"></a-input-number>
+                </a-form-item>
+            </div>
+            <div v-if="formState.op === 'common'">
+                <a-form-item name="paper_size" label="纸张大小">
+                    <a-select v-model:value="formState.paper_size" style="width: 200px">
+                        <a-select-option value="a0">A0</a-select-option>
+                        <a-select-option value="a1">A1</a-select-option>
+                        <a-select-option value="a2">A2</a-select-option>
+                        <a-select-option value="a3">A3</a-select-option>
+                        <a-select-option value="a4">A4</a-select-option>
+                        <a-select-option value="a5">A5</a-select-option>
+                        <a-select-option value="a6">A6</a-select-option>
+                        <a-select-option value="a7">A7</a-select-option>
+                        <a-select-option value="a8">A8</a-select-option>
+                        <a-select-option value="a9">A9</a-select-option>
+                        <a-select-option value="a10">A10</a-select-option>
+                        <a-select-option value="b0">B0</a-select-option>
+                        <a-select-option value="b1">B1</a-select-option>
+                        <a-select-option value="b2">B2</a-select-option>
+                        <a-select-option value="b3">B3</a-select-option>
+                        <a-select-option value="b4">B4</a-select-option>
+                        <a-select-option value="b5">B5</a-select-option>
+                        <a-select-option value="b6">B6</a-select-option>
+                        <a-select-option value="b7">B7</a-select-option>
+                        <a-select-option value="b8">B8</a-select-option>
+                        <a-select-option value="b9">B9</a-select-option>
+                        <a-select-option value="b10">B10</a-select-option>
+                        <a-select-option value="c0">C0</a-select-option>
+                        <a-select-option value="c1">C1</a-select-option>
+                        <a-select-option value="c2">C2</a-select-option>
+                        <a-select-option value="c3">C3</a-select-option>
+                        <a-select-option value="c4">C4</a-select-option>
+                        <a-select-option value="c5">C5</a-select-option>
+                        <a-select-option value="c6">C6</a-select-option>
+                        <a-select-option value="c7">C7</a-select-option>
+                        <a-select-option value="c8">C8</a-select-option>
+                        <a-select-option value="c9">C9</a-select-option>
+                        <a-select-option value="c10">C10</a-select-option>
+                        <a-select-option value="card-4x6">card-4x6</a-select-option>
+                        <a-select-option value="card-5x7">card-5x7</a-select-option>
+                        <a-select-option value="commercial">commercial</a-select-option>
+                        <a-select-option value="executive">executive</a-select-option>
+                        <a-select-option value="invoice">invoice</a-select-option>
+                        <a-select-option value="ledger">ledger</a-select-option>
+                        <a-select-option value="legal">legal</a-select-option>
+                        <a-select-option value="legal-13">legal-13</a-select-option>
+                        <a-select-option value="letter">letter</a-select-option>
+                        <a-select-option value="monarch">monarch</a-select-option>
+                        <a-select-option value="tabloid-extra">tabloid-extra</a-select-option>
+                    </a-select>
+                </a-form-item>
+            </div>
+            <div v-if="formState.op === 'custom'">
+                <a-form-item name="width" label="宽度">
+                    <a-input-number v-model:value="formState.width" :min="0"></a-input-number>
+                </a-form-item>
+                <a-form-item name="height" label="高度">
+                    <a-input-number v-model:value="formState.height" :min="0"></a-input-number>
+                </a-form-item>
+                <a-form-item label="单位">
+                    <a-radio-group v-model:value="formState.unit">
+                        <a-radio value="pt">像素</a-radio>
+                        <a-radio value="cm">厘米</a-radio>
+                        <a-radio value="mm">毫米</a-radio>
+                        <a-radio value="in">英寸</a-radio>
+                    </a-radio-group>
+                </a-form-item>
+            </div>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
                 <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
@@ -107,6 +121,7 @@ export default defineComponent({
             paper_size: "A4",
             width: 0,
             height: 0,
+            unit: "pt"
         });
 
         const validateStatus = reactive({
@@ -189,7 +204,7 @@ export default defineComponent({
             } else if (formState.op === "common") {
                 await handleOps(ScalePDFByPaperSize, [formState.input, formState.output, formState.paper_size, formState.page]);
             } else if (formState.op === "custom") {
-                await handleOps(ScalePDFByDim, [formState.input, formState.output, formState.width, formState.height, formState.page]);
+                await handleOps(ScalePDFByDim, [formState.input, formState.output, formState.width, formState.height, formState.unit, formState.page]);
             }
             confirmLoading.value = false;
         }

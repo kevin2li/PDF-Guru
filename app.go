@@ -1,6 +1,3 @@
-//go:build windows
-// +build windows
-
 package main
 
 import (
@@ -676,13 +673,16 @@ func (a *App) ScalePDFByScale(inFile string, outFile string, scale float32, page
 	}
 	return nil
 }
-func (a *App) ScalePDFByDim(inFile string, outFile string, width float32, height float32, pagesStr string) error {
-	log.Printf("inFile: %s, outFile: %s, width: %f, height: %f, pagesStr: %s\n", inFile, outFile, width, height, pagesStr)
+func (a *App) ScalePDFByDim(inFile string, outFile string, width float32, height float32, unit string, pagesStr string) error {
+	log.Printf("inFile: %s, outFile: %s, width: %f, height: %f, unit: %s, pagesStr: %s\n", inFile, outFile, width, height, unit, pagesStr)
 	args := []string{"resize", "--method", "dim"}
 	args = append(args, "--width", fmt.Sprintf("%f", width))
 	args = append(args, "--height", fmt.Sprintf("%f", height))
 	if pagesStr != "" {
 		args = append(args, "--page_range", pagesStr)
+	}
+	if unit != "" {
+		args = append(args, "--unit", unit)
 	}
 	if outFile != "" {
 		args = append(args, "-o", outFile)
@@ -1393,9 +1393,7 @@ func (a *App) RemoveWatermarkByType(inFile string, outFile string, pages string)
 		return err
 	}
 	cmd := exec.Command(config.PdfPath, args...)
-
-	// err = CheckCmdError(cmd)	err = GetCmdStatusAndMessage(cmd)
-
+	err = GetCmdStatusAndMessage(cmd)
 	if err != nil {
 		err = errors.Wrap(err, "")
 		return err

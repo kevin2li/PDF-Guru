@@ -19,10 +19,10 @@
             </a-form-item>
             <a-form-item name="merge.sort" label="排序字段">
                 <a-radio-group v-model:value="formState.sort">
-                    <a-radio value="hand">添加顺序</a-radio>
+                    <a-radio value="default">添加顺序</a-radio>
                     <a-radio value="name">文件名</a-radio>
-                    <a-radio value="create">创建时间</a-radio>
-                    <a-radio value="modify">修改时间</a-radio>
+                    <a-radio value="ctime">创建时间</a-radio>
+                    <a-radio value="mtime">修改时间</a-radio>
                 </a-radio-group>
             </a-form-item>
             <a-form-item label="排序方向">
@@ -61,7 +61,7 @@ export default defineComponent({
         const formState = reactive<MergeState>({
             input_path_list: [],
             output: "",
-            sort: "hand",
+            sort: "default",
             sort_direction: "asc",
         });
 

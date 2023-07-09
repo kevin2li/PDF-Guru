@@ -177,6 +177,7 @@ interface ScaleState {
     paper_size: string;
     width: number;
     height: number;
+    unit: string;
 }
 
 interface PreferencesState {

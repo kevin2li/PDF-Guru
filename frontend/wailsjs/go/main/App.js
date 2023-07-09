@@ -218,8 +218,8 @@ export function SaveConfig(arg1, arg2, arg3) {
   return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3);
 }
 
-export function ScalePDFByDim(arg1, arg2, arg3, arg4, arg5) {
-  return window['go']['main']['App']['ScalePDFByDim'](arg1, arg2, arg3, arg4, arg5);
+export function ScalePDFByDim(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['ScalePDFByDim'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function ScalePDFByPaperSize(arg1, arg2, arg3, arg4) {

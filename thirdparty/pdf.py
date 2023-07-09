@@ -231,11 +231,11 @@ def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, i
         if output_path is None:
             output_dir = p.parent
         roi_indices = parse_range(page_range, doc.page_count, is_reverse=is_reverse)
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         parts = range_compress(roi_indices)
         for part in parts:
-            tmp_doc.insert_pdf(doc, from_page=part[0], to_page=part[1])
-        tmp_doc.save(str(output_dir / f"{p.stem}-切片.pdf"), garbage=3, deflate=True)
+            writer.insert_pdf(doc, from_page=part[0], to_page=part[1])
+        writer.save(str(output_dir / f"{p.stem}-切片.pdf"), garbage=3, deflate=True)
     except:
         logger.error(f"roi_indices: {roi_indices}")
         logger.error(traceback.format_exc())
@@ -254,9 +254,9 @@ def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
             output_dir.mkdir(parents=True, exist_ok=True)
         for i in range(0, doc.page_count, chunk_size):
             savepath = str(output_dir / f"{p.stem}-{i+1}-{min(i+chunk_size, doc.page_count)}.pdf")
-            tmp_doc:fitz.Document = fitz.open()
-            tmp_doc.insert_pdf(doc, from_page=i, to_page=min(i+chunk_size, doc.page_count)-1)
-            tmp_doc.save(savepath, garbage=3, deflate=True)
+            writer:fitz.Document = fitz.open()
+            writer.insert_pdf(doc, from_page=i, to_page=min(i+chunk_size, doc.page_count)-1)
+            writer.save(savepath, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -275,11 +275,11 @@ def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str =
             output_dir = Path(output_path)
             output_dir.mkdir(parents=True, exist_ok=True)
         for i, indices in enumerate(indices_list):
-            tmp_doc: fitz.Document = fitz.open()
+            writer: fitz.Document = fitz.open()
             parts = range_compress(indices)
             for part in parts:
-                tmp_doc.insert_pdf(doc, from_page=part[0], to_page=part[1])
-            tmp_doc.save(str(output_dir / f"{p.stem}-part{i}.pdf"), garbage=3, deflate=True)
+                writer.insert_pdf(doc, from_page=part[0], to_page=part[1])
+            writer.save(str(output_dir / f"{p.stem}-part{i}.pdf"), garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -313,13 +313,13 @@ def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
                 end = doc.page_count-1
                 cur_idx = p[0]
                 next_idx = len(toc)
-            tmp_doc: fitz.Document = fitz.open()
-            tmp_doc.insert_pdf(doc, from_page=begin, to_page=end)
+            writer: fitz.Document = fitz.open()
+            writer.insert_pdf(doc, from_page=begin, to_page=end)
             title = p[1][1].replace("/", "-").replace("\\", "-").replace(":", "-").replace("?","-").replace("*", "-").replace("\"", "-").replace("<", "-").replace(">", "-").replace("|", "-")
 
             tmp_toc = list(map(lambda x: [x[0], x[1], x[2]-begin],toc[cur_idx:next_idx]))
-            tmp_doc.set_toc(tmp_toc)
-            tmp_doc.save(str(output_dir / f"{title}.pdf"), garbage=3, deflate=True)
+            writer.set_toc(tmp_toc)
+            writer.save(str(output_dir / f"{title}.pdf"), garbage=3, deflate=True)
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -332,10 +332,10 @@ def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None)
         roi_indices = parse_range(page_range, doc.page_count, is_unique=False)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-重排.pdf")
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         for i in roi_indices:
-            tmp_doc.insert_pdf(doc, from_page=i, to_page=i)
-        tmp_doc.save(output_path, garbage=3, deflate=True)
+            writer.insert_pdf(doc, from_page=i, to_page=i)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -348,17 +348,17 @@ def insert_blank_pdf(doc_path: str, pos: int, count: int, orientation: str, pape
         p = Path(doc_path)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-插入空白页.pdf")
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         if paper_size == "same":
             fmt = doc[0].rect
         else:
             fmt = fitz.paper_rect(f"{paper_size}-l") if orientation == "landscape" else fitz.paper_rect(paper_size)
         if pos - 2 >= 0:
-            tmp_doc.insert_pdf(doc, from_page=0, to_page=pos-2)
+            writer.insert_pdf(doc, from_page=0, to_page=pos-2)
         for i in range(count):
-            tmp_doc.new_page(-1, width=fmt.width, height=fmt.height)
-        tmp_doc.insert_pdf(doc, from_page=pos-1, to_page=-1)
-        tmp_doc.save(output_path, garbage=3, deflate=True)
+            writer.new_page(-1, width=fmt.width, height=fmt.height)
+        writer.insert_pdf(doc, from_page=pos-1, to_page=-1)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -374,14 +374,14 @@ def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: int, page_range: str 
         if output_path is None:
             p = Path(doc_path1)
             output_path = str(p.parent / f"{p.stem}-插入.pdf")
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         if insert_pos - 2 >= 0:
-            tmp_doc.insert_pdf(doc1, from_page=0, to_page=insert_pos-2)
+            writer.insert_pdf(doc1, from_page=0, to_page=insert_pos-2)
         doc2_indices = parse_range(page_range, n2)
         for i in doc2_indices:
-            tmp_doc.insert_pdf(doc2, from_page=i, to_page=i)
-        tmp_doc.insert_pdf(doc1, from_page=insert_pos-1, to_page=n1-1)
-        tmp_doc.save(output_path, garbage=3, deflate=True)
+            writer.insert_pdf(doc2, from_page=i, to_page=i)
+        writer.insert_pdf(doc1, from_page=insert_pos-1, to_page=n1-1)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -401,26 +401,28 @@ def replace_pdf(doc_path1: str, doc_path2: str, src_range: str = "all", dst_rang
         if output_path is None:
             p = Path(doc_path1)
             output_path = str(p.parent / f"{p.stem}-替换.pdf")
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         dst_indices = parse_range(dst_range, n2)
         parts = src_range.split("-")
         if len(parts) == 2:
             a, b = parts
             a = int(a) if a != "N" else n1
             b = int(b) if b != "N" else n1
-            tmp_doc.insert_pdf(doc1, from_page=0, to_page=a-2)
+            if a-2 >= 0:
+                writer.insert_pdf(doc1, from_page=0, to_page=a-2)
             for i in dst_indices:
-                tmp_doc.insert_pdf(doc2, from_page=i, to_page=i)
-            tmp_doc.insert_pdf(doc1, from_page=b, to_page=n1-1)
-            tmp_doc.save(output_path, garbage=3, deflate=True)
+                writer.insert_pdf(doc2, from_page=i, to_page=i)
+            writer.insert_pdf(doc1, from_page=b, to_page=n1-1)
+            writer.save(output_path, garbage=3, deflate=True)
         elif len(parts) == 1:
             a = int(parts[0]) if parts[0] != "N" else n1
-            tmp_doc.insert_pdf(doc1, from_page=0, to_page=a-2)
+            if a-2 >= 0:
+                writer.insert_pdf(doc1, from_page=0, to_page=a-2)
             for i in dst_indices:
-                tmp_doc.insert_pdf(doc2, from_page=i, to_page=i)
+                writer.insert_pdf(doc2, from_page=i, to_page=i)
             if a < n1:
-                tmp_doc.insert_pdf(doc1, from_page=a, to_page=n1-1)
-            tmp_doc.save(output_path, garbage=3, deflate=True)
+                writer.insert_pdf(doc1, from_page=a, to_page=n1-1)
+            writer.save(output_path, garbage=3, deflate=True)
         else:
             logger.error("页码格式错误")
             dump_json(cmd_output_path, {"status": "error", "message": "页码格式错误!"})
@@ -499,7 +501,7 @@ def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str =
     try:
         doc: fitz.Document = fitz.open(doc_path)
         roi_indices = parse_range(page_range, doc.page_count)
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         if unit != "pt":
             bbox = tuple(map(lambda x: convert_length(x, unit, "pt"), bbox))
             logger.debug(bbox)
@@ -507,15 +509,15 @@ def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str =
             page = doc[page_index]
             page_width, page_height = page.rect.width, page.rect.height
             if keep_page_size:
-                new_page = tmp_doc.new_page(-1, width=page_width, height=page_height)
+                new_page = writer.new_page(-1, width=page_width, height=page_height)
                 new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
             else:
-                new_page = tmp_doc.new_page(-1, width=bbox[2]-bbox[0], height=bbox[3]-bbox[1])
+                new_page = writer.new_page(-1, width=bbox[2]-bbox[0], height=bbox[3]-bbox[1])
                 new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
-        tmp_doc.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -526,7 +528,7 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
     try:
         doc: fitz.Document = fitz.open(doc_path)
         roi_indices = parse_range(page_range, doc.page_count)
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         if unit != "pt":
             margin = tuple(map(lambda x: convert_length(x, unit, "pt"), margin))
         for page_index in roi_indices:
@@ -534,15 +536,15 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
             page_width, page_height = page.rect.width, page.rect.height
             bbox = fitz.Rect(margin[3], margin[0], page_width-margin[1], page_height-margin[2])
             if keep_page_size:
-                new_page = tmp_doc.new_page(-1, width=page_width, height=page_height)
+                new_page = writer.new_page(-1, width=page_width, height=page_height)
                 new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
             else:
-                new_page = tmp_doc.new_page(-1, width=bbox[2]-bbox[0], height=bbox[3]-bbox[1])
+                new_page = writer.new_page(-1, width=bbox[2]-bbox[0], height=bbox[3]-bbox[1])
                 new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
-        tmp_doc.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -553,7 +555,7 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "al
     try:
         doc: fitz.Document = fitz.open(doc_path)
         roi_indices = parse_range(page_range, doc.page_count)
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         for page_index in roi_indices:
             page = doc[page_index]
             page_width, page_height = page.rect.width, page.rect.height
@@ -562,12 +564,12 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "al
                 for j in range(n_col):
                     bbox = fitz.Rect(j*width, i*height, (j+1)*width, (i+1)*height)
                     # bbox += d
-                    tmp_page = tmp_doc.new_page(-1, width=bbox.width, height=bbox.height)
+                    tmp_page = writer.new_page(-1, width=bbox.width, height=bbox.height)
                     tmp_page.show_pdf_page(tmp_page.rect, doc, page_index, clip=bbox)
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-网格分割.pdf")
-        tmp_doc.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -578,7 +580,7 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
     try:
         doc: fitz.Document = fitz.open(doc_path)
         roi_indices = parse_range(page_range, doc.page_count)
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         if h_breakpoints:
             h_breakpoints = [v for v in h_breakpoints if 0 <= v <= 1]
             h_breakpoints = [0] + h_breakpoints + [1]
@@ -597,12 +599,12 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
             for i in range(len(h_breakpoints)-1):
                 for j in range(len(v_breakpoints)-1):
                     bbox = fitz.Rect(v_breakpoints[j]*page_width, h_breakpoints[i]*page_height, v_breakpoints[j+1]*page_width, h_breakpoints[i+1]*page_height)
-                    tmp_page = tmp_doc.new_page(-1, width=bbox.width, height=bbox.height)
-                    tmp_page.show_pdf_page(tmp_page.rect, doc, page_index, clip=bbox)
+                    new_page = writer.new_page(-1, width=bbox.width, height=bbox.height)
+                    new_page.show_pdf_page(new_page.rect, doc, page_index, clip=bbox)
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-自定义分割.pdf")
-        tmp_doc.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -626,17 +628,17 @@ def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4"
             for j in range(n_col):
                 rect = fitz.Rect(j*unit_w, i*unit_h, (j+1)*unit_w, (i+1)*unit_h)
                 r_tab.append(rect)
-        tmp_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for page_index in roi_indices:
             if page_index % batch_size == 0:
                 logger.debug(page_index)
-                page = tmp_doc.new_page(-1, width=width, height=height)
+                page = writer.new_page(-1, width=width, height=height)
             page.show_pdf_page(r_tab[page_index % batch_size], doc, page_index)
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-网格组合.pdf")
-        tmp_doc.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -884,22 +886,23 @@ def compress_pdf(doc_path: str, output_path: str = None):
     doc.save(output_path, garbage=4, deflate=True, clean=True)
 
 @batch_process
-def resize_pdf_by_dim(doc_path: str, width: float, height: float, page_range: str = "all", output_path: str = None):
+def resize_pdf_by_dim(doc_path: str, width: float, height: float, unit: str = "pt", page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        p = Path(doc_path)
-        if output_path is None:
-            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        new_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
+        width, height = convert_length(width, unit, "pt"), convert_length(height, unit, "pt")
         roi_indices = parse_range(page_range, doc.page_count)
         for i in range(doc.page_count):
             if i not in roi_indices:
-                new_doc.insert_pdf(doc, from_page=i, to_page=i)
+                writer.insert_pdf(doc, from_page=i, to_page=i)
                 continue
             page = doc[i]
-            new_page: fitz.Page = new_doc.new_page(width=width, height=height)
+            new_page: fitz.Page = writer.new_page(width=width, height=height)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
-        new_doc.save(output_path, garbage=3, deflate=True)
+        p = Path(doc_path)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -909,19 +912,19 @@ def resize_pdf_by_dim(doc_path: str, width: float, height: float, page_range: st
 def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        p = Path(doc_path)
-        if output_path is None:
-            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        new_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for i in range(doc.page_count):
             if i not in roi_indices:
-                new_doc.insert_pdf(doc, from_page=i, to_page=i)
+                writer.insert_pdf(doc, from_page=i, to_page=i)
                 continue
             page = doc[i]
-            new_page: fitz.Page = new_doc.new_page(width=page.rect.width*scale, height=page.rect.height*scale)
+            new_page: fitz.Page = writer.new_page(width=page.rect.width*scale, height=page.rect.height*scale)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
-        new_doc.save(output_path, garbage=3, deflate=True)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -931,23 +934,23 @@ def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", ou
 def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        p = Path(doc_path)
-        if output_path is None:
-            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        new_doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         for i in range(doc.page_count):
             if i not in roi_indices:
-                new_doc.insert_pdf(doc, from_page=i, to_page=i)
+                writer.insert_pdf(doc, from_page=i, to_page=i)
                 continue
             page = doc[i]
             if page.rect.width > page.rect.height:
                 fmt = fitz.paper_rect(f"{paper_size}-l")
             else:
                 fmt = fitz.paper_rect(f"{paper_size}")
-            new_page: fitz.Page = new_doc.new_page(width=fmt.width, height=fmt.height)
+            new_page: fitz.Page = writer.new_page(width=fmt.width, height=fmt.height)
             new_page.show_pdf_page(new_page.rect, doc, page.number, rotate=page.rotation)
-        new_doc.save(output_path, garbage=3, deflate=True)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-缩放.pdf")
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -2025,6 +2028,7 @@ def main():
     resize_parser.add_argument("--scale", type=float, help="缩放比例")
     resize_parser.add_argument("--paper_size", type=str, help="纸张大小")
     resize_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    resize_parser.add_argument("--unit", type=str, choices=['pt', 'mm', 'cm', 'in'], default="pt", help="单位")
     resize_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     # 提取子命令
@@ -2181,7 +2185,7 @@ def main():
         compress_pdf(doc_path=args.input_path, output_path=args.output)
     elif args.which == "resize":
         if args.method == "dim":
-            resize_pdf_by_dim(doc_path=args.input_path, width=args.width, height=args.height, page_range=args.page_range, output_path=args.output)
+            resize_pdf_by_dim(doc_path=args.input_path, width=args.width, height=args.height, unit=args.unit, page_range=args.page_range, output_path=args.output)
         elif args.method == "scale":
             resize_pdf_by_scale(doc_path=args.input_path, scale=args.scale, page_range=args.page_range, output_path=args.output)
         elif args.method == "paper_size":

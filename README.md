@@ -71,8 +71,6 @@ npm install -g pnpm
 
 2. 编译项目
 
-Windows：
-
 ```bash
 git clone https://github.com/kevin2li/PDF-Guru.git
 cd PDF-Guru
@@ -93,6 +91,7 @@ cd .. # 切到根目录
 wails dev # 开发预览
 wails build # 编译
 ```
+windows:
 
 将`pdf.exe`、`PDF Guru.exe`、`ocr.py`、`convert.py`放在一个文件夹下，运行`PDF Guru.exe`即可。
 
