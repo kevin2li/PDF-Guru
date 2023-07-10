@@ -8,7 +8,16 @@
     <a href="https://github.com/kevin2li/PDF-Guru/releases"><img src="https://img.shields.io/github/v/release/kevin2li/PDF-Guru?color=ffa"></a>
     <a href=""><img src="https://img.shields.io/badge/python-3.10+-aff.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/os-win%2C%20mac-pink.svg"></a>
-</p>
+</p
+
+- [PDF Guru](#pdf-guru)
+  - [项目介绍](#项目介绍)
+  - [上手指南](#上手指南)
+    - [安装](#安装)
+    - [使用](#使用)
+  - [Authors](#authors)
+  - [License](#license)
+  - [Acknowledgments](#acknowledgments)
 
 ## 项目介绍
 [PDF Guru](https://github.com/kevin2li/PDF-Guru)是一个通用型PDF文件处理工具，包含PDF合并、拆分、旋转、水印、加密、转换等20多项常用功能，完全开源，个人免费使用，界面简洁，简单易用。
@@ -31,15 +40,6 @@
 5. 界面简洁，使用简单
 6. 体积小巧，绿色免安装，随用随开
 7. 插件化：根据需要选择是否安装额外组件，减小安装包体积
-
-- [PDF Guru](#pdf-guru)
-  - [项目介绍](#项目介绍)
-  - [上手指南](#上手指南)
-    - [安装](#安装)
-    - [使用](#使用)
-  - [Authors](#authors)
-  - [License](#license)
-  - [Acknowledgments](#acknowledgments)
 
 
 ## 上手指南

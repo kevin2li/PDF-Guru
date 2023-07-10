@@ -214,9 +214,9 @@ def batch_process(func):
             path_list = glob.glob(doc_path)
             logger.debug(f"path_list length: {len(path_list) if path_list else 0}")
             if path_list:
-                del kwargs['doc_path']
                 for path in path_list:
-                    func(*args, doc_path=path, **kwargs)
+                    kwargs["doc_path"] = path
+                    func(*args, **kwargs)
         else:
             func(*args, **kwargs)
         func(*args, **kwargs)
@@ -236,6 +236,7 @@ def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, i
         for part in parts:
             writer.insert_pdf(doc, from_page=part[0], to_page=part[1])
         writer.save(str(output_dir / f"{p.stem}-切片.pdf"), garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(f"roi_indices: {roi_indices}")
         logger.error(traceback.format_exc())
@@ -320,6 +321,7 @@ def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
             tmp_toc = list(map(lambda x: [x[0], x[1], x[2]-begin],toc[cur_idx:next_idx]))
             writer.set_toc(tmp_toc)
             writer.save(str(output_dir / f"{title}.pdf"), garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -732,8 +734,7 @@ def title_preprocess(title: str):
         res['level'] = 1
         return res
     except:
-        
-        dump_json(cmd_output_path, {'level': 1, "text": title})
+        return {'level': 1, "text": title}
 
 @batch_process
 def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: str = None):
@@ -744,146 +745,181 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
         doc_path (str): pdf文件路径
         offset (int): 偏移量, 计算方式: “pdf文件实际页码” - “目录文件标注页码”
     """
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    toc_path = Path(toc_path)
-    toc = []
-    if toc_path.suffix == ".txt":
-        with open(toc_path, "r", encoding="utf-8") as f:
-            for line in f:
-                pno = 1
-                title = line
-                m = re.search("(\d+)(?=\s*$)", line) # 把最右侧的数字当作页码，如果解析的数字超过pdf总页数，就从左边依次删直到小于pdf总页数为止
-                if m is not None:
-                    pno = int(m.group(1))
-                    while pno > doc.page_count:
-                        pno = int(str(pno)[1:])
-                    title = line[:m.span()[0]]
-                pno = pno + offset
-                if not title.strip(): # 标题为空跳过
-                    continue
-                res = title_preprocess(title)
-                level, title = res['level'], res['text']
-                toc.append([level, title, pno])
-    elif toc_path.suffix == ".json":
-        with open(toc_path, "r", encoding="utf-8") as f:
-            toc = json.load(f)
-    else:
-        raise ValueError("不支持的toc文件格式!")
-    # 校正层级
-    levels = [v[0] for v in toc]
-    diff = [levels[i+1]-levels[i] for i in range(len(levels)-1)]
-    indices = [i for i in range(len(diff)) if diff[i] > 1]
-    for idx in indices:
-        toc[idx][0] = toc[idx+1][0]
-    doc.set_toc(toc)
-    if output_path is None:
-        output_path = str(p.parent / f"{p.stem}-toc.pdf")
-    doc.save(output_path)
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        toc_path = Path(toc_path)
+        toc = []
+        if toc_path.suffix == ".txt":
+            with open(toc_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    pno = 1
+                    title = line
+                    m = re.search("(\d+)(?=\s*$)", line) # 把最右侧的数字当作页码，如果解析的数字超过pdf总页数，就从左边依次删直到小于pdf总页数为止
+                    if m is not None:
+                        pno = int(m.group(1))
+                        while pno > doc.page_count:
+                            pno = int(str(pno)[1:])
+                        title = line[:m.span()[0]]
+                    pno = pno + offset
+                    if not title.strip(): # 标题为空跳过
+                        continue
+                    res = title_preprocess(title)
+                    level, title = res['level'], res['text']
+                    toc.append([level, title, pno])
+        elif toc_path.suffix == ".json":
+            with open(toc_path, "r", encoding="utf-8") as f:
+                toc = json.load(f)
+        else:
+            raise ValueError("不支持的toc文件格式!")
+        # 校正层级
+        levels = [v[0] for v in toc]
+        diff = [levels[i+1]-levels[i] for i in range(len(levels)-1)]
+        indices = [i for i in range(len(diff)) if diff[i] > 1]
+        for idx in indices:
+            toc[idx][0] = toc[idx+1][0]
+        doc.set_toc(toc)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-toc.pdf")
+        doc.save(output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    toc = []
-    for i in range(0, doc.page_count, gap):
-        toc.append([1, format.replace("%p", str(i+1)), i+1])
-    toc.append([1, format.replace("%p", str(doc.page_count)), doc.page_count])
-    doc.set_toc(toc)
-    if output_path is None:
-        output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
-    doc.save(output_path)
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        toc = []
+        for i in range(0, doc.page_count, gap):
+            toc.append([1, format.replace("%p", str(i+1)), i+1])
+        toc.append([1, format.replace("%p", str(doc.page_count)), doc.page_count])
+        doc.set_toc(toc)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
+        doc.save(output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    toc = doc.get_toc(simple=False)
-    if format == "txt":
-        if output_path is None:
-            output_path = str(p.parent / f"{p.stem}-toc.txt")
-        with open(output_path, "w", encoding="utf-8") as f:
-            for line in toc:
-                indent = (line[0]-1)*"\t"
-                f.writelines(f"{indent}{line[1]} {line[2]}\n")
-    elif format == "json":
-        if output_path is None:
-            output_path = str(p.parent / f"{p.stem}-toc.json")
-        for i in range(len(toc)):
-            try:
-                toc[i][-1] = toc[i][-1]['to'].y
-            except:
-                toc[i][-1] = 0
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(toc, f)
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        toc = doc.get_toc(simple=False)
+        if format == "txt":
+            if output_path is None:
+                output_path = str(p.parent / f"{p.stem}-toc.txt")
+            with open(output_path, "w", encoding="utf-8") as f:
+                for line in toc:
+                    indent = (line[0]-1)*"\t"
+                    f.writelines(f"{indent}{line[1]} {line[2]}\n")
+        elif format == "json":
+            if output_path is None:
+                output_path = str(p.parent / f"{p.stem}-toc.json")
+            for i in range(len(toc)):
+                try:
+                    toc[i][-1] = toc[i][-1]['to'].y
+                except:
+                    toc[i][-1] = 0
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(toc, f)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def transform_toc_file(toc_path: str, is_add_indent: bool = True, is_remove_trailing_dots: bool = True, add_offset: int = 0, output_path: str = None):
-    if output_path is None:
-        p = Path(toc_path)
-        output_path = str(p.parent / f"{p.stem}-toc-clean.txt")
-    with open(toc_path, "r", encoding="utf-8") as f, open(output_path, "w", encoding="utf-8") as f2:
-        for line in f:
-            new_line = line
-            if is_remove_trailing_dots:
-                new_line = re.sub("(\.\s*)+(?=\d*\s*$)", " ", new_line)
-                new_line = new_line.rstrip() + "\n"
-            if is_add_indent:
-                res = title_preprocess(new_line)
-                new_line = (res['level']-1)*'\t' + res['text'] + "\n"
-            if add_offset:
-                m = re.search("(\d+)(?=\s*$)", new_line)
-                if m is not None:
-                    pno = int(m.group(1))
-                    pno = pno + add_offset
-                    new_line = new_line[:m.span()[0]-1] + f" {pno}\n"
-            f2.write(new_line)
+    try:
+        if output_path is None:
+            p = Path(toc_path)
+            output_path = str(p.parent / f"{p.stem}-toc-clean.txt")
+        with open(toc_path, "r", encoding="utf-8") as f, open(output_path, "w", encoding="utf-8") as f2:
+            for line in f:
+                new_line = line
+                if is_remove_trailing_dots:
+                    new_line = re.sub("(\.\s*)+(?=\d*\s*$)", " ", new_line)
+                    new_line = new_line.rstrip() + "\n"
+                if is_add_indent:
+                    res = title_preprocess(new_line)
+                    new_line = (res['level']-1)*'\t' + res['text'] + "\n"
+                if add_offset:
+                    m = re.search("(\d+)(?=\s*$)", new_line)
+                    if m is not None:
+                        pno = int(m.group(1))
+                        pno = pno + add_offset
+                        new_line = new_line[:m.span()[0]-1] + f" {pno}\n"
+                f2.write(new_line)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, perm: List[str] = [], output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    full_perm_dict = {
-        "打开": fitz.PDF_PERM_ACCESSIBILITY,
-        "复制": fitz.PDF_PERM_COPY,
-        "打印": fitz.PDF_PERM_PRINT | fitz.PDF_PERM_PRINT_HQ,
-        "注释": fitz.PDF_PERM_ANNOTATE,
-        "表单": fitz.PDF_PERM_FORM,
-        "插入/删除页面": fitz.PDF_PERM_ASSEMBLE,
-    }
-    for v in perm:
-        del full_perm_dict[v]
-    perm_value = sum(full_perm_dict.values())
-    encrypt_meth = fitz.PDF_ENCRYPT_AES_256 # strongest algorithm
-    if output_path is None:
-        output_path = str(p.parent / f"{p.stem}-加密.pdf")
-    doc.save(
-        output_path,
-        encryption=encrypt_meth, # set the encryption method
-        owner_pw=owner_password, # set the owner password
-        user_pw=user_password, # set the user password
-        permissions=perm_value, # set permissions
-    )
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        full_perm_dict = {
+            "打开": fitz.PDF_PERM_ACCESSIBILITY,
+            "复制": fitz.PDF_PERM_COPY,
+            "打印": fitz.PDF_PERM_PRINT | fitz.PDF_PERM_PRINT_HQ,
+            "注释": fitz.PDF_PERM_ANNOTATE,
+            "表单": fitz.PDF_PERM_FORM,
+            "插入/删除页面": fitz.PDF_PERM_ASSEMBLE,
+        }
+        for v in perm:
+            del full_perm_dict[v]
+        perm_value = sum(full_perm_dict.values())
+        encrypt_meth = fitz.PDF_ENCRYPT_AES_256 # strongest algorithm
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-加密.pdf")
+        doc.save(
+            output_path,
+            encryption=encrypt_meth, # set the encryption method
+            owner_pw=owner_password, # set the owner password
+            user_pw=user_password, # set the user password
+            permissions=perm_value, # set permissions
+        )
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    if doc.isEncrypted:
-        doc.authenticate(password)
-        n = doc.page_count
-        doc.select(range(n))
-    if output_path is None:
-        output_path = str(p.parent / f"{p.stem}-解密.pdf")
-    doc.save(output_path)
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if doc.isEncrypted:
+            doc.authenticate(password)
+            n = doc.page_count
+            doc.select(range(n))
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-解密.pdf")
+        doc.save(output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def compress_pdf(doc_path: str, output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    if output_path is None:
-        output_path = str(p.parent / f"{p.stem}-压缩.pdf")
-    doc.save(output_path, garbage=4, deflate=True, clean=True)
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-压缩.pdf")
+        doc.save(output_path, garbage=4, deflate=True, clean=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def resize_pdf_by_dim(doc_path: str, width: float, height: float, unit: str = "pt", page_range: str = "all", output_path: str = None):
@@ -974,43 +1010,48 @@ def create_text_wartmark(
         multiple_mode        : bool = False,
         output_path          : str = None,
     ) -> None:
-    if output_path is None:
-        output_path = "watermark.pdf"
-    c = canvas.Canvas(output_path,pagesize=(width,height))
-    pdfmetrics.registerFont(TTFont('custom_font',font))
+    try:
+        if output_path is None:
+            output_path = "watermark.pdf"
+        c = canvas.Canvas(output_path,pagesize=(width,height))
+        pdfmetrics.registerFont(TTFont('custom_font',font))
 
-    parts = wm_text.split("\n")
-    max_part = max(parts, key=lambda x: len(x))
-    wm_length = c.stringWidth(max_part, "custom_font", fontsize)
-    font_length = c.stringWidth("中", "custom_font", fontsize)
-    line_height = c.stringWidth(max_part[0], "custom_font", fontsize)*1.1
-    wm_height = line_height * len(parts)
-    
-    c.setFont("custom_font", fontsize)
-    c.setStrokeColorRGB(*text_stroke_color_rgb)
-    c.setFillColorRGB(*text_fill_color_rgb)
-    c.setFillAlpha(text_fill_alpha)
-    c.translate(width/2, height/2)
-    c.rotate(angle)
+        parts = wm_text.split("\n")
+        max_part = max(parts, key=lambda x: len(x))
+        wm_length = c.stringWidth(max_part, "custom_font", fontsize)
+        font_length = c.stringWidth("中", "custom_font", fontsize)
+        line_height = c.stringWidth(max_part[0], "custom_font", fontsize)*1.1
+        wm_height = line_height * len(parts)
+        
+        c.setFont("custom_font", fontsize)
+        c.setStrokeColorRGB(*text_stroke_color_rgb)
+        c.setFillColorRGB(*text_fill_color_rgb)
+        c.setFillAlpha(text_fill_alpha)
+        c.translate(width/2, height/2)
+        c.rotate(angle)
 
-    diagonal_length = math.sqrt(width**2 + height**2) # diagonal length of the paper
-    if multiple_mode:
-        start_y_list = list(map(lambda x: x*wm_height*(line_spacing+1), range(num_lines)))
-        center_y = sum(start_y_list) / len(start_y_list)
-        start_y_list = list(map(lambda x: x - center_y + y_offset, start_y_list))
-        logger.debug(start_y_list)
-        for start_y in start_y_list:
-            start_x = -diagonal_length + x_offset
-            while start_x < diagonal_length:
-                for i, part in enumerate(parts):
-                    c.drawString(start_x,start_y-i*line_height,part)
-                start_x += wm_length+font_length*word_spacing
-    else:
-        start_x = - wm_length/2 + x_offset
-        start_y = - wm_height/2 + y_offset
-        for i, part in enumerate(parts):
-            c.drawString(start_x,start_y-i*line_height,part)
-    c.save()
+        diagonal_length = math.sqrt(width**2 + height**2) # diagonal length of the paper
+        if multiple_mode:
+            start_y_list = list(map(lambda x: x*wm_height*(line_spacing+1), range(num_lines)))
+            center_y = sum(start_y_list) / len(start_y_list)
+            start_y_list = list(map(lambda x: x - center_y + y_offset, start_y_list))
+            logger.debug(start_y_list)
+            for start_y in start_y_list:
+                start_x = -diagonal_length + x_offset
+                while start_x < diagonal_length:
+                    for i, part in enumerate(parts):
+                        c.drawString(start_x,start_y-i*line_height,part)
+                    start_x += wm_length+font_length*word_spacing
+        else:
+            start_x = - wm_length/2 + x_offset
+            start_y = - wm_height/2 + y_offset
+            for i, part in enumerate(parts):
+                c.drawString(start_x,start_y-i*line_height,part)
+        c.save()
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def create_image_wartmark(
         width        : Union[int, float],
@@ -1152,7 +1193,7 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
                             if i1 < 0: break  # none more left: done
                             i2 = stream.find(b"EMC", i1)  # end of definition
                             stream[i1 : i2+3] = b""  # remove the full definition source "/Artifact ... EMC"
-                        doc.update_stream(xref, stream)
+                        doc.update_stream(xref, stream, compress=True)
             writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
         if not WATERMARK_FLAG:
             logger.error("该文件没有找到水印!")
@@ -1161,7 +1202,7 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.ez_save(output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1782,43 +1823,46 @@ def convert_anydoc2pdf(input_path: str, output_path: str = None):
     """
     supported document types: PDF, XPS, EPUB, MOBI, FB2, CBZ, SVG
     """
-    doc = fitz.open(input_path)
-    b = doc.convert_to_pdf()  # convert to pdf
-    pdf = fitz.open("pdf", b)  # open as pdf
+    try:
+        doc = fitz.open(input_path)
+        b = doc.convert_to_pdf()  # convert to pdf
+        pdf = fitz.open("pdf", b)  # open as pdf
 
-    toc= doc.get_toc()  # table of contents of input
-    pdf.set_toc(toc)  # simply set it for output
-    meta = doc.metadata  # read and set metadata
-    if not meta["producer"]:
-        meta["producer"] = "PyMuPDF v" + fitz.VersionBind
+        toc= doc.get_toc()  # table of contents of input
+        pdf.set_toc(toc)  # simply set it for output
+        meta = doc.metadata  # read and set metadata
+        if not meta["producer"]:
+            meta["producer"] = "PyMuPDF v" + fitz.VersionBind
 
-    if not meta["creator"]:
-        meta["creator"] = "PyMuPDF PDF converter"
-    meta["modDate"] = fitz.get_pdf_now()
-    meta["creationDate"] = meta["modDate"]
-    pdf.set_metadata(meta)
+        if not meta["creator"]:
+            meta["creator"] = "PyMuPDF PDF converter"
+        meta["modDate"] = fitz.get_pdf_now()
+        meta["creationDate"] = meta["modDate"]
+        pdf.set_metadata(meta)
 
-    # now process the links
-    link_cnti = 0
-    link_skip = 0
-    for pinput in doc:  # iterate through input pages
-        links = pinput.get_links()  # get list of links
-        link_cnti += len(links)  # count how many
-        pout = pdf[pinput.number]  # read corresp. output page
-        for l in links:  # iterate though the links
-            if l["kind"] == fitz.LINK_NAMED:  # we do not handle named links
-                logger.info("named link page", pinput.number, l)
-                link_skip += 1  # count them
-                continue
-            pout.insert_link(l)  # simply output the others
+        # now process the links
+        link_cnti = 0
+        link_skip = 0
+        for pinput in doc:  # iterate through input pages
+            links = pinput.get_links()  # get list of links
+            link_cnti += len(links)  # count how many
+            pout = pdf[pinput.number]  # read corresp. output page
+            for l in links:  # iterate though the links
+                if l["kind"] == fitz.LINK_NAMED:  # we do not handle named links
+                    logger.info("named link page", pinput.number, l)
+                    link_skip += 1  # count them
+                    continue
+                pout.insert_link(l)  # simply output the others
 
-    # save the conversion result
-    if output_path is None:
-        p = Path(input_path)
-        output_path = str(p.parent / f"{p.stem}.pdf")
-    pdf.save(output_path, garbage=4, deflate=True)
-
-
+        # save the conversion result
+        if output_path is None:
+            p = Path(input_path)
+            output_path = str(p.parent / f"{p.stem}.pdf")
+        pdf.save(output_path, garbage=4, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def extract_metadata(doc_path: str, output_path: str = None):
     try:

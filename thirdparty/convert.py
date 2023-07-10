@@ -1,10 +1,18 @@
+import argparse
 import glob
+import json
+import logging
 import re
 import traceback
 from pathlib import Path
 
 import fitz
-import argparse
+
+cmd_output_path = "cmd_output.json"
+
+def dump_json(path, obj):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False)
 
 def parse_range(page_range: str, page_count: int, is_multi_range: bool = False, is_reverse: bool = False, is_unique: bool = True):
     # e.g.: "1-3,5-6,7-10", "1,4-5", "3-N", "even", "odd"
@@ -96,10 +104,10 @@ def convert_docx2pdf(doc_path: str, output_path: str = None):
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}.pdf")
         convert(doc_path, output_path)
-        print({"status": "success", "message": ""})
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        logger.error(traceback.format_exc())
-        print({"status": "error", "message": traceback.format_exc()})
+        logging.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
 def convert_pdf2docx(doc_path: str, page_range: str = "all", output_path: str = None):
@@ -113,10 +121,10 @@ def convert_pdf2docx(doc_path: str, page_range: str = "all", output_path: str = 
             output_path = str(p.parent / f"{p.stem}.docx")
         cv.convert(output_path, pages=roi_indices)
         cv.close()
-        print({"status": "success", "message": ""})
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        logger.error(traceback.format_exc())
-        print({"status": "error", "message": traceback.format_exc()})
+        logging.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def main():
     parser = argparse.ArgumentParser(description="Convert functions")

@@ -1,5 +1,6 @@
 import argparse
 import glob
+import json
 import os
 import re
 import shutil
@@ -12,9 +13,32 @@ import numpy as np
 from paddleocr import PaddleOCR, PPStructure, draw_ocr
 from PIL import Image
 from tqdm import tqdm
+import logging
 
 ocr_engine_ch = PaddleOCR(use_angle_cls=True, lang='ch', show_log=False) # need to run only once to download and load model into memory
 ocr_engine_en = PaddleOCR(use_angle_cls=True, lang='en', show_log=False) # need to run only once to download and load model into memory
+cmd_output_path = "cmd_output.json"
+
+def dump_json(path, obj):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False)
+
+def batch_process(func):
+    def wrapper(*args, **kwargs):
+        logging.debug(args)
+        logging.debug(kwargs)
+        input_path = kwargs['input_path']
+        if "*" in input_path:
+            path_list = glob.glob(input_path)
+            logging.debug(f"path_list length: {len(path_list) if path_list else 0}")
+            if path_list:
+                for path in path_list:
+                    kwargs["input_path"] = path
+                    func(*args, **kwargs)
+        else:
+            func(*args, **kwargs)
+        func(*args, **kwargs)
+    return wrapper
 
 def title_preprocess(title: str):
     """提取标题层级和标题内容
@@ -160,69 +184,28 @@ def write_ocr_result(ocr_results, output_path: str, offset: int = 5, mode: str =
             line = line.rstrip()
             f.write(f"{line}\n")
 
+@batch_process
 def ocr_from_image(input_path: str, lang: str = 'ch', output_path: str = None, offset: float = 5., use_double_columns: bool = False, show_log: bool = False):
-    if "*" in input_path:
-        input_path_list = glob.glob(input_path)
-        for input_path in input_path_list:
-            ocr_from_image(input_path, lang, output_path, offset, use_double_columns, show_log)
-        return
-    p = Path(input_path)
-    if output_path is None:
-        output_dir = p.parent / f"OCR识别结果-{p.stem}"
-    else:
-        output_dir = Path(output_path)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    text_output_path = str(output_dir / f"{p.stem}-ocr.txt")
-    if lang == 'ch':
-        ocr_engine = ocr_engine_ch
-    elif lang == 'en':
-        ocr_engine = ocr_engine_en
-    else:
-        raise ValueError("不支持的语言")
-    img = cv2.imread(input_path)
-    result = None
-    if use_double_columns:
-        height, width = img.shape[:2]
-        mid = width / 2
-        left_img = img[:, :int(mid)]
-        right_img = img[:, int(mid):]
-        left_result = ocr_engine.ocr(left_img, cls=False)[0]
-        right_result = ocr_engine.ocr(right_img, cls=False)[0]
-        write_ocr_result(left_result, text_output_path, offset)
-        write_ocr_result(right_result, text_output_path, offset, mode="a")
-    else:
-        result = ocr_engine.ocr(img, cls=False)[0]
-        write_ocr_result(result, text_output_path, offset)
-
-def ocr_from_pdf(doc_path: str, page_range: str = 'all', lang: str = 'ch', output_path: str = None, offset: float = 5., use_double_columns: bool = False, show_log: bool = False):
-    if "*" in doc_path:
-        doc_path_list = glob.glob(doc_path)
-        for doc_path in doc_path_list:
-            ocr_from_pdf(doc_path, page_range, lang, output_path, offset, use_double_columns, show_log)
-        return
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    if output_path is None:
-        output_path = p.parent / f"OCR识别结果-{p.stem}"
-    else:
-        output_path = Path(output_path)
-    output_path.mkdir(parents=True, exist_ok=True)
-    if page_range in ["all", ""]:
-        roi_indices = list(range(len(doc)))
-    else:
-        roi_indices = parse_range(page_range)
-    if lang == 'ch':
-        ocr_engine = ocr_engine_ch
-    elif lang == 'en':
-        ocr_engine = ocr_engine_en
-    else:
-        raise ValueError("不支持的语言")
-    dpi = 300
-    for page_index in tqdm(roi_indices):
-        page = doc[page_index]
-        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-        img = np.frombuffer(pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, pix.n))
-        cur_output_path = output_path / f"{page_index+1}-OCR.txt"
+    try:
+        if "*" in input_path:
+            input_path_list = glob.glob(input_path)
+            for input_path in input_path_list:
+                ocr_from_image(input_path, lang, output_path, offset, use_double_columns, show_log)
+            return
+        p = Path(input_path)
+        if output_path is None:
+            output_dir = p.parent / f"OCR识别结果-{p.stem}"
+        else:
+            output_dir = Path(output_path)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        text_output_path = str(output_dir / f"{p.stem}-ocr.txt")
+        if lang == 'ch':
+            ocr_engine = ocr_engine_ch
+        elif lang == 'en':
+            ocr_engine = ocr_engine_en
+        else:
+            raise ValueError("不支持的语言")
+        img = cv2.imread(input_path)
         result = None
         if use_double_columns:
             height, width = img.shape[:2]
@@ -231,20 +214,68 @@ def ocr_from_pdf(doc_path: str, page_range: str = 'all', lang: str = 'ch', outpu
             right_img = img[:, int(mid):]
             left_result = ocr_engine.ocr(left_img, cls=False)[0]
             right_result = ocr_engine.ocr(right_img, cls=False)[0]
-            write_ocr_result(left_result, cur_output_path, offset)
-            write_ocr_result(right_result, cur_output_path, offset, mode="a")
+            write_ocr_result(left_result, text_output_path, offset)
+            write_ocr_result(right_result, text_output_path, offset, mode="a")
         else:
             result = ocr_engine.ocr(img, cls=False)[0]
-            write_ocr_result(result, cur_output_path, offset)
+            write_ocr_result(result, text_output_path, offset)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logging.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-    path_list = sorted(list(filter(lambda x: x.endswith(".txt"), os.listdir(output_path))), key=lambda x: int(re.search("(\d+)", x).group(1)))
-    merged_path = output_path / "合并.txt"
-    with open(merged_path, "a", encoding="utf-8") as f:
-        for path in path_list:
-            abs_path = os.path.join(output_path, path)
-            with open(abs_path, "r", encoding="utf-8") as f2:
-                for line in f2:
-                    f.write(line)
+@batch_process
+def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', output_path: str = None, offset: float = 5., use_double_columns: bool = False, show_log: bool = False):
+    try:
+        doc: fitz.Document = fitz.open(input_path)
+        p = Path(input_path)
+        if output_path is None:
+            output_path = p.parent / f"OCR识别结果-{p.stem}"
+        else:
+            output_path = Path(output_path)
+        output_path.mkdir(parents=True, exist_ok=True)
+        if page_range in ["all", ""]:
+            roi_indices = list(range(len(doc)))
+        else:
+            roi_indices = parse_range(page_range)
+        if lang == 'ch':
+            ocr_engine = ocr_engine_ch
+        elif lang == 'en':
+            ocr_engine = ocr_engine_en
+        else:
+            raise ValueError("不支持的语言")
+        dpi = 300
+        for page_index in tqdm(roi_indices):
+            page = doc[page_index]
+            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+            img = np.frombuffer(pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, pix.n))
+            cur_output_path = output_path / f"{page_index+1}-OCR.txt"
+            result = None
+            if use_double_columns:
+                height, width = img.shape[:2]
+                mid = width / 2
+                left_img = img[:, :int(mid)]
+                right_img = img[:, int(mid):]
+                left_result = ocr_engine.ocr(left_img, cls=False)[0]
+                right_result = ocr_engine.ocr(right_img, cls=False)[0]
+                write_ocr_result(left_result, cur_output_path, offset)
+                write_ocr_result(right_result, cur_output_path, offset, mode="a")
+            else:
+                result = ocr_engine.ocr(img, cls=False)[0]
+                write_ocr_result(result, cur_output_path, offset)
+
+        path_list = sorted(list(filter(lambda x: x.endswith(".txt"), os.listdir(output_path))), key=lambda x: int(re.search("(\d+)", x).group(1)))
+        merged_path = output_path / "合并.txt"
+        with open(merged_path, "a", encoding="utf-8") as f:
+            for path in path_list:
+                abs_path = os.path.join(output_path, path)
+                with open(abs_path, "r", encoding="utf-8") as f2:
+                    for line in f2:
+                        f.write(line)
+            dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logging.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def extract_title(input_path: str, lang: str = 'ch', use_double_columns: bool = False) -> list:
     # TODO: 存在标题识别不全bug
@@ -278,67 +309,77 @@ def extract_title(input_path: str, lang: str = 'ch', use_double_columns: bool = 
     return out
 
 def add_toc_from_ocr(doc_path: str, lang: str='ch', use_double_columns: bool = False, output_path: str = None):
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    tmp_dir = p.parent / 'tmp'
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    
-    toc = []
-    dpi = 300
-    for page in tqdm(doc, total=doc.page_count):
-        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-        savepath = str(tmp_dir / f"page-{page.number+1}.png")
-        pix.save(savepath)
-        result = extract_title(savepath, lang, use_double_columns)
-        for item in result:
-            pos, (title, prob) = item
-            # 书签格式：[|v|, title, page [, dest]]  (层级，标题，页码，高度)
-            res = title_preprocess(title)
-            level, title = res['level'], res['text']
-            height = pos[0][1] # 左上角点的y坐标
-            toc.append([level, title, page.number+1, height])
-    # 校正层级
-    levels = [v[0] for v in toc]
-    diff = np.diff(levels)
-    indices = np.where(diff>1)[0]
-    for idx in indices:
-        toc[idx][0] = toc[idx+1][0]
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        tmp_dir = p.parent / 'tmp'
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        
+        toc = []
+        dpi = 300
+        for page in tqdm(doc, total=doc.page_count):
+            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+            savepath = str(tmp_dir / f"page-{page.number+1}.png")
+            pix.save(savepath)
+            result = extract_title(savepath, lang, use_double_columns)
+            for item in result:
+                pos, (title, prob) = item
+                # 书签格式：[|v|, title, page [, dest]]  (层级，标题，页码，高度)
+                res = title_preprocess(title)
+                level, title = res['level'], res['text']
+                height = pos[0][1] # 左上角点的y坐标
+                toc.append([level, title, page.number+1, height])
+        # 校正层级
+        levels = [v[0] for v in toc]
+        diff = np.diff(levels)
+        indices = np.where(diff>1)[0]
+        for idx in indices:
+            toc[idx][0] = toc[idx+1][0]
 
-    # 设置目录
-    doc.set_toc(toc)
-    if output_path is None:
-        output_path = str(p.parent / f"{p.stem}-toc.pdf")
-    doc.save(output_path)
-    shutil.rmtree(tmp_dir)
+        # 设置目录
+        doc.set_toc(toc)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-toc.pdf")
+        doc.save(output_path)
+        shutil.rmtree(tmp_dir)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logging.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def extract_item_from_pdf(doc_path: str, page_range: str = 'all', type: str = "figure", output_dir: str = None):
     """
     suupported types: figure, table, equation, title, text
     """
-    doc: fitz.Document = fitz.open(doc_path)
-    p = Path(doc_path)
-    tmp_dir = p.parent / 'tmp'
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    if output_dir is None:
-        output_dir = p.parent / type
-    else:
-        output_dir = Path(output_dir) / type
-    output_dir.mkdir(parents=True, exist_ok=True)
-    roi_indices = parse_range(page_range)
-    dpi = 300
-    for page_index in tqdm(roi_indices, total=len(roi_indices)):
-        page = doc[page_index]
-        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-        savepath = str(tmp_dir / f"page-{page.number+1}.png")
-        pix.save(savepath)
-        result = ppstructure_analysis(savepath)
-        result = [v for v in result if v['type']==type]
-        
-        idx = 1
-        for item in result:
-            im_show = Image.fromarray(item['img'])
-            im_show.save(str(output_dir / f"page-{page.number+1}-{type}-{idx}.png"))
-            idx += 1
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        tmp_dir = p.parent / 'tmp'
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        if output_dir is None:
+            output_dir = p.parent / type
+        else:
+            output_dir = Path(output_dir) / type
+        output_dir.mkdir(parents=True, exist_ok=True)
+        roi_indices = parse_range(page_range)
+        dpi = 300
+        for page_index in tqdm(roi_indices, total=len(roi_indices)):
+            page = doc[page_index]
+            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+            savepath = str(tmp_dir / f"page-{page.number+1}.png")
+            pix.save(savepath)
+            result = ppstructure_analysis(savepath)
+            result = [v for v in result if v['type']==type]
+            
+            idx = 1
+            for item in result:
+                im_show = Image.fromarray(item['img'])
+                im_show.save(str(output_dir / f"page-{page.number+1}-{type}-{idx}.png"))
+                idx += 1
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logging.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def main():
     parser = argparse.ArgumentParser()
