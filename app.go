@@ -867,26 +867,27 @@ func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format 
 	return nil
 }
 
-func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, addOffset int, removeDots bool) error {
-	log.Printf("inFile: %s, outFile: %s, addIndent: %v, addOffset: %d, removeDots: %v\n", inFile, outFile, addIndent, addOffset, removeDots)
+
+func (a *App) TransformBookmark(inFile string, outFile string, addOffset int, levelDict []string, deleteLevelBelow int) error {
+	log.Printf("inFile: %s, outFile: %s, addOffset: %d, levelDict: %v, deleteLevelBelow: %d\n", inFile, outFile, addOffset, levelDict, deleteLevelBelow)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		log.Println(err)
 		return err
 	}
 	args := []string{"bookmark", "transform"}
-	if addIndent {
-		args = append(args, "--add_indent")
+	args = append(args, "--delete-level-below", fmt.Sprintf("%d", deleteLevelBelow))
+	for _, level := range levelDict {
+		args = append(args, "--level-dict", level)
 	}
 	if addOffset != 0 {
 		args = append(args, "--add_offset", fmt.Sprintf("%d", addOffset))
 	}
-	if removeDots {
-		args = append(args, "--remove_trailing_dots")
-	}
+
 	if outFile != "" {
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, "--toc", inFile)
+	log.Println(args)
 	config, err := a.LoadConfig()
 	if err != nil {
 		err = errors.Wrap(err, "")
@@ -899,13 +900,6 @@ func (a *App) TransformBookmark(inFile string, outFile string, addIndent bool, a
 		err = errors.Wrap(err, "")
 		return err
 	}
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		err = errors.Wrap(err, "")
-		log.Println(err)
-		return err
-	}
-	log.Println(string(output))
 	return nil
 }
 

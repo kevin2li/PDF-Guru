@@ -49,11 +49,56 @@
                 <a-form-item name="transform_offset" label="页码偏移量">
                     <a-input-number v-model:value="formState.transform_offset" />
                 </a-form-item>
-                <a-form-item name="bookmark.transform_indent" label="增加缩进">
-                    <a-switch v-model:checked="formState.transform_indent" />
-                </a-form-item>
-                <a-form-item name="bookmark.transform_dots" label="删除尾部点">
-                    <a-switch v-model:checked="formState.transform_dots" />
+                <div>
+                    <a-form-item :label="index === 0 ? '缩进层级设置' : ' '" :colon="index === 0 ? true : false"
+                        v-for="(item, index) in indentItems.items" :key="index">
+                        <a-space>
+                            <a-select v-model:value="indentItems.items[index].prefix" style="width: 200px"
+                                placeholder="选择标题前缀">
+                                <a-select-option value="第一章">第一章</a-select-option>
+                                <a-select-option value="第一节">第一节</a-select-option>
+                                <a-select-option value="第一小节">第一小节</a-select-option>
+                                <a-select-option value="第一编">第一编</a-select-option>
+                                <a-select-option value="第一卷">第一卷</a-select-option>
+                                <a-select-option value="第一部分">第一部分</a-select-option>
+                                <a-select-option value="第一课">第一课</a-select-option>
+                                <a-select-option value="一、">一、</a-select-option>
+                                <a-select-option value="1.">1.</a-select-option>
+                                <a-select-option value="1.1">1.1</a-select-option>
+                                <a-select-option value="1.1.1">1.1.1</a-select-option>
+                                <a-select-option value="1.1.1.1">1.1.1.1</a-select-option>
+                                <a-select-option value="Chapter 1.">Chapter 1.</a-select-option>
+                                <a-select-option value="Lesson 1.">Lesson 1.</a-select-option>
+                            </a-select>
+                            <a-select v-model:value="indentItems.items[index].level" style="width: 200px"
+                                placeholder="选择标题层级">
+                                <a-select-option value="1">1</a-select-option>
+                                <a-select-option value="2">2</a-select-option>
+                                <a-select-option value="3">3</a-select-option>
+                                <a-select-option value="4">4</a-select-option>
+                                <a-select-option value="5">5</a-select-option>
+                                <a-select-option value="6">6</a-select-option>
+                            </a-select>
+                        </a-space>
+                        <MinusCircleOutlined @click="removeIndentItem(item)" style="margin-left: 1vw;" />
+                    </a-form-item>
+                    <a-form-item name="span" :label="indentItems.items.length === 0 ? '缩进层级设置' : ' '"
+                        :colon="indentItems.items.length === 0 ? true : false">
+                        <a-button type="dashed" block @click="addIndentItem" style="width: 410px;">
+                            <PlusOutlined />
+                            添加层级
+                        </a-button>
+                    </a-form-item>
+                </div>
+                <a-form-item label="删除标题层级">
+                    <a-select v-model:value="formState.delete_level_below" style="width: 200px">
+                        <a-select-option :value="0">无</a-select-option>
+                        <a-select-option :value="2">二级标题及以下</a-select-option>
+                        <a-select-option :value="3">三级标题及以下</a-select-option>
+                        <a-select-option :value="4">四级标题及以下</a-select-option>
+                        <a-select-option :value="5">五级标题及以下</a-select-option>
+                        <a-select-option :value="6">六级标题及以下</a-select-option>
+                    </a-select>
                 </a-form-item>
             </div>
             <div v-if="formState.op == 'recognize'">
@@ -99,10 +144,19 @@ import {
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
+import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import type { BookmarkState } from "../data";
 import { handleOps } from "../data";
+
+interface IndentItem {
+    prefix: string | undefined;
+    level: string | undefined;
+}
+
 export default defineComponent({
     components: {
+        MinusCircleOutlined,
+        PlusOutlined,
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -122,8 +176,24 @@ export default defineComponent({
             transform_dots: false,
             ocr_lang: "ch",
             ocr_double_column: false,
+            delete_level_below: 0,
         });
 
+        const indentItems = reactive<{ items: IndentItem[] }>({
+            items: [],
+        })
+        const addIndentItem = () => {
+            indentItems.items.push({
+                prefix: undefined,
+                level: undefined,
+            });
+        };
+        const removeIndentItem = (item: IndentItem) => {
+            let index = indentItems.items.indexOf(item);
+            if (index > -1) {
+                indentItems.items.splice(index, 1);
+            }
+        };
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -228,7 +298,15 @@ export default defineComponent({
                     break;
                 }
                 case "transform": {
-                    await handleOps(TransformBookmark, [formState.input, formState.output, formState.transform_indent, formState.transform_offset, formState.transform_dots]);
+                    let items = indentItems.items.filter((item) => {
+                        return item.prefix !== undefined && item.level !== undefined;
+                    });
+                    let res = [];
+                    for (let i = 0; i < items.length; i++) {
+                        res.push(`{"prefix":"${items[i].prefix}","level":"${items[i].level}"}`);
+                    }
+                    console.log(res);
+                    await handleOps(TransformBookmark, [formState.input, formState.output, formState.transform_offset, res, formState.delete_level_below]);
                     break;
                 }
                 case "recognize": {
@@ -253,7 +331,20 @@ export default defineComponent({
                 await submit();
             }
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
+        return {
+            formState,
+            rules,
+            formRef,
+            validateStatus,
+            validateHelp,
+            confirmLoading,
+            resetFields,
+            onFinish,
+            onFinishFailed,
+            indentItems,
+            addIndentItem,
+            removeIndentItem,
+        };
     }
 })
 </script>

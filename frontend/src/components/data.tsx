@@ -148,6 +148,7 @@ interface BookmarkState {
     transform_dots: boolean;
     ocr_lang: string;
     ocr_double_column: boolean;
+    delete_level_below: number;
 }
 
 interface OcrState {

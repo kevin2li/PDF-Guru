@@ -41,7 +41,6 @@
 6. 体积小巧，绿色免安装，随用随开
 7. 插件化：根据需要选择是否安装额外组件，减小安装包体积
 
-
 ## 上手指南
 ### 安装
 
@@ -268,6 +267,8 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 去除水印：支持多种水印去除方式，可根据实际情况选择合适的方式(不保证绝对有效)。
 
 ![](https://minio.kevin2li.top/image-bed/blog/20230708212957.png)
+
+视频教程: [https://www.bilibili.com/video/BV1Qz4y1E7vq/](https://www.bilibili.com/video/BV1Qz4y1E7vq/)
 
 15. PDF加密/解密
 

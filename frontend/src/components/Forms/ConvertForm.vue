@@ -4,7 +4,7 @@
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="convert_type" label="转换类型">
-                <a-select v-model:value="formState.type" style="width: 300px">
+                <a-select v-model:value="formState.type" style="width: 300px" listHeight="150px">
                     <a-select-opt-group label="PDF转其他">
                         <a-select-option value="pdf2png">pdf转png</a-select-option>
                         <a-select-option value="pdf2svg">pdf转svg</a-select-option>

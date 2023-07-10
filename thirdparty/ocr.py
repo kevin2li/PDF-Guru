@@ -231,13 +231,19 @@ def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', out
         p = Path(input_path)
         if output_path is None:
             output_path = p.parent / f"OCR识别结果-{p.stem}"
+            if not output_path.exists():
+                output_path.mkdir(parents=True, exist_ok=True)
+            else:
+                logging.warning(f"文件夹 {output_path} 已存在，将被删除")
+                shutil.rmtree(output_path)
+                output_path.mkdir(parents=True, exist_ok=True)
         else:
             output_path = Path(output_path)
-        output_path.mkdir(parents=True, exist_ok=True)
+            output_path.mkdir(parents=True, exist_ok=True)
         if page_range in ["all", ""]:
             roi_indices = list(range(len(doc)))
         else:
-            roi_indices = parse_range(page_range)
+            roi_indices = parse_range(page_range, doc.page_count)
         if lang == 'ch':
             ocr_engine = ocr_engine_ch
         elif lang == 'en':
@@ -263,7 +269,6 @@ def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', out
             else:
                 result = ocr_engine.ocr(img, cls=False)[0]
                 write_ocr_result(result, cur_output_path, offset)
-
         path_list = sorted(list(filter(lambda x: x.endswith(".txt"), os.listdir(output_path))), key=lambda x: int(re.search("(\d+)", x).group(1)))
         merged_path = output_path / "合并.txt"
         with open(merged_path, "a", encoding="utf-8") as f:
@@ -308,10 +313,10 @@ def extract_title(input_path: str, lang: str = 'ch', use_double_columns: bool = 
                 out.append([new_pos, (title, prob)])
     return out
 
-def add_toc_from_ocr(doc_path: str, lang: str='ch', use_double_columns: bool = False, output_path: str = None):
+def add_toc_from_ocr(input_path: str, lang: str='ch', use_double_columns: bool = False, output_path: str = None):
     try:
-        doc: fitz.Document = fitz.open(doc_path)
-        p = Path(doc_path)
+        doc: fitz.Document = fitz.open(input_path)
+        p = Path(input_path)
         tmp_dir = p.parent / 'tmp'
         tmp_dir.mkdir(parents=True, exist_ok=True)
         
@@ -361,7 +366,7 @@ def extract_item_from_pdf(doc_path: str, page_range: str = 'all', type: str = "f
         else:
             output_dir = Path(output_dir) / type
         output_dir.mkdir(parents=True, exist_ok=True)
-        roi_indices = parse_range(page_range)
+        roi_indices = parse_range(page_range, doc.page_count)
         dpi = 300
         for page_index in tqdm(roi_indices, total=len(roi_indices)):
             page = doc[page_index]
@@ -416,15 +421,15 @@ def main():
     if args.which == "ocr":
         p = Path(args.input_path)
         if p.suffix in [".png", '.jpg', ".jpeg"]:
-            ocr_from_image(args.input_path, args.lang, args.output, args.offset, args.use_double_column)
+            ocr_from_image(input_path=args.input_path, lang=args.lang, output_path=args.output, offset=args.offset, use_double_columns=args.use_double_column)
         elif p.suffix in ['.pdf']:
-            ocr_from_pdf(args.input_path, args.range, args.lang, args.output, args.offset, args.use_double_column)
+            ocr_from_pdf(input_path=args.input_path, page_range=args.range, lang=args.lang, output_path=args.output, offset=args.offset, use_double_columns=args.use_double_column)
         else:
             raise ValueError("不支持的文件格式")
     elif args.which == "bookmark":
-        add_toc_from_ocr(args.input_path, lang=args.lang, use_double_columns=args.use_double_column, output_path=args.output_path)
+        add_toc_from_ocr(input_path=args.input_path, lang=args.lang, use_double_columns=args.use_double_column, output_path=args.output_path)
     elif args.which == "extract":
-        extract_item_from_pdf(args.input_path, args.page_range, args.type, args.output)
+        extract_item_from_pdf(doc_path=args.input_path, page_range=args.page_range, type=args.type, output_dir=args.output)
 
 if __name__ == "__main__":
     main()

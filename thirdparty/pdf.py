@@ -695,38 +695,62 @@ def extract_pdf_text(doc_path: str, page_range: str = "all", output_path: str = 
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-def title_preprocess(title: str):
+def title_preprocess(title: str, rules: List[dict] = None):
     """提取标题层级和标题内容
     """
     try:
         title = title.rstrip()
         res = {}
-        # 优先根据缩进匹配
+        # 优先根据rule匹配
+        for rule in rules:
+            if rule['prefix'] in ["1", "1."]:
+                m = re.match("\s*(\d+\.?)\s+(.+)", title)
+                if m is not None:
+                    res['text'] = f"{m.group(1)} {m.group(2)}"
+                    res['level'] = int(rule["level"])
+                    return res
+            elif rule["prefix"] == "1.1":
+                m = re.match("\s*(\d+\.\d+\.?)\s+(.+)", title)
+                if m is not None:
+                    res['text'] = f"{m.group(1)} {m.group(2)}"
+                    res['level'] = int(rule["level"])
+                    return res
+            elif rule["prefix"] == "1.1.1":
+                m = re.match("\s*(\d+\.\d+\.\d+\.?)\s+(.+)", title)
+                if m is not None:
+                    res['text'] = f"{m.group(1)} {m.group(2)}"
+                    res['level'] = int(rule["level"])
+                    return res
+            elif rule["prefix"] == "1.1.1.1":
+                m = re.match("\s*(\d+\.\d+\.\d+\.\d+\.?)\s+(.+)", title)
+                if m is not None:
+                    res['text'] = f"{m.group(1)} {m.group(2)}"
+                    res['level'] = int(rule["level"])
+                    return res
+            elif rule["prefix"] in ["第一章", "第一节", "第一小节", "第一卷", "第一编", "第一部分", "第一课"]:
+                m = re.match("\s*(第.+[章|节|编|卷|部分|课])\s*(.+)", title)
+                if m is not None:
+                    res['text'] = f"{m.group(1)} {m.group(2)}"
+                    res['level'] = int(rule["level"])
+                    return res
+            elif rule["prefix"] in ["Chapter 1", "Lesson 1"]:
+                m = re.match("\s*(Chapter|Lesson \d+\.?)\s*(.+)", title)
+                if m is not None:
+                    res['text'] = f"{m.group(1)} {m.group(2)}"
+                    res['level'] = int(rule["level"])
+                    return res
+            elif rule["prefix"] in ["一、", "一."]:
+                m = re.match("\s*([一二三四五六七八九十]+[、.])\s*(.+)", title)
+                if m is not None:
+                    res['text'] = f"{m.group(1)} {m.group(2)}"
+                    res['level'] = int(rule["level"])
+                    return res
+
+        # 其次根据缩进匹配
         if title.startswith("\t"):
             m = re.match("(\t*)\s*(.+)", title)
             res['text'] = f"{m.group(2)}".rstrip()
             res['level'] = len(m.group(1))+1
-            return res
-
-        # 匹配：1.1.1 标题
-        m = re.match("\s*((\d+\.?)+)\s*(.+)", title)
-        if m is not None:
-            res['text'] = f"{m.group(1)} {m.group(3)}"
-            res['level'] = len([v for v in m.group(1).split(".") if v])
-            return res
-        
-        # 匹配：第1章 标题
-        m = re.match("\s*(第.+[章|编])\s*(.+)", title)
-        if m is not None:
-            res['text'] = f"{m.group(1)} {m.group(2)}"
-            res['level'] = 1
-            return res
-
-        # 匹配：第1节 标题
-        m = re.match("\s*(第.+节)\s*(.+)", title)
-        if m is not None:
-            res['text'] = f"{m.group(1)} {m.group(2)}"
-            res['level'] = 2
             return res
         
         # 无匹配
@@ -771,7 +795,9 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
             with open(toc_path, "r", encoding="utf-8") as f:
                 toc = json.load(f)
         else:
-            raise ValueError("不支持的toc文件格式!")
+            logger.error("不支持的toc文件格式!")
+            dump_json(cmd_output_path, "不支持的toc文件格式!")
+            return
         # 校正层级
         levels = [v[0] for v in toc]
         diff = [levels[i+1]-levels[i] for i in range(len(levels)-1)]
@@ -811,16 +837,19 @@ def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
         doc: fitz.Document = fitz.open(doc_path)
         p = Path(doc_path)
         toc = doc.get_toc(simple=False)
+        if not toc:
+            dump_json(cmd_output_path, {"status": "error", "message": "该文件没有书签!"})
+            return
         if format == "txt":
             if output_path is None:
-                output_path = str(p.parent / f"{p.stem}-toc.txt")
+                output_path = str(p.parent / f"{p.stem}-书签.txt")
             with open(output_path, "w", encoding="utf-8") as f:
                 for line in toc:
                     indent = (line[0]-1)*"\t"
                     f.writelines(f"{indent}{line[1]} {line[2]}\n")
         elif format == "json":
             if output_path is None:
-                output_path = str(p.parent / f"{p.stem}-toc.json")
+                output_path = str(p.parent / f"{p.stem}-书签.json")
             for i in range(len(toc)):
                 try:
                     toc[i][-1] = toc[i][-1]['to'].y
@@ -833,28 +862,29 @@ def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
-def transform_toc_file(toc_path: str, is_add_indent: bool = True, is_remove_trailing_dots: bool = True, add_offset: int = 0, output_path: str = None):
+def transform_toc_file(toc_path: str, level_dict_list: List[dict] = None, add_offset: int = 0, delete_level_below: int = None, output_path: str = None):
     try:
+        logger.debug(level_dict_list)
         if output_path is None:
             p = Path(toc_path)
-            output_path = str(p.parent / f"{p.stem}-toc-clean.txt")
+            output_path = str(p.parent / f"{p.stem}-书签转换.txt")
         with open(toc_path, "r", encoding="utf-8") as f, open(output_path, "w", encoding="utf-8") as f2:
             for line in f:
                 new_line = line
-                if is_remove_trailing_dots:
-                    new_line = re.sub("(\.\s*)+(?=\d*\s*$)", " ", new_line)
-                    new_line = new_line.rstrip() + "\n"
-                if is_add_indent:
-                    res = title_preprocess(new_line)
-                    new_line = (res['level']-1)*'\t' + res['text'] + "\n"
                 if add_offset:
                     m = re.search("(\d+)(?=\s*$)", new_line)
                     if m is not None:
                         pno = int(m.group(1))
                         pno = pno + add_offset
                         new_line = new_line[:m.span()[0]-1] + f" {pno}\n"
+                if level_dict_list:
+                    out = title_preprocess(new_line, level_dict_list)
+                    new_line = "\t"*(out['level']-1) + out['text'] + "\n"
+                if delete_level_below:
+                    if new_line.startswith("\t"*(delete_level_below-1)):
+                        continue
                 f2.write(new_line)
+            f2.flush()
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -885,6 +915,8 @@ def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, p
             owner_pw=owner_password, # set the owner password
             user_pw=user_password, # set the user password
             permissions=perm_value, # set permissions
+            garbage=3,
+            deflate=True,
         )
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
@@ -902,7 +934,7 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
             doc.select(range(n))
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-解密.pdf")
-        doc.save(output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -2010,9 +2042,9 @@ def main():
     ## 书签转换
     bookmark_transform_parser = bookmark_sub_parsers.add_parser("transform", help="转换书签")
     bookmark_transform_parser.add_argument("--toc", type=str, help="目录文件路径")
-    bookmark_transform_parser.add_argument("--add_indent", action="store_true", help="是否添加缩进")
-    bookmark_transform_parser.add_argument("--remove_trailing_dots", action="store_true", help="是否删除标题末尾的点号")
     bookmark_transform_parser.add_argument("--add_offset", type=int, default=0, help="页码偏移量")
+    bookmark_transform_parser.add_argument("--level-dict", type=str, action="append", help="目录层级字典")
+    bookmark_transform_parser.add_argument("--delete-level-below", type=int, default=0, help="删除目录层级")
     bookmark_transform_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_transform_parser.set_defaults(bookmark_which='transform')
 
@@ -2243,7 +2275,12 @@ def main():
         elif args.bookmark_which == "extract":
             extract_toc(doc_path=args.input_path, format=args.format, output_path=args.output)
         elif args.bookmark_which == "transform":
-            transform_toc_file(toc_path=args.toc, is_add_indent=args.add_indent, is_remove_trailing_dots=args.remove_trailing_dots, add_offset=args.add_offset, output_path=args.output)
+            level_dict_list = []
+            if args.level_dict:
+                for item in args.level_dict:
+                    level_dict = eval(item)
+                    level_dict_list.append(level_dict)
+            transform_toc_file(toc_path=args.toc, level_dict_list=level_dict_list, delete_level_below=args.delete_level_below, add_offset=args.add_offset, output_path=args.output)
     elif args.which == "extract":
         if args.type == "text":
             extract_pdf_text(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
@@ -2318,3 +2355,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # out = title_preprocess("2.1.1  程序的顺序执行及其特征 43",  [{'prefix': '1.1', 'level': '2'}, {'prefix': '1.1.1', 'level': '3'}])
+    # print(out)

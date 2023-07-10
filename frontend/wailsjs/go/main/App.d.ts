@@ -122,7 +122,7 @@ export function SplitPDFByChunk(arg1:string,arg2:number,arg3:string):Promise<voi
 
 export function SplitPDFByPage(arg1:string,arg2:string,arg3:string):Promise<void>;
 
-export function TransformBookmark(arg1:string,arg2:string,arg3:boolean,arg4:number,arg5:boolean):Promise<void>;
+export function TransformBookmark(arg1:string,arg2:string,arg3:number,arg4:Array<string>,arg5:number):Promise<void>;
 
 export function WatermarkPDFByImage(arg1:string,arg2:string,arg3:string,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:number,arg10:number,arg11:number,arg12:boolean,arg13:string):Promise<void>;
 
