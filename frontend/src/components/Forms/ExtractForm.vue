@@ -6,15 +6,18 @@
             <a-form-item name="op" label="提取类型">
                 <a-radio-group button-style="solid" v-model:value="formState.op">
                     <a-radio-button value="page">页面</a-radio-button>
+                    <a-radio-button value="bookmark">书签</a-radio-button>
                     <a-radio-button value="text">文本</a-radio-button>
                     <a-radio-button value="image">图片</a-radio-button>
                     <a-radio-button value="table" disabled>表格</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
-                label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
-            </a-form-item>
+            <div v-if="formState.op !== 'bookmark'">
+                <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
+                    label="页码范围">
+                    <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                </a-form-item>
+            </div>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
                 :help="validateHelp.input">
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
@@ -32,7 +35,14 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, ReorderPDF, ExtractTextFromPDF, ExtractImageFromPDF } from '../../../wailsjs/go/main/App';
+import {
+    CheckFileExists,
+    CheckRangeFormat,
+    ReorderPDF,
+    ExtractTextFromPDF,
+    ExtractImageFromPDF,
+    ExtractBookmark,
+} from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { ExtractState } from "../data";
@@ -131,6 +141,10 @@ export default defineComponent({
                         output = formState.input.replace(/\.pdf$/, "_提取.pdf");
                     }
                     await handleOps(ReorderPDF, [formState.input.trim(), output, formState.page]);
+                    break;
+                }
+                case "bookmark": {
+                    await handleOps(ExtractBookmark, [formState.input, formState.output, "txt"]);
                     break;
                 }
                 case "text": {

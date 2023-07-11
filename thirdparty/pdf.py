@@ -1799,6 +1799,8 @@ def convert_to_image_pdf(doc_path: str, dpi: int = 300, page_range: str = "all",
         doc: fitz.Document = fitz.open(doc_path)
         writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
+        toc = doc.get_toc(simple=True)
+        logger.debug(toc)
         for page_index in range(doc.page_count):
             page = doc[page_index]
             new_page = writer.new_page(width=page.rect.width, height=page.rect.height)
@@ -1811,6 +1813,7 @@ def convert_to_image_pdf(doc_path: str, dpi: int = 300, page_range: str = "all",
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-图片型.pdf")
+        writer.set_toc(toc)
         writer.ez_save(output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:

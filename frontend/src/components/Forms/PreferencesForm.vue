@@ -82,6 +82,7 @@ export default defineComponent({
                 console.log({ res });
                 formState.pdf_path = res.pdf_path;
                 formState.python_path = res.python_path;
+                formState.tesseract_path = res.tesseract_path;
                 formState.pandoc_path = res.pandoc_path;
             }).catch((err: any) => {
                 console.log({ err });
