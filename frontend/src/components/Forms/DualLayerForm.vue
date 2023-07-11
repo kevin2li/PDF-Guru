@@ -5,21 +5,25 @@
             @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item label="语言">
                 <a-select v-model:value="formState.lang" style="width: 200px">
-                    <a-select-option value="ch">中文简体</a-select-option>
-                    <a-select-option value="en">英文</a-select-option>
+                    <a-select-option value="chi_sim">中文简体</a-select-option>
+                    <a-select-option value="eng">英文</a-select-option>
                 </a-select>
             </a-form-item>
-            <a-form-item label="是否双栏">
-                <a-checkbox v-model:checked="formState.double_column"></a-checkbox>
-            </a-form-item>
-            <a-form-item label="OCR引擎">
-                <a-select v-model:value="formState.engine" style="width: 200px">
-                    <a-select-option value="paddleocr">PaddleOCR</a-select-option>
-                    <a-select-option value="tesseract" disabled>Tesseract OCR</a-select-option>
+            <a-form-item name="dpi" label="DPI">
+                <a-select v-model:value="formState.dpi" style="width: 200px">
+                    <a-select-option value="100">100</a-select-option>
+                    <a-select-option value="200">200</a-select-option>
+                    <a-select-option value="300">300</a-select-option>
+                    <a-select-option value="400">400</a-select-option>
+                    <a-select-option value="500">500</a-select-option>
+                    <a-select-option value="600">600</a-select-option>
+                    <a-select-option value="800">800</a-select-option>
+                    <a-select-option value="1000">1000</a-select-option>
+                    <a-select-option value="1200">1200</a-select-option>
                 </a-select>
             </a-form-item>
-            <a-form-item name="page" label="页码范围" hasFeedback :validateStatus="validateStatus.page"
-                :help="validateHelp.page">
+            <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
+                label="页码范围">
                 <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
@@ -34,28 +38,31 @@
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
+        <div style="margin: 10px auto;">
+            <b>温馨提示</b>：本功能需要提前安装好 <a href="https://tesseract-ocr.github.io/tessdoc/#binaries" target="_blank">tesseract
+                ocr</a>.
+        </div>
     </div>
 </template>
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, OCR } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, MakeDualLayerPDF } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import type { OcrState } from "../data";
+import type { DualLayerState } from "../data";
 import { handleOps } from "../data";
 export default defineComponent({
     components: {
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<OcrState>({
+        const formState = reactive<DualLayerState>({
             input: "",
             output: "",
             page: "",
-            lang: "ch",
-            double_column: false,
-            engine: "paddleocr",
+            lang: "chi_sim",
+            dpi: 300,
         });
 
         const validateStatus = reactive({
@@ -65,7 +72,7 @@ export default defineComponent({
         const validateHelp = reactive({
             input: "",
             page: "",
-        })
+        });
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
             if (value === '') {
@@ -90,13 +97,12 @@ export default defineComponent({
                 return Promise.reject();
             });
             const legal_suffix = [".pdf", ".png", ".jpg", ".jpeg"];
-            if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
+            if (!legal_suffix.some((suffix) => value.trim().toLowerCase().endsWith(suffix))) {
                 validateStatus["input"] = 'error';
-                validateHelp["input"] = "仅支持pdf, png, jpg, jpeg格式的文件";
+                validateHelp["input"] = "目前仅支持pdf、png、jpg、jpeg格式的文件";
                 return Promise.reject();
             }
         };
-
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';
             if (value.trim() === '') {
@@ -133,14 +139,20 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(OCR, [formState.input, formState.output, formState.page, formState.lang, formState.double_column]);
+            await handleOps(MakeDualLayerPDF, [
+                formState.input,
+                formState.output,
+                formState.dpi,
+                formState.page,
+                formState.lang
+            ]);
             confirmLoading.value = false;
         }
         const onFinish = async () => {
             await submit();
         }
 
-        // @ts-ignore
+        // @ts-ignore   
         const onFinishFailed = async ({ values, errorFields, outOfDate }) => {
             if (errorFields.length > 0) {
                 console.log({ errorFields });

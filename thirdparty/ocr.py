@@ -10,10 +10,10 @@ from pathlib import Path
 import cv2
 import fitz
 import numpy as np
+from loguru import logger
 from paddleocr import PaddleOCR, PPStructure, draw_ocr
 from PIL import Image
 from tqdm import tqdm
-import logging
 
 ocr_engine_ch = PaddleOCR(use_angle_cls=True, lang='ch', show_log=False) # need to run only once to download and load model into memory
 ocr_engine_en = PaddleOCR(use_angle_cls=True, lang='en', show_log=False) # need to run only once to download and load model into memory
@@ -25,12 +25,12 @@ def dump_json(path, obj):
 
 def batch_process(func):
     def wrapper(*args, **kwargs):
-        logging.debug(args)
-        logging.debug(kwargs)
+        logger.debug(args)
+        logger.debug(kwargs)
         input_path = kwargs['input_path']
         if "*" in input_path:
             path_list = glob.glob(input_path)
-            logging.debug(f"path_list length: {len(path_list) if path_list else 0}")
+            logger.debug(f"path_list length: {len(path_list) if path_list else 0}")
             if path_list:
                 for path in path_list:
                     kwargs["input_path"] = path
@@ -221,11 +221,11 @@ def ocr_from_image(input_path: str, lang: str = 'ch', output_path: str = None, o
             write_ocr_result(result, text_output_path, offset)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        logging.error(traceback.format_exc())
+        logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
-def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', output_path: str = None, offset: float = 5., use_double_columns: bool = False, show_log: bool = False):
+def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', output_path: str = None, offset: float = 5., use_double_columns: bool = False):
     try:
         doc: fitz.Document = fitz.open(input_path)
         p = Path(input_path)
@@ -234,16 +234,13 @@ def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', out
             if not output_path.exists():
                 output_path.mkdir(parents=True, exist_ok=True)
             else:
-                logging.warning(f"文件夹 {output_path} 已存在，将被删除")
+                logger.warning(f"文件夹 {output_path} 已存在，将被删除")
                 shutil.rmtree(output_path)
                 output_path.mkdir(parents=True, exist_ok=True)
         else:
             output_path = Path(output_path)
             output_path.mkdir(parents=True, exist_ok=True)
-        if page_range in ["all", ""]:
-            roi_indices = list(range(len(doc)))
-        else:
-            roi_indices = parse_range(page_range, doc.page_count)
+        roi_indices = parse_range(page_range, doc.page_count)
         if lang == 'ch':
             ocr_engine = ocr_engine_ch
         elif lang == 'en':
@@ -279,8 +276,9 @@ def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', out
                         f.write(line)
             dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        logging.error(traceback.format_exc())
+        logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
 
 def extract_title(input_path: str, lang: str = 'ch', use_double_columns: bool = False) -> list:
     # TODO: 存在标题识别不全bug
@@ -349,7 +347,7 @@ def add_toc_from_ocr(input_path: str, lang: str='ch', use_double_columns: bool =
         shutil.rmtree(tmp_dir)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        logging.error(traceback.format_exc())
+        logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def extract_item_from_pdf(doc_path: str, page_range: str = 'all', type: str = "figure", output_dir: str = None):
@@ -383,7 +381,7 @@ def extract_item_from_pdf(doc_path: str, page_range: str = 'all', type: str = "f
                 idx += 1
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
-        logging.error(traceback.format_exc())
+        logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def main():

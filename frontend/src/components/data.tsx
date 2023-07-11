@@ -159,6 +159,7 @@ interface OcrState {
     page: string;
     lang: string;
     double_column: boolean;
+    engine: string;
 }
 
 interface DeleteState {
@@ -186,6 +187,7 @@ interface ScaleState {
 interface PreferencesState {
     pdf_path: string;
     python_path: string;
+    tesseract_path: string;
     pandoc_path: string;
     allow_modify: boolean;
 }
@@ -269,6 +271,15 @@ interface PageNumberState {
     unit: string;
 }
 
+interface DualLayerState {
+    input: string;
+    output: string;
+    page: string;
+    dpi: number;
+    lang: string;
+}
+
+
 const menuRecord: Record<string, string> = {
     "merge": "PDF合并",
     "split": "PDF拆分",
@@ -290,6 +301,7 @@ const menuRecord: Record<string, string> = {
     "encrypt": "PDF加解密",
     "ocr": "OCR识别",
     "meta": "查看元信息",
+    "dual": "双层PDF制作",
     "settings": "首选项"
 };
 
@@ -314,6 +326,7 @@ const menuDesc: Record<string, string> = {
     "encrypt": "对PDF文件进行加密或解密",
     "ocr": "对PDF文件或图片(支持png、jpg格式)进行OCR识别",
     "meta": "查看文档属性",
+    "dual": "双层PDF制作，可以为扫描件创建隐藏文字图层，从而支持文字复制、检索等功能",
     "settings": "对软件功能进行配置"
 }
 
@@ -357,4 +370,5 @@ export type {
     BackgroundState,
     HeaderAndFooterState,
     PageNumberState,
+    DualLayerState,
 };

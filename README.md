@@ -282,6 +282,8 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 
 ![](https://minio.kevin2li.top/image-bed/blog/20230708205703.png)
 
+视频教程：[https://www.bilibili.com/video/BV1Wx4y1o7P6/](https://www.bilibili.com/video/BV1Wx4y1o7P6/)
+
 17. PDF提取
 
 提取PDF文档中的页面、文本、图片等
@@ -305,8 +307,12 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 对PDF页面进行OCR识别，也支持对图片的OCR识别。
 
 ![](https://minio.kevin2li.top/image-bed/blog/20230708205809.png)
+21. 双层PDF制作
+> 此功能依赖tesseract ocr，下载地址：[https://github.com/UB-Mannheim/tesseract/wiki](https://github.com/UB-Mannheim/tesseract/wiki)
 
-21. 首选项
+![](https://minio.kevin2li.top/image-bed/blog/20230711142605.png)
+
+22. 首选项
 
 对于额外安装的功能需要在此处进行配置，即填写外部工具的可执行文件路径。
 

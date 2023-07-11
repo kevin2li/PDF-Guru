@@ -60,9 +60,10 @@ func (a *App) startup(ctx context.Context) {
 
 // My app part
 type MyConfig struct {
-	PdfPath    string `json:"pdf_path"`
-	PythonPath string `json:"python_path"`
-	PandocPath string `json:"pandoc_path"`
+	PdfPath       string `json:"pdf_path"`
+	PythonPath    string `json:"python_path"`
+	TesseractPath string `json:"tesseract_path"`
+	PandocPath    string `json:"pandoc_path"`
 }
 
 type CmdOutput struct {
@@ -70,10 +71,11 @@ type CmdOutput struct {
 	Message string `json:"message"`
 }
 
-func (a *App) SaveConfig(pdfPath string, pythonPath string, pandocPath string) error {
+func (a *App) SaveConfig(pdfPath string, pythonPath string, tesseractPath string, pandocPath string) error {
 	var config MyConfig
 	config.PdfPath = pdfPath
 	config.PythonPath = pythonPath
+	config.TesseractPath = tesseractPath
 	config.PandocPath = pandocPath
 	jsonData, err := json.Marshal(config)
 	if err != nil {
@@ -102,7 +104,7 @@ func (a *App) LoadConfig() (MyConfig, error) {
 			return config, err
 		}
 		path = filepath.Join(filepath.Dir(path), "pdf.exe")
-		err = a.SaveConfig(path, "", "")
+		err = a.SaveConfig(path, "", "", "")
 		if err != nil {
 			err = errors.Wrap(err, "")
 			return config, err
@@ -866,7 +868,6 @@ func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format 
 	}
 	return nil
 }
-
 
 func (a *App) TransformBookmark(inFile string, outFile string, addOffset int, levelDict []string, deleteLevelBelow int, defaultLevel int, isRemoveBlankLines bool) error {
 	log.Printf("inFile: %s, outFile: %s, addOffset: %d, levelDict: %v, deleteLevelBelow: %d\n", inFile, outFile, addOffset, levelDict, deleteLevelBelow)
@@ -1842,168 +1843,25 @@ func (a *App) RemovePDFPageNumber(
 	return nil
 }
 
-func (a *App) ConvertPDF2PNG(
+func (a *App) PDFConversion(
 	inFile string,
 	outFile string,
 	dpi int,
-	pages string) error {
-	log.Printf("inFile: %s, outFile: %s, dpi: %d, pages: %s\n", inFile, outFile, dpi, pages)
-	args := []string{"convert", "--source-type", "pdf", "--target-type", "png"}
-	if pages != "" {
-		args = append(args, "--page_range", pages)
-	}
-	args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
-	if outFile != "" {
-		args = append(args, "-o", outFile)
-	}
-	args = append(args, inFile)
-	log.Println(args)
-	config, err := a.LoadConfig()
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	cmd := exec.Command(config.PdfPath, args...)
-	err = GetCmdStatusAndMessage(cmd)
-
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	return nil
-}
-
-func (a *App) ConvertPDF2SVG(
-	inFile string,
-	outFile string,
-	dpi int,
-	pages string) error {
-	log.Printf("inFile: %s, outFile: %s, dpi: %d, pages: %s\n", inFile, outFile, dpi, pages)
-	args := []string{"convert", "--source-type", "pdf", "--target-type", "svg"}
-	if pages != "" {
-		args = append(args, "--page_range", pages)
-	}
-	args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
-	if outFile != "" {
-		args = append(args, "-o", outFile)
-	}
-	args = append(args, inFile)
-	log.Println(args)
-	config, err := a.LoadConfig()
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	cmd := exec.Command(config.PdfPath, args...)
-	err = GetCmdStatusAndMessage(cmd)
-
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	return nil
-}
-
-func (a *App) ConvertPNG2PDF(
-	inFile string,
-	outFile string,
 	isMerge bool,
-	pages string) error {
-	log.Printf("inFile: %s, outFile: %s, isMerge: %v, pages: %s\n", inFile, outFile, isMerge, pages)
-	args := []string{"convert", "--source-type", "png", "--target-type", "pdf"}
+	srcType string,
+	dstType string,
+	pages string,
+	convert_type string) error {
+	log.Printf("inFile: %s, outFile: %s, dpi: %d, srcType: %s, dstType: %s, pages: %s\n", inFile, outFile, dpi, srcType, dstType, pages)
+	args := []string{"convert", "--source-type", srcType, "--target-type", dstType}
 	if pages != "" {
 		args = append(args, "--page_range", pages)
+	}
+	if (srcType == "pdf" && dstType == "png") || (srcType == "pdf" && dstType == "svg") || (srcType == "pdf" && dstType == "image-pdf") {
+		args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
 	}
 	if isMerge {
 		args = append(args, "--merge")
-	}
-	if outFile != "" {
-		args = append(args, "-o", outFile)
-	}
-	args = append(args, inFile)
-	log.Println(args)
-	config, err := a.LoadConfig()
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	cmd := exec.Command(config.PdfPath, args...)
-	err = GetCmdStatusAndMessage(cmd)
-
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	return nil
-}
-
-func (a *App) ConvertSVG2PDF(
-	inFile string,
-	outFile string,
-	isMerge bool,
-	pages string) error {
-	log.Printf("inFile: %s, outFile: %s, isMerge: %v, pages: %s\n", inFile, outFile, isMerge, pages)
-	args := []string{"convert", "--source-type", "svg", "--target-type", "pdf"}
-	if pages != "" {
-		args = append(args, "--page_range", pages)
-	}
-	if isMerge {
-		args = append(args, "--merge")
-	}
-	if outFile != "" {
-		args = append(args, "-o", outFile)
-	}
-	args = append(args, inFile)
-	log.Println(args)
-	config, err := a.LoadConfig()
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	cmd := exec.Command(config.PdfPath, args...)
-	err = GetCmdStatusAndMessage(cmd)
-
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	return nil
-}
-
-func (a *App) ConvertMobi2PDF(
-	inFile string,
-	outFile string,
-) error {
-	log.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
-	args := []string{"convert", "--source-type", "mobi", "--target-type", "pdf"}
-	if outFile != "" {
-		args = append(args, "-o", outFile)
-	}
-	args = append(args, inFile)
-	log.Println(args)
-	config, err := a.LoadConfig()
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	cmd := exec.Command(config.PdfPath, args...)
-	err = GetCmdStatusAndMessage(cmd)
-
-	if err != nil {
-		err = errors.Wrap(err, "")
-		return err
-	}
-	return nil
-}
-
-func (a *App) ConvertEqub2PDF(
-	inFile string,
-	outFile string,
-) error {
-	log.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
-	args := []string{"convert", "--source-type", "equb", "--target-type", "pdf"}
-	if outFile != "" {
-		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
 	log.Println(args)
@@ -2255,4 +2113,38 @@ func (a *App) ConvertTex2Md(
 		return err
 	}
 	return nil
+}
+
+func (a *App) MakeDualLayerPDF(
+	inFile string,
+	outFile string,
+	dpi int,
+	pages string,
+	lang string,
+) error {
+	log.Printf("inFile: %s, outFile: %s, dpi: %d, pages: %s, lang: %s\n", inFile, outFile, dpi, pages, lang)
+	args := []string{"dual", "--dpi", fmt.Sprintf("%d", dpi), "--lang", lang}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	log.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		err = errors.Wrap(err, "")
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+
+	err = GetCmdStatusAndMessage(cmd)
+
+	if err != nil {
+		err = errors.Wrap(err, "")
+		return err
+	}
+	return nil
+
 }

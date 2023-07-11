@@ -5,6 +5,8 @@ import json
 import math
 import os
 import re
+import shutil
+import subprocess
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -1792,6 +1794,29 @@ def mask_pdf_by_rectangle_annot(
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 
+def convert_to_image_pdf(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        writer: fitz.Document = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            new_page = writer.new_page(width=page.rect.width, height=page.rect.height)
+            if page_index in roi_indices:
+                pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+                pix.set_dpi(dpi, dpi)
+                new_page.insert_image(new_page.rect, pixmap=pix)
+            else:
+                writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-图片型.pdf")
+        writer.ez_save(output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
 def convert_pdf2png(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1819,7 +1844,7 @@ def convert_pdf2svg(doc_path: str, dpi: int = 300, page_range: str = "all", outp
         roi_indices = parse_range(page_range, doc.page_count)
         if output_path is None:
             p = Path(doc_path)
-            output_dir = p.parent / f"{p.stem}-png"
+            output_dir = p.parent / f"{p.stem}-svg"
             output_dir.mkdir(exist_ok=True, parents=True)
         else:
             output_dir = Path(output_path)
@@ -1846,7 +1871,7 @@ def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, ou
                 with open(path, 'r') as f:
                     img = fitz.open(path)
                     pdfbytes = img.convert_to_pdf()
-                    pdf = fitz.open('pdf', pdfbytes) 
+                    pdf = fitz.open('pdf', pdfbytes)
                     rect = img[0].rect
                     page = writer.new_page(width=rect.width, height=rect.height)
                     page.show_pdf_page(rect, pdf, 0)
@@ -1953,6 +1978,137 @@ def extract_metadata(doc_path: str, output_path: str = None):
         metadata['file_size'] = human_readable_size(file_size)
         logger.debug(metadata)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+def flags_decomposer(flags):
+    """Make font flags human readable."""
+    l = []
+    if flags & 2 ** 0:
+        l.append("superscript")
+    if flags & 2 ** 1:
+        l.append("italic")
+    if flags & 2 ** 2:
+        l.append("serifed")
+    else:
+        l.append("sans")
+    if flags & 2 ** 3:
+        l.append("monospaced")
+    else:
+        l.append("proportional")
+    if flags & 2 ** 4:
+        l.append("bold")
+    return ", ".join(l)
+
+def extract_fonts(doc_path: str, output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        page = doc[0]
+
+        # read page text as a dictionary, suppressing extra spaces in CJK fonts
+        out = page.get_text("json")
+        with open("out-json.json", "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2, ensure_ascii=False)
+        
+        wlist = page.get_text("words")
+        with open("out-words.json", "w", encoding="utf-8") as f:
+            json.dump(wlist, f, indent=2, ensure_ascii=False)
+        
+        out = page.get_text("dict", flags=11)
+        with open("out-dict.json", "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2, ensure_ascii=False)
+
+        blocks = page.get_text("dict", flags=11)["blocks"]
+        with open("out-blocks.json", "w", encoding="utf-8") as f:
+            json.dump(blocks, f, indent=2, ensure_ascii=False)
+        logger.debug(blocks)
+        for b in blocks:  # iterate through the text blocks
+            for l in b["lines"]:  # iterate through the text lines
+                for s in l["spans"]:  # iterate through the text spans
+                    # logger.debug("")
+                    font_properties = "Font: '%s' (%s), size %g, color #%06x" % (
+                        s["font"],  # font name
+                        flags_decomposer(s["flags"]),  # readable font flags
+                        s["size"],  # font size
+                        s["color"],  # font color
+                    )
+                    # logger.debug("Text: '%s'" % s["text"])  # simple print of text
+                    # logger.debug(font_properties)
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+def make_dual_layer_pdf(input_path: str, page_range: str = 'all', lang: str = 'chi_sim', dpi: int = 300, output_path: str = None):
+    try:
+        tesseract_path = None
+        with open("config.json", "r") as f:
+            config = json.load(f)
+            if not config['tesseract_path']:
+                dump_json(cmd_output_path, {"status": "error", "message": "请先配置tesseract路径"})
+                return
+            tesseract_path = config['tesseract_path']
+
+        # tesseract_path = "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+        doc: fitz.Document = fitz.open(input_path)
+        writer: fitz.Document = fitz.open()
+        roi_indices = parse_range(page_range, doc.page_count)
+        toc = doc.get_toc(simple=True)
+
+        p = Path(input_path)
+        temp_dir = p.parent / "temp"
+        temp_dir.mkdir(exist_ok=True, parents=True)
+
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            if page_index in roi_indices:
+                pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+                img_save_path = str(temp_dir / f"{page_index}.png")
+                pix.pil_save(img_save_path, dpi=(dpi, dpi))
+                pdf_save_path = str(temp_dir / f"{page_index}")
+                result = subprocess.run([tesseract_path, img_save_path, pdf_save_path, "-l", lang, "pdf"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                if result.returncode != 0:
+                    logger.error(result)
+                    dump_json(cmd_output_path, {"status": "error", "message": str(result)})
+                    return
+                else:
+                    new_page = writer.new_page(width=page.rect.width, height=page.rect.height)
+                    pdf = fitz.open(f"{pdf_save_path}.pdf")
+                    new_page.show_pdf_page(page.rect, pdf, 0)
+                    pdf.close()
+            else:
+                writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
+
+        writer.set_toc(toc)
+        if output_path is None:
+            output_path = p.parent / f"{p.stem}-双层.pdf"
+        writer.ez_save(output_path)
+        writer.close()
+        doc.close()
+        shutil.rmtree(temp_dir)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+@batch_process
+def make_dual_layer_pdf_from_image(doc_path: str, lang: str = 'chi_sim',  output_path: str = None):
+    try:
+        tesseract_path = None
+        with open("config.json", "r") as f:
+            config = json.load(f)
+            if not config['tesseract_path']:
+                dump_json(cmd_output_path, {"status": "error", "message": "请先配置tesseract路径"})
+                return
+            tesseract_path = config['tesseract_path']
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = p.parent / f"{p.stem}-双层"
+        result = subprocess.run([tesseract_path, doc_path, output_path, "-l", lang, "pdf"], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        if result.returncode != 0:
+            logger.error(result)
+            dump_json(cmd_output_path, {"status": "error", "message": str(result)})
+            return
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -2256,6 +2412,15 @@ def main():
     page_number_parser.add_argument("--unit", type=str, choices=['pt', 'mm', 'cm', 'in'], default="pt", help="单位")
     page_number_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
+    # 双层PDF子命令
+    dual_parser = sub_parsers.add_parser("dual", help="双层PDF", description="生成双层PDF")
+    dual_parser.set_defaults(which='dual')
+    dual_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    dual_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
+    dual_parser.add_argument("--page-range", type=str, default="all", help="页码范围")
+    dual_parser.add_argument("--lang", type=str, default="ch", help="识别语言") # ['chi_sim', 'eng']
+    dual_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
     args = parser.parse_args()
     logger.debug(args)
     if args.which == "merge":
@@ -2333,6 +2498,8 @@ def main():
                 convert_pdf2png(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
             elif args.target_type == "svg":
                 convert_pdf2svg(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
+            elif args.target_type == "image-pdf":
+                convert_to_image_pdf(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
         elif args.target_type == "pdf":
             if args.source_type == "png":
                 convert_png2pdf(input_path=args.input_path, is_merge=args.is_merge,output_path=args.output)
@@ -2379,6 +2546,13 @@ def main():
             insert_page_number(doc_path=args.input_path, format=args.format, pos=args.pos, start=args.start, margin_bbox=args.margin_bbox, font_family=args.font_family, font_size=args.font_size, font_color=args.font_color, opacity=args.opacity, align=args.align, page_range=args.page_range, unit=args.unit, output_path=args.output)
         elif args.type == "remove":
             remove_page_number(doc_path=args.input_path, margin_bbox=args.margin_bbox, pos=args.pos, unit=args.unit, page_range=args.page_range, output_path=args.output)
+    elif args.which == "dual":
+        if args.input_path.lower().endswith(".pdf"):
+            make_dual_layer_pdf(input_path=args.input_path, dpi=args.dpi, page_range=args.page_range, lang=args.lang, output_path=args.output)
+        elif args.input_path.lower().endswith(".png") or args.input_path.lower().endswith(".jpg") or args.input_path.lower().endswith(".jpeg"):
+            make_dual_layer_pdf_from_image(doc_path=args.input_path, lang=args.lang, output_path=args.output)
+        else:
+            raise ValueError("不支持的文件类型!")
 
 if __name__ == "__main__":
     main()

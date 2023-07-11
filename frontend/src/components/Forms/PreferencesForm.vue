@@ -8,6 +8,11 @@
                 <a-input v-model:value="formState.python_path" placeholder="填写python路径" :disabled="!formState.allow_modify"
                     allow-clear></a-input>
             </a-form-item>
+            <a-form-item name="python_path" label="tesseract路径" hasFeedback :validateStatus="validateStatus.python_path"
+                :help="validateHelp.python_path">
+                <a-input v-model:value="formState.tesseract_path" placeholder="填写tesseract路径"
+                    :disabled="!formState.allow_modify" allow-clear></a-input>
+            </a-form-item>
             <a-form-item name="pandoc_path" label="pandoc路径" hasFeedback :validateStatus="validateStatus.pandoc_path"
                 :help="validateHelp.pandoc_path">
                 <a-input v-model:value="formState.pandoc_path" placeholder="填写pandoc路径" :disabled="!formState.allow_modify"
@@ -18,9 +23,30 @@
                 </a-button>
             </a-form-item>
         </a-form>
-        <div style="margin-top: 20px;">
-            项目地址：<a href="https://github.com/kevin2li/PDF-Guru" target="_blank">https://github.com/kevin2li/PDF-Guru</a>
+        <div>
+            <a-space direction="vertical">
+                <div style="margin-top: 20px;">
+                    项目地址：<a href="https://github.com/kevin2li/PDF-Guru"
+                        target="_blank">https://github.com/kevin2li/PDF-Guru</a>
+                </div>
+                <div>
+                    作者：<a href="https://github.com/kevin2li" target="_blank">Kevin2li</a>
+                </div>
+                <div>
+                    B站：<a href="https://space.bilibili.com/369356107"
+                        target="_blank">https://space.bilibili.com/369356107</a>
+                </div>
+            </a-space>
         </div>
+        <a-divider></a-divider>
+        <!-- <b>相关资源下载：</b>
+        <div style="margin-top: 1vh;">
+            <a-space direction="vertical">
+                <div>1. Python: </div>
+                <div>2. tesseract ocr: </div>
+                <div>3. Pandoc: </div>
+            </a-space>
+        </div> -->
     </div>
 </template>
 <script lang="ts">
@@ -38,6 +64,7 @@ export default defineComponent({
         const formState = reactive<PreferencesState>({
             pdf_path: "",
             python_path: "",
+            tesseract_path: "",
             pandoc_path: "",
             allow_modify: false,
         });
@@ -110,7 +137,7 @@ export default defineComponent({
             formState.allow_modify = !formState.allow_modify;
             button_text.value = formState.allow_modify ? "保存" : "修改";
             if (!formState.allow_modify) {
-                await SaveConfig(formState.pdf_path, formState.python_path, formState.pandoc_path).then((res: any) => {
+                await SaveConfig(formState.pdf_path, formState.python_path, formState.tesseract_path, formState.pandoc_path).then((res: any) => {
                     console.log({ res });
                     message.success("保存成功");
                 }).catch((err: any) => {

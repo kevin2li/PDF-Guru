@@ -8,6 +8,7 @@
                     <a-select-opt-group label="PDF转其他">
                         <a-select-option value="pdf2png">pdf转png</a-select-option>
                         <a-select-option value="pdf2svg">pdf转svg</a-select-option>
+                        <a-select-option value="pdf2image-pdf">pdf转图片型pdf</a-select-option>
                         <!-- <a-select-option value="pdf2html">pdf转html</a-select-option> -->
                         <a-select-option value="pdf2docx">
                             pdf转docx
@@ -17,7 +18,7 @@
                     <a-select-opt-group label="其他转PDF">
                         <a-select-option value="png2pdf">png转pdf</a-select-option>
                         <a-select-option value="svg2pdf">svg转pdf</a-select-option>
-                        <a-select-option value="equb2pdf">equb转pdf</a-select-option>
+                        <a-select-option value="equb2pdf-python">equb转pdf</a-select-option>
                         <a-select-option value="mobi2pdf">mobi转pdf</a-select-option>
                         <a-select-option value="md2pdf">
                             markdown转pdf
@@ -94,17 +95,12 @@ import { message, Modal } from 'ant-design-vue';
 import {
     CheckFileExists,
     CheckRangeFormat,
-    ConvertPDF2PNG,
-    ConvertPDF2SVG,
-    ConvertPNG2PDF,
-    ConvertSVG2PDF,
-    ConvertEqub2PDF,
-    ConvertMobi2PDF,
     ConvertPDF2Docx,
     ConvertMd2Docx,
     ConvertMd2PDF,
     ConvertMd2Html,
     ConvertMd2Tex,
+    PDFConversion,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -194,52 +190,74 @@ export default defineComponent({
             confirmLoading.value = true;
             switch (formState.type) {
                 case "pdf2png": {
-                    await handleOps(ConvertPDF2PNG, [
+                    await handleOps(PDFConversion, [
                         formState.input,
                         formState.output,
                         formState.dpi,
+                        false,
+                        "pdf",
+                        "png",
                         formState.page,
                     ])
                     break;
                 }
                 case "png2pdf": {
-                    await handleOps(ConvertPNG2PDF, [
+                    await handleOps(PDFConversion, [
                         formState.input,
                         formState.output,
-                        formState.is_merge,
+                        formState.dpi,
+                        false,
+                        "png",
+                        "pdf",
                         formState.page,
                     ])
                     break;
                 }
                 case "pdf2svg": {
-                    await handleOps(ConvertPDF2SVG, [
+                    await handleOps(PDFConversion, [
                         formState.input,
                         formState.output,
                         formState.dpi,
+                        false,
+                        "pdf",
+                        "svg",
                         formState.page,
                     ])
                     break;
                 }
                 case "svg2pdf": {
-                    await handleOps(ConvertSVG2PDF, [
+                    await handleOps(PDFConversion, [
                         formState.input,
                         formState.output,
-                        formState.is_merge,
+                        formState.dpi,
+                        false,
+                        "svg",
+                        "pdf",
                         formState.page,
                     ])
                     break;
                 }
-                case "equb2pdf": {
-                    await handleOps(ConvertEqub2PDF, [
+                case "equb2pdf-python": {
+                    await handleOps(PDFConversion, [
                         formState.input,
                         formState.output,
+                        formState.dpi,
+                        false,
+                        "equb",
+                        "pdf",
+                        formState.page,
                     ])
                     break;
                 }
                 case "mobi2pdf": {
-                    await handleOps(ConvertMobi2PDF, [
+                    await handleOps(PDFConversion, [
                         formState.input,
                         formState.output,
+                        formState.dpi,
+                        false,
+                        "mobi",
+                        "pdf",
+                        formState.page,
                     ])
                     break;
                 }
@@ -247,6 +265,18 @@ export default defineComponent({
                     await handleOps(ConvertPDF2Docx, [
                         formState.input,
                         formState.output,
+                    ])
+                    break;
+                }
+                case "pdf2image-pdf": {
+                    await handleOps(PDFConversion, [
+                        formState.input,
+                        formState.output,
+                        formState.dpi,
+                        false,
+                        "pdf",
+                        "image-pdf",
+                        formState.page,
                     ])
                     break;
                 }

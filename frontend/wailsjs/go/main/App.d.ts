@@ -24,8 +24,6 @@ export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertDocx2Md(arg1:string,arg2:string):Promise<void>;
 
-export function ConvertEqub2PDF(arg1:string,arg2:string):Promise<void>;
-
 export function ConvertHtml2Md(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertMd2Docx(arg1:string,arg2:string):Promise<void>;
@@ -38,19 +36,9 @@ export function ConvertMd2RevealJs(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertMd2Tex(arg1:string,arg2:string):Promise<void>;
 
-export function ConvertMobi2PDF(arg1:string,arg2:string):Promise<void>;
-
 export function ConvertPDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function ConvertPDF2Docx(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertPDF2PNG(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
-
-export function ConvertPDF2SVG(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
-
-export function ConvertPNG2PDF(arg1:string,arg2:string,arg3:boolean,arg4:string):Promise<void>;
-
-export function ConvertSVG2PDF(arg1:string,arg2:string,arg3:boolean,arg4:string):Promise<void>;
 
 export function ConvertTex2Md(arg1:string,arg2:string):Promise<void>;
 
@@ -82,6 +70,8 @@ export function InsertPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:s
 
 export function LoadConfig():Promise<main.MyConfig>;
 
+export function MakeDualLayerPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string):Promise<void>;
+
 export function MaskPDFByAnnot(arg1:string,arg2:string,arg3:number,arg4:string,arg5:number,arg6:number,arg7:string):Promise<void>;
 
 export function MaskPDFByRect(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:string,arg6:number,arg7:number,arg8:string):Promise<void>;
@@ -93,6 +83,8 @@ export function OCR(arg1:string,arg2:string,arg3:string,arg4:string,arg5:boolean
 export function OCRExtract(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function OCRPDFBookmark(arg1:string,arg2:string,arg3:string,arg4:string,arg5:boolean):Promise<void>;
+
+export function PDFConversion(arg1:string,arg2:string,arg3:number,arg4:boolean,arg5:string,arg6:string,arg7:string,arg8:string):Promise<void>;
 
 export function RemovePDFHeaderAndFooter(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<string>,arg5:string,arg6:string):Promise<void>;
 
@@ -108,7 +100,7 @@ export function ReplacePDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:
 
 export function RotatePDF(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
 
-export function SaveConfig(arg1:string,arg2:string,arg3:string):Promise<void>;
+export function SaveConfig(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function ScalePDFByDim(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string,arg6:string):Promise<void>;
 

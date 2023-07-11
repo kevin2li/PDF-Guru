@@ -140,6 +140,12 @@
                         </template>
                         {{ menuRecord['ocr'] }}
                     </a-menu-item>
+                    <a-menu-item key="dual">
+                        <template #icon>
+                            <file-search-outlined />
+                        </template>
+                        {{ menuRecord['dual'] }}
+                    </a-menu-item>
                 </a-sub-menu>
                 <a-menu-item key="settings">
                     <template #icon>
@@ -179,6 +185,7 @@
                     <PageNumberForm v-if="state.selectedKeys.at(0) === 'page_number'" />
                     <BackgroundForm v-if="state.selectedKeys.at(0) === 'background'" />
                     <!-- <MetaForm v-if="state.selectedKeys.at(0) === 'meta'" /> -->
+                    <DualLayerForm v-if="state.selectedKeys.at(0) === 'dual'" />
                 </div>
             </div>
         </a-col>
@@ -222,6 +229,7 @@ import {
     TabletOutlined,
     FieldBinaryOutlined,
     SyncOutlined,
+    FileSearchOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
@@ -247,6 +255,8 @@ import HeaderAndFooterForm from "./Forms/HeaderAndFooterForm.vue";
 import BackgroundForm from "./Forms/BackgroundForm.vue";
 import PageNumberForm from "./Forms/PageNumberForm.vue";
 import MetaForm from "./Forms/MetaForm.vue";
+import DualLayerForm from "./Forms/DualLayerForm.vue";
+
 
 const IconFont = createFromIconfontCN({ scriptUrl: '//at.alicdn.com/t/font_8d5l8fzk5b87iudi.js' });
 
@@ -288,6 +298,7 @@ export default defineComponent({
         TabletOutlined,
         FieldBinaryOutlined,
         SyncOutlined,
+        FileSearchOutlined,
         IconFont,
         // form
         // 合并
@@ -332,6 +343,8 @@ export default defineComponent({
         PageNumberForm,
         // 文档属性
         MetaForm,
+        // 双层PDF
+        DualLayerForm,
     },
     setup() {
         const state = reactive({
