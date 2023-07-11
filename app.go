@@ -868,7 +868,7 @@ func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format 
 }
 
 
-func (a *App) TransformBookmark(inFile string, outFile string, addOffset int, levelDict []string, deleteLevelBelow int) error {
+func (a *App) TransformBookmark(inFile string, outFile string, addOffset int, levelDict []string, deleteLevelBelow int, defaultLevel int, isRemoveBlankLines bool) error {
 	log.Printf("inFile: %s, outFile: %s, addOffset: %d, levelDict: %v, deleteLevelBelow: %d\n", inFile, outFile, addOffset, levelDict, deleteLevelBelow)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		log.Println(err)
@@ -882,7 +882,10 @@ func (a *App) TransformBookmark(inFile string, outFile string, addOffset int, le
 	if addOffset != 0 {
 		args = append(args, "--add_offset", fmt.Sprintf("%d", addOffset))
 	}
-
+	args = append(args, "--default-level", fmt.Sprintf("%d", defaultLevel))
+	if isRemoveBlankLines {
+		args = append(args, "--remove-blank-lines")
+	}
 	if outFile != "" {
 		args = append(args, "-o", outFile)
 	}

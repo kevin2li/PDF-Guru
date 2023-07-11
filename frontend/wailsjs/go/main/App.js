@@ -242,8 +242,8 @@ export function SplitPDFByPage(arg1, arg2, arg3) {
   return window['go']['main']['App']['SplitPDFByPage'](arg1, arg2, arg3);
 }
 
-export function TransformBookmark(arg1, arg2, arg3, arg4, arg5) {
-  return window['go']['main']['App']['TransformBookmark'](arg1, arg2, arg3, arg4, arg5);
+export function TransformBookmark(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['TransformBookmark'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 export function WatermarkPDFByImage(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13) {

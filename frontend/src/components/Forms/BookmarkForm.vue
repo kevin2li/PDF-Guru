@@ -53,8 +53,8 @@
                     <a-form-item :label="index === 0 ? '缩进层级设置' : ' '" :colon="index === 0 ? true : false"
                         v-for="(item, index) in indentItems.items" :key="index">
                         <a-space>
-                            <a-select v-model:value="indentItems.items[index].prefix" style="width: 200px"
-                                placeholder="选择标题前缀">
+                            <a-select v-model:value="indentItems.items[index].type" style="width: 200px"
+                                placeholder="选择标题前缀" @change="selectChange(index)">
                                 <a-select-option value="第一章">第一章</a-select-option>
                                 <a-select-option value="第一节">第一节</a-select-option>
                                 <a-select-option value="第一小节">第一小节</a-select-option>
@@ -63,13 +63,17 @@
                                 <a-select-option value="第一部分">第一部分</a-select-option>
                                 <a-select-option value="第一课">第一课</a-select-option>
                                 <a-select-option value="一、">一、</a-select-option>
-                                <a-select-option value="1.">1.</a-select-option>
+                                <a-select-option value="1">1</a-select-option>
                                 <a-select-option value="1.1">1.1</a-select-option>
                                 <a-select-option value="1.1.1">1.1.1</a-select-option>
                                 <a-select-option value="1.1.1.1">1.1.1.1</a-select-option>
-                                <a-select-option value="Chapter 1.">Chapter 1.</a-select-option>
-                                <a-select-option value="Lesson 1.">Lesson 1.</a-select-option>
+                                <a-select-option value="Chapter 1">Chapter 1</a-select-option>
+                                <a-select-option value="Lesson 1">Lesson 1</a-select-option>
+                                <a-select-option value="custom">自定义</a-select-option>
                             </a-select>
+                            <a-input v-model:value="indentItems.items[index].prefix"
+                                v-if="indentItems.items[index].type === 'custom'" style="width: 280px"
+                                placeholder="自定义前缀(支持正则), e.g. 第.+小节" allow-clear />
                             <a-select v-model:value="indentItems.items[index].level" style="width: 200px"
                                 placeholder="选择标题层级">
                                 <a-select-option value="1">1</a-select-option>
@@ -90,6 +94,9 @@
                         </a-button>
                     </a-form-item>
                 </div>
+                <a-form-item label="默认层级">
+                    <a-input-number v-model:value="formState.default_level" :min="1"></a-input-number>
+                </a-form-item>
                 <a-form-item label="删除标题层级">
                     <a-select v-model:value="formState.delete_level_below" style="width: 200px">
                         <a-select-option :value="0">无</a-select-option>
@@ -99,6 +106,9 @@
                         <a-select-option :value="5">五级标题及以下</a-select-option>
                         <a-select-option :value="6">六级标题及以下</a-select-option>
                     </a-select>
+                </a-form-item>
+                <a-form-item label="删除空行">
+                    <a-switch v-model:checked="formState.remove_blank_lines" />
                 </a-form-item>
             </div>
             <div v-if="formState.op == 'recognize'">
@@ -151,6 +161,7 @@ import { handleOps } from "../data";
 interface IndentItem {
     prefix: string | undefined;
     level: string | undefined;
+    type: string | undefined;
 }
 
 export default defineComponent({
@@ -177,6 +188,8 @@ export default defineComponent({
             ocr_lang: "ch",
             ocr_double_column: false,
             delete_level_below: 0,
+            default_level: 1,
+            remove_blank_lines: true,
         });
 
         const indentItems = reactive<{ items: IndentItem[] }>({
@@ -186,12 +199,20 @@ export default defineComponent({
             indentItems.items.push({
                 prefix: undefined,
                 level: undefined,
+                type: undefined,
             });
         };
         const removeIndentItem = (item: IndentItem) => {
             let index = indentItems.items.indexOf(item);
             if (index > -1) {
                 indentItems.items.splice(index, 1);
+            }
+        };
+        const selectChange = (index: number) => {
+            if (indentItems.items[index].type !== 'custom') {
+                indentItems.items[index].prefix = indentItems.items[index].type;
+            } else {
+                indentItems.items[index].prefix = undefined;
             }
         };
         const validateStatus = reactive({
@@ -303,10 +324,10 @@ export default defineComponent({
                     });
                     let res = [];
                     for (let i = 0; i < items.length; i++) {
-                        res.push(`{"prefix":"${items[i].prefix}","level":"${items[i].level}"}`);
+                        res.push(`{"prefix":"${items[i].prefix}","level":"${items[i].level}", "type":"${items[i].type}"}`);
                     }
                     console.log(res);
-                    await handleOps(TransformBookmark, [formState.input, formState.output, formState.transform_offset, res, formState.delete_level_below]);
+                    await handleOps(TransformBookmark, [formState.input, formState.output, formState.transform_offset, res, formState.delete_level_below, formState.default_level, formState.remove_blank_lines]);
                     break;
                 }
                 case "recognize": {
@@ -344,6 +365,7 @@ export default defineComponent({
             indentItems,
             addIndentItem,
             removeIndentItem,
+            selectChange,
         };
     }
 })

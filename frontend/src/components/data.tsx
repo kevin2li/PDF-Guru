@@ -149,6 +149,8 @@ interface BookmarkState {
     ocr_lang: string;
     ocr_double_column: boolean;
     delete_level_below: number;
+    default_level: number;
+    remove_blank_lines: boolean;
 }
 
 interface OcrState {

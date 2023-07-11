@@ -467,14 +467,21 @@ def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direc
             else:
                 new_path_list.sort(key=lambda x: Path(x).stat().st_mtime, reverse=True)
         logger.debug(new_path_list)
-        doc: fitz.Document = fitz.open()
+        writer: fitz.Document = fitz.open()
+        toc_list = []
+        cur_page_number = 0
         for doc_path in new_path_list:
             doc_temp = fitz.open(doc_path)
-            doc.insert_pdf(doc_temp)
+            toc_temp = doc_temp.get_toc(simple=True)
+            toc_temp = list(map(lambda x: [x[0], x[1], x[2]+cur_page_number], toc_temp))
+            toc_list.extend(toc_temp)
+            cur_page_number += doc_temp.page_count
+            writer.insert_pdf(doc_temp)
+        writer.set_toc(toc_list)
         if output_path is None:
             p = Path(doc_path_list[0])
             output_path = str(p.parent / f"合并.pdf")
-        doc.save(output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -492,7 +499,7 @@ def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: 
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-旋转.pdf")
-        doc.save(output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -702,50 +709,57 @@ def title_preprocess(title: str, rules: List[dict] = None):
         title = title.rstrip()
         res = {}
         # 优先根据rule匹配
-        for rule in rules:
-            if rule['prefix'] in ["1", "1."]:
-                m = re.match("\s*(\d+\.?)\s+(.+)", title)
-                if m is not None:
-                    res['text'] = f"{m.group(1)} {m.group(2)}"
-                    res['level'] = int(rule["level"])
-                    return res
-            elif rule["prefix"] == "1.1":
-                m = re.match("\s*(\d+\.\d+\.?)\s+(.+)", title)
-                if m is not None:
-                    res['text'] = f"{m.group(1)} {m.group(2)}"
-                    res['level'] = int(rule["level"])
-                    return res
-            elif rule["prefix"] == "1.1.1":
-                m = re.match("\s*(\d+\.\d+\.\d+\.?)\s+(.+)", title)
-                if m is not None:
-                    res['text'] = f"{m.group(1)} {m.group(2)}"
-                    res['level'] = int(rule["level"])
-                    return res
-            elif rule["prefix"] == "1.1.1.1":
-                m = re.match("\s*(\d+\.\d+\.\d+\.\d+\.?)\s+(.+)", title)
-                if m is not None:
-                    res['text'] = f"{m.group(1)} {m.group(2)}"
-                    res['level'] = int(rule["level"])
-                    return res
-            elif rule["prefix"] in ["第一章", "第一节", "第一小节", "第一卷", "第一编", "第一部分", "第一课"]:
-                m = re.match("\s*(第.+[章|节|编|卷|部分|课])\s*(.+)", title)
-                if m is not None:
-                    res['text'] = f"{m.group(1)} {m.group(2)}"
-                    res['level'] = int(rule["level"])
-                    return res
-            elif rule["prefix"] in ["Chapter 1", "Lesson 1"]:
-                m = re.match("\s*(Chapter|Lesson \d+\.?)\s*(.+)", title)
-                if m is not None:
-                    res['text'] = f"{m.group(1)} {m.group(2)}"
-                    res['level'] = int(rule["level"])
-                    return res
-            elif rule["prefix"] in ["一、", "一."]:
-                m = re.match("\s*([一二三四五六七八九十]+[、.])\s*(.+)", title)
-                if m is not None:
-                    res['text'] = f"{m.group(1)} {m.group(2)}"
-                    res['level'] = int(rule["level"])
-                    return res
-
+        if rules:
+            for rule in rules:
+                if rule['type'] != "custom":
+                    if rule['prefix'] in ["1", "1."]:
+                        m = re.match("\s*(\d+\.?)\s+(.+)", title)
+                        if m is not None:
+                            res['text'] = f"{m.group(1)} {m.group(2)}"
+                            res['level'] = int(rule["level"])
+                            return res
+                    elif rule["prefix"] == "1.1":
+                        m = re.match("\s*(\d+\.\d+\.?)\s+(.+)", title)
+                        if m is not None:
+                            res['text'] = f"{m.group(1)} {m.group(2)}"
+                            res['level'] = int(rule["level"])
+                            return res
+                    elif rule["prefix"] == "1.1.1":
+                        m = re.match("\s*(\d+\.\d+\.\d+\.?)\s+(.+)", title)
+                        if m is not None:
+                            res['text'] = f"{m.group(1)} {m.group(2)}"
+                            res['level'] = int(rule["level"])
+                            return res
+                    elif rule["prefix"] == "1.1.1.1":
+                        m = re.match("\s*(\d+\.\d+\.\d+\.\d+\.?)\s+(.+)", title)
+                        if m is not None:
+                            res['text'] = f"{m.group(1)} {m.group(2)}"
+                            res['level'] = int(rule["level"])
+                            return res
+                    elif rule["prefix"] in ["第一章", "第一节", "第一小节", "第一卷", "第一编", "第一部分", "第一课"]:
+                        m = re.match("\s*(第.+[章|节|编|卷|部分|课])\s*(.+)", title)
+                        if m is not None:
+                            res['text'] = f"{m.group(1)} {m.group(2)}"
+                            res['level'] = int(rule["level"])
+                            return res
+                    elif rule["prefix"] in ["Chapter 1", "Lesson 1"]:
+                        m = re.match("\s*((Chapter|Lesson) \d+\.?)\s*(.+)", title)
+                        if m is not None:
+                            res['text'] = f"{m.group(1)} {m.group(2)}"
+                            res['level'] = int(rule["level"])
+                            return res
+                    elif rule["prefix"] in ["一、", "一."]:
+                        m = re.match("\s*([一二三四五六七八九十]+[、.])\s*(.+)", title)
+                        if m is not None:
+                            res['text'] = f"{m.group(1)} {m.group(2)}"
+                            res['level'] = int(rule["level"])
+                            return res
+                else:
+                    m = re.match(f'\s*({rule["prefix"]})\s+(.+)', title)
+                    if m is not None:
+                        res['text'] = f"{m.group(1)} {m.group(2)}"
+                        res['level'] = int(rule["level"])
+                        return res
         # 其次根据缩进匹配
         if title.startswith("\t"):
             m = re.match("(\t*)\s*(.+)", title)
@@ -804,10 +818,11 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
         indices = [i for i in range(len(diff)) if diff[i] > 1]
         for idx in indices:
             toc[idx][0] = toc[idx+1][0]
+        logger.debug(toc)
         doc.set_toc(toc)
         if output_path is None:
-            output_path = str(p.parent / f"{p.stem}-toc.pdf")
-        doc.save(output_path)
+            output_path = str(p.parent / f"{p.stem}-加书签目录.pdf")
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -825,7 +840,7 @@ def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", output
         doc.set_toc(toc)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
-        doc.save(output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -862,7 +877,7 @@ def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-def transform_toc_file(toc_path: str, level_dict_list: List[dict] = None, add_offset: int = 0, delete_level_below: int = None, output_path: str = None):
+def transform_toc_file(toc_path: str, level_dict_list: List[dict] = None, add_offset: int = 0, delete_level_below: int = None, default_level: int = 1, is_remove_blanklines: bool = True, output_path: str = None):
     try:
         logger.debug(level_dict_list)
         if output_path is None:
@@ -870,6 +885,13 @@ def transform_toc_file(toc_path: str, level_dict_list: List[dict] = None, add_of
             output_path = str(p.parent / f"{p.stem}-书签转换.txt")
         with open(toc_path, "r", encoding="utf-8") as f, open(output_path, "w", encoding="utf-8") as f2:
             for line in f:
+                if not line.strip(): # 空行
+                    if is_remove_blanklines:
+                        continue
+                    else:
+                        f2.write(f"{line}\n")
+                        continue
+                old_line = line
                 new_line = line
                 if add_offset:
                     m = re.search("(\d+)(?=\s*$)", new_line)
@@ -877,12 +899,15 @@ def transform_toc_file(toc_path: str, level_dict_list: List[dict] = None, add_of
                         pno = int(m.group(1))
                         pno = pno + add_offset
                         new_line = new_line[:m.span()[0]-1] + f" {pno}\n"
+                        old_line = new_line # 页码更新不算
                 if level_dict_list:
                     out = title_preprocess(new_line, level_dict_list)
                     new_line = "\t"*(out['level']-1) + out['text'] + "\n"
                 if delete_level_below:
                     if new_line.startswith("\t"*(delete_level_below-1)):
                         continue
+                if new_line == old_line: # 没有发生变化
+                    new_line = "\t"*(default_level-1) + old_line
                 f2.write(new_line)
             f2.flush()
         dump_json(cmd_output_path, {"status": "success", "message": ""})
@@ -1149,7 +1174,7 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
                 page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         wm_doc.close()
         doc.close()
         os.remove(tmp_wm_path)
@@ -1174,7 +1199,7 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
             page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         wm_doc.close()
         doc.close()
         os.remove(tmp_wm_path)
@@ -1195,7 +1220,7 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
         if output_path is None:
             p = Path(doc_path)
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         wm_doc.close()
         doc.close()
         dump_json(cmd_output_path, {"status": "success", "message": ""})
@@ -2045,6 +2070,8 @@ def main():
     bookmark_transform_parser.add_argument("--add_offset", type=int, default=0, help="页码偏移量")
     bookmark_transform_parser.add_argument("--level-dict", type=str, action="append", help="目录层级字典")
     bookmark_transform_parser.add_argument("--delete-level-below", type=int, default=0, help="删除目录层级")
+    bookmark_transform_parser.add_argument("--default-level", type=int, default=1, help="默认目录层级")
+    bookmark_transform_parser.add_argument("--remove-blank-lines", action="store_true", help="删除空行")
     bookmark_transform_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_transform_parser.set_defaults(bookmark_which='transform')
 
@@ -2280,7 +2307,7 @@ def main():
                 for item in args.level_dict:
                     level_dict = eval(item)
                     level_dict_list.append(level_dict)
-            transform_toc_file(toc_path=args.toc, level_dict_list=level_dict_list, delete_level_below=args.delete_level_below, add_offset=args.add_offset, output_path=args.output)
+            transform_toc_file(toc_path=args.toc, level_dict_list=level_dict_list, delete_level_below=args.delete_level_below, add_offset=args.add_offset, default_level=args.default_level, is_remove_blanklines=args.remove_blank_lines, output_path=args.output)
     elif args.which == "extract":
         if args.type == "text":
             extract_pdf_text(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
@@ -2355,5 +2382,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # out = title_preprocess("2.1.1  程序的顺序执行及其特征 43",  [{'prefix': '1.1', 'level': '2'}, {'prefix': '1.1.1', 'level': '3'}])
-    # print(out)
