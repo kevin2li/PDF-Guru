@@ -5,7 +5,7 @@
             @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="调整后的页码顺序, e.g. 1-10" />
+                <a-input v-model:value="formState.page" placeholder="调整后的页码顺序, e.g. 5-N,4,1-3" />
             </a-form-item>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
                 :help="validateHelp.input">

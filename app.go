@@ -436,11 +436,14 @@ func (a *App) DeletePDF(inFile string, outFile string, pagesStr string) error {
 	return nil
 }
 
-func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages string, outFile string) error {
-	log.Printf("inFile1: %s, inFile2: %s, insertPos: %d, dstPages: %s, outFile: %s\n", inFile1, inFile2, insertPos, dstPages, outFile)
+func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages string, posType string, outFile string) error {
+	log.Printf("inFile1: %s, inFile2: %s, insertPos: %d, dstPages: %s, posType: %s, outFile: %s\n", inFile1, inFile2, insertPos, dstPages, posType, outFile)
 	args := []string{"insert"}
 	if insertPos != 0 {
 		args = append(args, "--insert_pos", fmt.Sprintf("%d", insertPos))
+	}
+	if posType != "" {
+		args = append(args, "--pos-type", posType)
 	}
 	if dstPages != "" {
 		args = append(args, "--page_range", dstPages)
@@ -467,10 +470,13 @@ func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages 
 	return nil
 }
 
-func (a *App) InsertBlankPDF(inFile string, outFile string, insertPos int, paper_size string, orientation string, count int) error {
-	log.Printf("inFile: %s, outFile: %s, insertPos: %d, orientation: %s, count: %d\n", inFile, outFile, insertPos, orientation, count)
+func (a *App) InsertBlankPDF(inFile string, outFile string, insertPos int, posType string, paper_size string, orientation string, count int) error {
+	log.Printf("inFile: %s, outFile: %s, insertPos: %d, posType: %s, paper_size: %s, orientation: %s, count: %d\n", inFile, outFile, insertPos, posType, paper_size, orientation, count)
 	args := []string{"insert", "--method", "blank"}
 	args = append(args, "--insert_pos", fmt.Sprintf("%d", insertPos))
+	if posType != "" {
+		args = append(args, "--pos-type", posType)
+	}
 	if paper_size != "" {
 		args = append(args, "--paper_size", paper_size)
 	}

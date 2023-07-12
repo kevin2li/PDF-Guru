@@ -346,7 +346,7 @@ def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None)
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
-def insert_blank_pdf(doc_path: str, pos: int, count: int, orientation: str, paper_size: str, output_path: str = None):
+def insert_blank_pdf(doc_path: str, pos: int, pos_type: str, count: int, orientation: str, paper_size: str, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
         p = Path(doc_path)
@@ -357,18 +357,32 @@ def insert_blank_pdf(doc_path: str, pos: int, count: int, orientation: str, pape
             fmt = doc[0].rect
         else:
             fmt = fitz.paper_rect(f"{paper_size}-l") if orientation == "landscape" else fitz.paper_rect(paper_size)
+
+        if pos_type == 'before_first':
+            pos = 1
+        elif pos_type == 'after_first':
+            pos = 2
+        elif pos_type == 'before_last':
+            pos = doc.page_count
+        elif pos_type == 'after_last':
+            pos = doc.page_count+1
+        elif pos_type == 'before_custom':
+            pass
+        elif pos_type == 'after_custom':
+            pos = pos + 1
         if pos - 2 >= 0:
             writer.insert_pdf(doc, from_page=0, to_page=pos-2)
         for i in range(count):
             writer.new_page(-1, width=fmt.width, height=fmt.height)
-        writer.insert_pdf(doc, from_page=pos-1, to_page=-1)
+        if pos-1 < doc.page_count:
+            writer.insert_pdf(doc, from_page=pos-1, to_page=-1)
         writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: int, page_range: str = "all", output_path: str = None):
+def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: int, pos_type: str, page_range: str = "all", output_path: str = None):
     try:
         doc1: fitz.Document = fitz.open(doc_path1)
         doc2: fitz.Document = fitz.open(doc_path2)
@@ -379,12 +393,27 @@ def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: int, page_range: str 
             p = Path(doc_path1)
             output_path = str(p.parent / f"{p.stem}-插入.pdf")
         writer: fitz.Document = fitz.open()
+        
+        if pos_type == 'before_first':
+            insert_pos = 1
+        elif pos_type == 'after_first':
+            insert_pos = 2
+        elif pos_type == 'before_last':
+            insert_pos = doc1.page_count
+        elif pos_type == 'after_last':
+            insert_pos = doc1.page_count+1
+        elif pos_type == 'before_custom':
+            pass
+        elif pos_type == 'after_custom':
+            insert_pos = insert_pos + 1
+
         if insert_pos - 2 >= 0:
             writer.insert_pdf(doc1, from_page=0, to_page=insert_pos-2)
         doc2_indices = parse_range(page_range, n2)
         for i in doc2_indices:
             writer.insert_pdf(doc2, from_page=i, to_page=i)
-        writer.insert_pdf(doc1, from_page=insert_pos-1, to_page=n1-1)
+        if insert_pos-1 < n1:
+            writer.insert_pdf(doc1, from_page=insert_pos-1, to_page=n1-1)
         writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
@@ -456,6 +485,12 @@ def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direc
                 new_path_list.sort()
             else:
                 new_path_list.sort(reverse=True)
+        elif sort_method == "name_digit":
+            new_path_list = sorted(new_path_list, key=lambda x: int(re.search(r"\d+$", Path(x).stem).group()))
+            if sort_direction == "asc":
+                pass
+            else:
+                new_path_list = new_path_list[::-1]
         # create time
         elif sort_method == "ctime":
             if sort_direction == "asc":
@@ -468,21 +503,23 @@ def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direc
                 new_path_list.sort(key=lambda x: Path(x).stat().st_mtime)
             else:
                 new_path_list.sort(key=lambda x: Path(x).stat().st_mtime, reverse=True)
-        logger.debug(new_path_list)
         writer: fitz.Document = fitz.open()
         toc_list = []
         cur_page_number = 0
         for doc_path in new_path_list:
             doc_temp = fitz.open(doc_path)
             toc_temp = doc_temp.get_toc(simple=True)
-            toc_temp = list(map(lambda x: [x[0], x[1], x[2]+cur_page_number], toc_temp))
+            if toc_temp:
+                toc_temp = list(map(lambda x: [x[0], x[1], x[2]+cur_page_number], toc_temp))
+            else:
+                toc_temp = [[1, Path(doc_path).stem, cur_page_number+1]]
             toc_list.extend(toc_temp)
             cur_page_number += doc_temp.page_count
             writer.insert_pdf(doc_temp)
         writer.set_toc(toc_list)
         if output_path is None:
             p = Path(doc_path_list[0])
-            output_path = str(p.parent / f"合并.pdf")
+            output_path = str(p.parent / f"{p.stem}(等)合并.pdf").replace("*", "")
         writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
@@ -2124,7 +2161,7 @@ def main():
     merge_parser.set_defaults(which='merge')
     merge_parser.add_argument("input_path_list", type=str, nargs="+", help="pdf文件路径")
     merge_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
-    merge_parser.add_argument("--sort_method", type=str, choices=['default', 'name', 'ctime', 'mtime'], default="default", help="排序方式")
+    merge_parser.add_argument("--sort_method", type=str, choices=['default', 'name', 'name_digit', 'ctime', 'mtime'], default="default", help="排序方式")
     merge_parser.add_argument("--sort_direction", type=str, choices=['asc', 'desc'], default="asc", help="排序方向")
 
     # 拆分子命令
@@ -2150,7 +2187,8 @@ def main():
     insert_parser.add_argument("--method", type=str, choices=['blank', 'pdf'], default="pdf", help="插入方式")
     insert_parser.add_argument("input_path1", type=str, help="被插入的pdf文件路径")
     insert_parser.add_argument("input_path2", type=str, help="插入pdf文件路径")
-    insert_parser.add_argument("--insert_pos", type=int, default=0, help="插入位置")
+    insert_parser.add_argument("--insert_pos", type=int, default=0, help="插入位置页码")
+    insert_parser.add_argument("--pos-type", type=str, choices=['before_first', 'after_first', 'before_last', 'after_last', 'before_custom', 'after_custom'], default="before", help="插入位置类型")
     insert_parser.add_argument("--page_range", type=str, default="all", help="插入pdf的页码范围")
     insert_parser.add_argument("--orientation", type=str, choices=['portrait', 'landscape'], default="portrait", help="纸张方向")
     insert_parser.add_argument("--paper_size", type=str, default="A4", help="纸张大小")
@@ -2439,9 +2477,9 @@ def main():
         slice_pdf(doc_path=args.input_path, page_range=args.page_range, output_path=args.output, is_reverse=True)
     elif args.which == 'insert':
         if args.method == "blank":
-            insert_blank_pdf(doc_path=args.input_path1, pos=args.insert_pos, count=args.count, orientation=args.orientation, paper_size=args.paper_size, output_path=args.output)
+            insert_blank_pdf(doc_path=args.input_path1, pos=args.insert_pos, pos_type=args.pos_type, count=args.count, orientation=args.orientation, paper_size=args.paper_size, output_path=args.output)
         else:
-            insert_pdf(doc_path1=args.input_path1, doc_path2=args.input_path2, insert_pos=args.insert_pos, page_range=args.page_range, output_path=args.output)
+            insert_pdf(doc_path1=args.input_path1, doc_path2=args.input_path2, insert_pos=args.insert_pos, pos_type=args.pos_type, page_range=args.page_range, output_path=args.output)
     elif args.which == "replace":
         replace_pdf(doc_path1=args.input_path1, doc_path2=args.input_path2, src_range=args.src_page_range, dst_range=args.dst_page_range, output_path=args.output)
     elif args.which == "reorder":

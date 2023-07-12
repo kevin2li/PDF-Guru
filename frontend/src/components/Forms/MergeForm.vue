@@ -20,7 +20,8 @@
             <a-form-item name="merge.sort" label="排序字段">
                 <a-radio-group v-model:value="formState.sort">
                     <a-radio value="default">添加顺序</a-radio>
-                    <a-radio value="name">文件名</a-radio>
+                    <a-radio value="name">文件名(字母)</a-radio>
+                    <a-radio value="name_digit">文件名(编号)</a-radio>
                     <a-radio value="ctime">创建时间</a-radio>
                     <a-radio value="mtime">修改时间</a-radio>
                 </a-radio-group>

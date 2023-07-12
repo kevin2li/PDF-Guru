@@ -307,10 +307,20 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 对PDF页面进行OCR识别，也支持对图片的OCR识别。
 
 ![](https://minio.kevin2li.top/image-bed/blog/20230708205809.png)
+
+
 21. 双层PDF制作
 > 此功能依赖tesseract ocr，下载地址：[https://github.com/UB-Mannheim/tesseract/wiki](https://github.com/UB-Mannheim/tesseract/wiki)
 
 ![](https://minio.kevin2li.top/image-bed/blog/20230711142605.png)
+
+依赖安装：https://tesseract-ocr.github.io/tessdoc/#binaries
+
+语言包下载：
+- 中文包下载：https://github.com/tesseract-ocr/tessdata/blob/3.04.00/chi_sim.traineddata
+
+放到安装目录的`tessdata`目录下(默认为`C:\Program Files\Tesseract-OCR\tessdata`)即可。
+
 
 22. 首选项
 

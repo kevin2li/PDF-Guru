@@ -64,9 +64,9 @@ export function ExtractImageFromPDF(arg1:string,arg2:string,arg3:string):Promise
 
 export function ExtractTextFromPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
-export function InsertBlankPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:number):Promise<void>;
+export function InsertBlankPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:string,arg7:number):Promise<void>;
 
-export function InsertPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string):Promise<void>;
+export function InsertPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:string):Promise<void>;
 
 export function LoadConfig():Promise<main.MyConfig>;
 

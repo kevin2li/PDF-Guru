@@ -25,6 +25,7 @@ interface InsertState {
     paper_size: string;
     orientation: string;
     count: number;
+    src_pos_type: string;
     src_pos: number;
     src_path: string;
     dst_path: string;
