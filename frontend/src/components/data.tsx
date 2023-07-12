@@ -111,6 +111,7 @@ interface WatermarkState {
     annot_page: number;
     mask_color: string;
     mask_opacity: number;
+    layer: string;
 }
 
 interface ConvertState {

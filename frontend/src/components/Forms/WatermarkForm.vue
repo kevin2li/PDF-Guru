@@ -127,7 +127,6 @@
                     </a-form-item>
                 </div>
                 <div v-if="formState.type === 'text' || formState.type === 'image'">
-
                     <a-form-item label="排布">
                         <a-radio-group v-model:value="formState.multiple_mode">
                             <a-radio :value="false">单行</a-radio>
@@ -136,7 +135,7 @@
                     </a-form-item>
                     <a-form-item label="多行水印" v-if="formState.multiple_mode">
                         <a-space size="large">
-                            <a-input-number v-model:value="formState.num_lines">
+                            <a-input-number v-model:value="formState.num_lines" :min="1">
                                 <template #addonBefore>
                                     行数
                                 </template>
@@ -159,6 +158,12 @@
                         <a-input v-model:value="formState.wm_path" placeholder="水印PDF路径" allow-clear />
                     </a-form-item>
                 </div>
+                <a-form-item label="层级">
+                    <a-select v-model:value="formState.layer" style="width: 200px">
+                        <a-select-option value="bottom">置于底层</a-select-option>
+                        <a-select-option value="top">置于顶层</a-select-option>
+                    </a-select>
+                </a-form-item>
                 <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                     label="页码范围">
                     <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
@@ -348,6 +353,7 @@ export default defineComponent({
             annot_page: 1,
             mask_color: '#FFFFFF',
             mask_opacity: 1,
+            layer: "bottom",
         });
 
         const color_picker_state = reactive({
@@ -459,15 +465,52 @@ export default defineComponent({
                 case "add": {
                     switch (formState.type) {
                         case "text": {
-                            await handleOps(WatermarkPDFByText, [formState.input, formState.output, formState.text, formState.font_family, formState.font_size, formState.font_color, formState.rotate, formState.font_opacity, formState.num_lines, formState.word_spacing, formState.line_spacing, formState.x_offset, formState.y_offset, formState.multiple_mode, formState.page]);
+                            await handleOps(WatermarkPDFByText, [
+                                formState.input,
+                                formState.output,
+                                formState.text,
+                                formState.font_family,
+                                formState.font_size,
+                                formState.font_color,
+                                formState.rotate,
+                                formState.font_opacity,
+                                formState.num_lines,
+                                formState.word_spacing,
+                                formState.line_spacing,
+                                formState.x_offset,
+                                formState.y_offset,
+                                formState.multiple_mode,
+                                formState.layer,
+                                formState.page
+                            ]);
                             break;
                         }
                         case "image": {
-                            await handleOps(WatermarkPDFByImage, [formState.input, formState.output, formState.wm_path, formState.rotate, formState.font_opacity, formState.scale, formState.num_lines, formState.line_spacing, formState.word_spacing, formState.x_offset, formState.y_offset, formState.multiple_mode, formState.page]);
+                            await handleOps(WatermarkPDFByImage, [
+                                formState.input,
+                                formState.output,
+                                formState.wm_path,
+                                formState.rotate,
+                                formState.font_opacity,
+                                formState.scale,
+                                formState.num_lines,
+                                formState.line_spacing,
+                                formState.word_spacing,
+                                formState.x_offset,
+                                formState.y_offset,
+                                formState.multiple_mode,
+                                formState.layer,
+                                formState.page
+                            ]);
                             break;
                         }
                         case "pdf": {
-                            await handleOps(WatermarkPDFByPDF, [formState.input, formState.output, formState.wm_path, formState.page]);
+                            await handleOps(WatermarkPDFByPDF, [
+                                formState.input,
+                                formState.output,
+                                formState.wm_path,
+                                formState.layer,
+                                formState.page]);
                             break;
                         }
                     }

@@ -1197,7 +1197,7 @@ def create_image_wartmark(
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
-def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", output_path: str = None, **args):
+def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", layer: str = "bottom", output_path: str = None, **args):
     try:
         doc: fitz.Document = fitz.open(doc_path)
         page = doc[-1]
@@ -1209,7 +1209,8 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
         for page_index in range(doc.page_count):
             if page_index in roi_indices:
                 page: fitz.Page = doc[page_index]
-                page.show_pdf_page(page.rect, wm_doc, 0, overlay=False)
+                overlay = False if layer == "bottom" else True
+                page.show_pdf_page(page.rect, wm_doc, 0, overlay=overlay)
                 page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
@@ -1223,7 +1224,7 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
-def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all", output_path: str = None, **args):
+def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all", layer: str = "bottom", output_path: str = None, **args):
     try:
         doc: fitz.Document = fitz.open(doc_path)
         page = doc[-1]
@@ -1234,7 +1235,8 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
         roi_indices = parse_range(page_range, doc.page_count)
         for i in roi_indices:
             page: fitz.Page = doc[i]
-            page.show_pdf_page(page.rect, wm_doc, 0, overlay=False)
+            overlay = False if layer == "bottom" else True
+            page.show_pdf_page(page.rect, wm_doc, 0, overlay=overlay)
             page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
@@ -1248,14 +1250,15 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
-def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all", output_path: str = None):
+def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all", layer: str = "bottom", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
         wm_doc: fitz.Document = fitz.open(wm_doc_path)
         roi_indices = parse_range(page_range, doc.page_count)
         for i in roi_indices:
             page: fitz.Page = doc[i]
-            page.show_pdf_page(page.rect, wm_doc, 0, overlay=False)
+            overlay = False if layer == "bottom" else True
+            page.show_pdf_page(page.rect, wm_doc, 0, overlay=overlay)
         if output_path is None:
             p = Path(doc_path)
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
@@ -2047,22 +2050,24 @@ def extract_fonts(doc_path: str, output_path: str = None):
         page = doc[0]
 
         # read page text as a dictionary, suppressing extra spaces in CJK fonts
-        out = page.get_text("json")
-        with open("out-json.json", "w", encoding="utf-8") as f:
-            json.dump(out, f, indent=2, ensure_ascii=False)
+        # out = page.get_text("json")
+        # with open("out-json.json", "w", encoding="utf-8") as f:
+        #     json.dump(out, f, indent=2, ensure_ascii=False)
         
-        wlist = page.get_text("words")
-        with open("out-words.json", "w", encoding="utf-8") as f:
-            json.dump(wlist, f, indent=2, ensure_ascii=False)
+        # wlist = page.get_text("words")
+        # with open("out-words.json", "w", encoding="utf-8") as f:
+        #     json.dump(wlist, f, indent=2, ensure_ascii=False)
         
-        out = page.get_text("dict", flags=11)
-        with open("out-dict.json", "w", encoding="utf-8") as f:
-            json.dump(out, f, indent=2, ensure_ascii=False)
+        # out = page.get_text("dict", flags=11)
+        # with open("out-dict.json", "w", encoding="utf-8") as f:
+        #     json.dump(out, f, indent=2, ensure_ascii=False)
 
+        # blocks = page.get_text("dict", flags=11)["blocks"]
+        # with open("out-blocks.json", "w", encoding="utf-8") as f:
+        #     json.dump(blocks, f, indent=2, ensure_ascii=False)
+        # logger.debug(blocks)
+        
         blocks = page.get_text("dict", flags=11)["blocks"]
-        with open("out-blocks.json", "w", encoding="utf-8") as f:
-            json.dump(blocks, f, indent=2, ensure_ascii=False)
-        logger.debug(blocks)
         for b in blocks:  # iterate through the text blocks
             for l in b["lines"]:  # iterate through the text lines
                 for s in l["spans"]:  # iterate through the text spans
@@ -2073,8 +2078,8 @@ def extract_fonts(doc_path: str, output_path: str = None):
                         s["size"],  # font size
                         s["color"],  # font color
                     )
-                    # logger.debug("Text: '%s'" % s["text"])  # simple print of text
-                    # logger.debug(font_properties)
+                    logger.debug("Text: '%s'" % s["text"])  # simple print of text
+                    logger.debug(font_properties)
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -2296,6 +2301,7 @@ def main():
     watermark_add_parser.add_argument("--wm-path", type=str, dest="wm_path", help="水印图片路径")
     watermark_add_parser.add_argument("--scale", type=float, default=1, dest="scale", help="水印图片缩放比例")
     watermark_add_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    watermark_add_parser.add_argument("--layer", type=str, default="bottom", help="水印图层")
     watermark_add_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     watermark_remove_parser = watermark_subparsers.add_parser("remove", help="删除水印")
@@ -2554,11 +2560,11 @@ def main():
         if args.watermark_which == "add":
             if args.type == "text":
                 color = hex_to_rgb(args.color)
-                watermark_pdf_by_text(doc_path=args.input_path, wm_text=args.mark_text, page_range=args.page_range, output_path=args.output, font=args.font_family, fontsize=args.font_size, angle=args.angle, text_stroke_color_rgb=(0, 0, 0), text_fill_color_rgb=color, text_fill_alpha=args.opacity, num_lines=args.num_lines, line_spacing=args.line_spacing, word_spacing=args.word_spacing, multiple_mode=args.multiple_mode, x_offset=args.x_offset, y_offset=args.y_offset)
+                watermark_pdf_by_text(doc_path=args.input_path, wm_text=args.mark_text, page_range=args.page_range, layer=args.layer, output_path=args.output, font=args.font_family, fontsize=args.font_size, angle=args.angle, text_stroke_color_rgb=(0, 0, 0), text_fill_color_rgb=color, text_fill_alpha=args.opacity, num_lines=args.num_lines, line_spacing=args.line_spacing, word_spacing=args.word_spacing, multiple_mode=args.multiple_mode, x_offset=args.x_offset, y_offset=args.y_offset)
             elif args.type == "image":
-                watermark_pdf_by_image(doc_path=args.input_path, wm_path=args.wm_path, page_range=args.page_range, output_path=args.output, scale=args.scale, angle=args.angle, opacity=args.opacity, multiple_mode=args.multiple_mode, num_lines=args.num_lines, line_spacing=args.line_spacing, word_spacing=args.word_spacing, x_offset=args.x_offset, y_offset=args.y_offset)
+                watermark_pdf_by_image(doc_path=args.input_path, wm_path=args.wm_path, page_range=args.page_range, layer=args.layer,  output_path=args.output, scale=args.scale, angle=args.angle, opacity=args.opacity, multiple_mode=args.multiple_mode, num_lines=args.num_lines, line_spacing=args.line_spacing, word_spacing=args.word_spacing, x_offset=args.x_offset, y_offset=args.y_offset)
             elif args.type == "pdf":
-                watermark_pdf_by_pdf(doc_path=args.input_path, wm_doc_path=args.wm_path, page_range=args.page_range, output_path=args.output)
+                watermark_pdf_by_pdf(doc_path=args.input_path, wm_doc_path=args.wm_path, page_range=args.page_range, layer=args.layer, output_path=args.output)
         elif args.watermark_which == "remove":
             if args.method == "type":
                 remove_watermark_by_type(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
@@ -2597,3 +2603,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # extract_fonts(r"C:\Users\kevin\Downloads\2023考研英语一真题-去水印版.pdf")
