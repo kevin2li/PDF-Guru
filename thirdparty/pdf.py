@@ -2044,43 +2044,130 @@ def flags_decomposer(flags):
         l.append("bold")
     return ", ".join(l)
 
-def extract_fonts(doc_path: str, output_path: str = None):
+def contains_rect(rect1, rect2) -> bool:
+    x1, y1, x2, y2 = rect1
+    x3, y3, x4, y4 = rect2
+    if x1 <= x3 and y1 <= y3 and x2 >= x4 and y2 >= y4:
+        return True
+    return False
+
+def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        page = doc[0]
+        toc_examples = []
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            for annot in page.annots():
+                if annot.type[0] == 4: # Square
+                    level = int(annot.info['content']) if annot.info['content'] else 1
+                    toc_examples.append({'level': level, 'page': page_index, 'rect': annot.rect})
+                    page.delete_annot(annot)
+        if not toc_examples:
+            logger.error("没有发现矩形注释！")
+            dump_json(cmd_output_path, {"status": "error", "message": "没有发现矩形注释！"})
+            return
 
-        # read page text as a dictionary, suppressing extra spaces in CJK fonts
-        # out = page.get_text("json")
-        # with open("out-json.json", "w", encoding="utf-8") as f:
-        #     json.dump(out, f, indent=2, ensure_ascii=False)
-        
-        # wlist = page.get_text("words")
-        # with open("out-words.json", "w", encoding="utf-8") as f:
-        #     json.dump(wlist, f, indent=2, ensure_ascii=False)
-        
-        # out = page.get_text("dict", flags=11)
-        # with open("out-dict.json", "w", encoding="utf-8") as f:
-        #     json.dump(out, f, indent=2, ensure_ascii=False)
+        for i, item in enumerate(toc_examples):
+            page = doc[item['page']]
+            blocks = page.get_text("dict", flags=11)['blocks']
+            words = page.get_text("words") # (x0, y0, x1, y1, "string", blocknumber, linenumber, wordnumber)
+            rect = item['rect']
+            roi_words = {
+                "words": [],
+                "properties": [],
+            }
+            for word in words:
+                *word_rect, text, blocknumber, linenumber, wordnumber = word
+                if contains_rect(rect, word_rect):
+                    roi_words['words'].append(text)
+                    lines = blocks[blocknumber]['lines'][linenumber]
+                    for span in lines['spans']:
+                        if contains_rect(span['bbox'], word_rect):
+                            properties = {
+                                "size": span['size'],
+                                'font': span['font'],
+                                'color': span['color'],
+                                'flags': span['flags'],
+                                'ascender': span['ascender'],
+                                'descender': span['ascender'],
+                            }
+                            roi_words['properties'].append(properties)
+                            break
+            toc_examples[i]['style'] = roi_words['properties']
+            toc_examples[i]['words'] = roi_words['words']
+        logger.debug(toc_examples)
 
-        # blocks = page.get_text("dict", flags=11)["blocks"]
-        # with open("out-blocks.json", "w", encoding="utf-8") as f:
-        #     json.dump(blocks, f, indent=2, ensure_ascii=False)
-        # logger.debug(blocks)
+        toc = []
+        roi_indicies = parse_range(page_range, doc.page_count)
+        for page_index in roi_indicies:
+            page = doc[page_index]
+            words = page.get_text("words") # (x0, y0, x1, y1, "string", blocknumber, linenumber, wordnumber)
+            blocks = page.get_text("dict", flags=11)['blocks']
+            temp = ""
+            last_level = ""
+            last_block = -1
+            for word in words:
+                *word_rect, text, blocknumber, linenumber, wordnumber = word
+                lines = blocks[blocknumber]['lines'][linenumber]
+                FOUND_FLAG = False
+                for span in lines['spans']:
+                    if contains_rect(span['bbox'], word_rect):
+                        properties = {
+                            "size": span['size'],
+                            'font': span['font'],
+                            'color': span['color'],
+                            'flags': span['flags'],
+                            'ascender': span['ascender'],
+                            'descender': span['ascender'],
+                        }
+                        for item in toc_examples:
+                            if properties in item['style']:
+                                FOUND_FLAG = True
+                                if last_block == -1 or last_block == blocknumber:
+                                    if last_level == "" or item['level'] == last_level:
+                                        temp = f"{temp} {text}"
+                                    else:
+                                        if temp.strip():
+                                            toc.append([last_level, temp.strip(), page_index+1])
+                                        temp = text
+                                else:
+                                    if temp.strip():
+                                        toc.append([last_level, temp.strip(), page_index+1])
+                                    temp = text
+                                
+                                last_level = item['level']
+                                last_block = blocknumber
+                                break
+                        break
+                if not FOUND_FLAG:
+                    if temp.strip():
+                        toc.append([last_level, temp.strip(), page_index+1])
+                        last_level = ""
+                    temp = ""
+                    last_level = ""
+                    last_block = -1
+        # 校正层级
+        levels = [v[0] for v in toc]
+        diff = [levels[i+1]-levels[i] for i in range(len(levels)-1)]
+        indices = [i for i in range(len(diff)) if diff[i] > 1]
+        for idx in indices:
+            toc[idx][0] = toc[idx+1][0]
+
+        logger.debug(toc)
         
-        blocks = page.get_text("dict", flags=11)["blocks"]
-        for b in blocks:  # iterate through the text blocks
-            for l in b["lines"]:  # iterate through the text lines
-                for s in l["spans"]:  # iterate through the text spans
-                    # logger.debug("")
-                    font_properties = "Font: '%s' (%s), size %g, color #%06x" % (
-                        s["font"],  # font name
-                        flags_decomposer(s["flags"]),  # readable font flags
-                        s["size"],  # font size
-                        s["color"],  # font color
-                    )
-                    logger.debug("Text: '%s'" % s["text"])  # simple print of text
-                    logger.debug(font_properties)
+        p = Path(doc_path)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-生成目录版.pdf")
+        
+        doc.set_toc(toc)
+        doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
+        toc_output_path = str(p.parent / f"{p.stem}-目录.txt")
+        with open(toc_output_path, "w", encoding='utf-8') as f:
+            for line in toc:
+                indent = (line[0]-1)*"\t"
+                f.writelines(f"{indent}{line[1]} {line[2]}\n")
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
@@ -2276,6 +2363,14 @@ def main():
     bookmark_transform_parser.add_argument("--remove-blank-lines", action="store_true", help="删除空行")
     bookmark_transform_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     bookmark_transform_parser.set_defaults(bookmark_which='transform')
+
+    ## 书签识别
+    bookmark_detect_parser = bookmark_sub_parsers.add_parser("detect", help="识别书签")
+    bookmark_detect_parser.set_defaults(bookmark_which="detect")
+    bookmark_detect_parser.add_argument("--type", type=str, choices=['font', 'ocr'], default="font", help="识别方式")
+    bookmark_detect_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    bookmark_detect_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    bookmark_detect_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     # 水印子命令
     watermark_parser = sub_parsers.add_parser("watermark", help="水印", description="添加文本水印")
@@ -2520,6 +2615,9 @@ def main():
                     level_dict = eval(item)
                     level_dict_list.append(level_dict)
             transform_toc_file(toc_path=args.toc, level_dict_list=level_dict_list, delete_level_below=args.delete_level_below, add_offset=args.add_offset, default_level=args.default_level, is_remove_blanklines=args.remove_blank_lines, output_path=args.output)
+        elif args.bookmark_which == "detect":
+            if args.type == "font":
+                find_title_by_rect_annot(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
     elif args.which == "extract":
         if args.type == "text":
             extract_pdf_text(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
@@ -2603,4 +2701,9 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # extract_fonts(r"C:\Users\kevin\Downloads\2023考研英语一真题-去水印版.pdf")
+    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\2023考研英语一真题-去水印版.pdf")
+    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\迅捷PDF编辑器v2.0使用手册-去水印版.pdf", "3-N")
+    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\2022-中国计算机学会推荐国际学术会议和期刊目录.pdf")
+    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\Computer Networking_ A Top-Down Approach, Global Edition, 8th Edition.pdf", "33-N")
+    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\项目任务书(最终签字版).pdf", "11-13")
+    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\SQL必知必会（第5版）.pdf", "18-N")

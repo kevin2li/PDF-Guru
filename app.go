@@ -888,6 +888,35 @@ func (a *App) TransformBookmark(inFile string, outFile string, addOffset int, le
 	return nil
 }
 
+func (a *App) DetectBookmarkByFont(
+	inFile string,
+	outFile string,
+	pages string) error {
+	logger.Printf("inFile: %s, outFile: %s, pages: %s\n", inFile, outFile, pages)
+	args := []string{"bookmark", "detect"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	logger.Println(args)
+	config, err := a.LoadConfig()
+	if err != nil {
+		err = errors.Wrap(err, "")
+		return err
+	}
+	cmd := exec.Command(config.PdfPath, args...)
+	err = GetCmdStatusAndMessage(cmd)
+
+	if err != nil {
+		err = errors.Wrap(err, "")
+		return err
+	}
+	return nil
+}
+
 func (a *App) WatermarkPDFByText(inFile string, outFile string, markText string, fontFamily string, fontSize int, fontColor string, angle int, opacity float32, num_lines int, line_spacing float32, word_spacing float32, x_offset float32, y_offset float32, multiple_mode bool, layer string, pagesStr string) error {
 	logger.Printf("inFile: %s, outFile: %s, markText: %s, fontFamily: %s, fontSize: %d, fontColor: %s, angle: %d, opacity: %f, num_lines: %d, line_spacing: %f, word_spacing: %f, x_offset: %f, y_offset: %f, multiple_mode: %v, layer: %s\n", inFile, outFile, markText, fontFamily, fontSize, fontColor, angle, opacity, num_lines, line_spacing, word_spacing, x_offset, y_offset, multiple_mode, layer)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {

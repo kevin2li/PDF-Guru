@@ -153,6 +153,7 @@ interface BookmarkState {
     delete_level_below: number;
     default_level: number;
     remove_blank_lines: boolean;
+    recognize_type: string;
 }
 
 interface OcrState {

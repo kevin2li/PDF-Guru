@@ -106,6 +106,10 @@ export function DeletePDF(arg1, arg2, arg3) {
   return window['go']['main']['App']['DeletePDF'](arg1, arg2, arg3);
 }
 
+export function DetectBookmarkByFont(arg1, arg2, arg3) {
+  return window['go']['main']['App']['DetectBookmarkByFont'](arg1, arg2, arg3);
+}
+
 export function DetectWatermarkByIndex(arg1, arg2, arg3) {
   return window['go']['main']['App']['DetectWatermarkByIndex'](arg1, arg2, arg3);
 }

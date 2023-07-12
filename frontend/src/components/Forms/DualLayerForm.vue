@@ -38,9 +38,9 @@
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
-        <div style="margin: 10px auto;">
-            <b>温馨提示</b>：本功能需要提前安装好 <a href="https://tesseract-ocr.github.io/tessdoc/#binaries" target="_blank">tesseract
-                ocr</a>.
+        <div style="margin-top: 1.2vh;width: 85%;">
+            <a-alert message="本功能需要提前安装好tesseract ocr。 下载地址：https://tesseract-ocr.github.io/tessdoc/#binaries"
+                type="info" show-icon />
         </div>
     </div>
 </template>

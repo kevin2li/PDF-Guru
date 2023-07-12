@@ -54,6 +54,8 @@ export function DecryptPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function DeletePDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function DetectBookmarkByFont(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function DetectWatermarkByIndex(arg1:string,arg2:string,arg3:number):Promise<void>;
 
 export function EncryptPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>):Promise<void>;

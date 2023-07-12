@@ -8,12 +8,7 @@
                     <a-radio-button value="extract">提取书签</a-radio-button>
                     <a-radio-button value="write">写入书签</a-radio-button>
                     <a-radio-button value="transform">转换书签</a-radio-button>
-                    <a-radio-button value="recognize">
-                        <a-space>
-                            <span>识别书签</span>
-                            <a-tag color="blue">python</a-tag>
-                        </a-space>
-                    </a-radio-button>
+                    <a-radio-button value="recognize">识别书签</a-radio-button>
                 </a-radio-group>
             </a-form-item>
             <div v-if="formState.op == 'extract'">
@@ -112,22 +107,40 @@
                 </a-form-item>
             </div>
             <div v-if="formState.op == 'recognize'">
-                <a-form-item name="bookmark.ocr_lang" label="语言">
-                    <a-select v-model:value="formState.ocr_lang" style="width: 200px">
-                        <a-select-option value="ch">简体中文</a-select-option>
-                        <a-select-option value="en">英文</a-select-option>
-                    </a-select>
+                <a-form-item name="bookmark.recognize_type" label="类型">
+                    <a-radio-group v-model:value="formState.recognize_type">
+                        <a-radio value="font">基于字体属性</a-radio>
+                        <a-radio value="ocr">基于OCR <a-tag color="blue">python</a-tag></a-radio>
+                    </a-radio-group>
                 </a-form-item>
-                <a-form-item name="bookmark.ocr_double_column" label="双栏">
-                    <a-switch v-model:checked="formState.ocr_double_column" />
-                </a-form-item>
-                <a-form-item name="page" label="目录页码范围" hasFeedback :validateStatus="validateStatus.page"
-                    :help="validateHelp.page">
-                    <a-input v-model:value="formState.page" placeholder="e.g. 1-10,11-15,16-19" allow-clear />
-                </a-form-item>
+                <div v-if="formState.recognize_type == 'ocr'">
+                    <a-form-item name="bookmark.ocr_lang" label="语言">
+                        <a-select v-model:value="formState.ocr_lang" style="width: 200px">
+                            <a-select-option value="ch">简体中文</a-select-option>
+                            <a-select-option value="en">英文 </a-select-option>
+                        </a-select>
+                    </a-form-item>
+                    <a-form-item name="bookmark.ocr_double_column" label="双栏">
+                        <a-switch v-model:checked="formState.ocr_double_column" />
+                    </a-form-item>
+                    <a-form-item name="page" label="目录页码范围" hasFeedback :validateStatus="validateStatus.page"
+                        :help="validateHelp.page">
+                        <a-input v-model:value="formState.page" placeholder="e.g. 1-10,11-15,16-19" allow-clear />
+                    </a-form-item>
+                </div>
+                <div v-if="formState.recognize_type == 'font'">
+                    <a-form-item name="page" label="检索页码范围" hasFeedback :validateStatus="validateStatus.page"
+                        :help="validateHelp.page">
+                        <a-input v-model:value="formState.page" placeholder="e.g. 3-N" allow-clear />
+                    </a-form-item>
+                    <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
+                        :help="validateHelp.input">
+                        <a-input v-model:value="formState.input" placeholder="含有使用矩形注释标注标题层级的输入文件路径" allow-clear />
+                    </a-form-item>
+                </div>
             </div>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
-                :help="validateHelp.input">
+                :help="validateHelp.input" v-if="!(formState.op === 'recognize' && formState.recognize_type === 'font')">
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
             </a-form-item>
             <a-form-item name="output" label="输出">
@@ -138,6 +151,9 @@
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
+        <!-- <div v-if="formState.op === 'recognize' && formState.recognize_type === 'font'" style="margin-top: 1vh;width: 85%;">
+            <a-alert message="请确保输入文件中含有标注了标题层级的矩形注释" type="info" show-icon />
+        </div> -->
     </div>
 </template>
 <script lang="ts">
@@ -151,6 +167,7 @@ import {
     TransformBookmark,
     WriteBookmarkByGap,
     OCRPDFBookmark,
+    DetectBookmarkByFont,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -190,6 +207,7 @@ export default defineComponent({
             delete_level_below: 0,
             default_level: 1,
             remove_blank_lines: true,
+            recognize_type: "font",
         });
 
         const indentItems = reactive<{ items: IndentItem[] }>({
@@ -331,8 +349,17 @@ export default defineComponent({
                     break;
                 }
                 case "recognize": {
-                    await handleOps(OCRPDFBookmark, [formState.input, formState.output, formState.page, formState.ocr_lang, formState.ocr_double_column]);
-                    break;
+                    switch (formState.recognize_type) {
+                        case "font": {
+                            await handleOps(DetectBookmarkByFont, [formState.input, formState.output, formState.page]);
+                            break;
+                        }
+                        case "ocr": {
+                            await handleOps(OCRPDFBookmark, [formState.input, formState.output, formState.page, formState.ocr_lang, formState.ocr_double_column]);
+                            break;
+                        }
+                    }
+
                 }
             }
             confirmLoading.value = false;
