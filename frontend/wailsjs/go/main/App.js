@@ -250,6 +250,6 @@ export function WriteBookmarkByFile(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['WriteBookmarkByFile'](arg1, arg2, arg3, arg4);
 }
 
-export function WriteBookmarkByGap(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['WriteBookmarkByGap'](arg1, arg2, arg3, arg4);
+export function WriteBookmarkByGap(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['WriteBookmarkByGap'](arg1, arg2, arg3, arg4, arg5, arg6);
 }

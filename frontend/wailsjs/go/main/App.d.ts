@@ -126,4 +126,4 @@ export function WatermarkPDFByText(arg1:string,arg2:string,arg3:string,arg4:stri
 
 export function WriteBookmarkByFile(arg1:string,arg2:string,arg3:string,arg4:number):Promise<void>;
 
-export function WriteBookmarkByGap(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
+export function WriteBookmarkByGap(arg1:string,arg2:string,arg3:number,arg4:string,arg5:number,arg6:string):Promise<void>;

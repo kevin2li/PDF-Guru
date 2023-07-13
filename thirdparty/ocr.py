@@ -12,7 +12,9 @@ import cv2
 import fitz
 import matplotlib.pyplot as plt
 import numpy as np
-from paddleocr import PaddleOCR, PPStructure, draw_ocr
+from paddleocr import PaddleOCR, PPStructure, draw_ocr, save_structure_res
+from paddleocr.ppstructure.recovery.recovery_to_doc import (
+    convert_info_docx, sorted_layout_boxes)
 from PIL import Image
 from tqdm import tqdm
 
@@ -423,6 +425,30 @@ def extract_item_from_pdf(doc_path: str, page_range: str = 'all', type: str = "f
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
+def convert_pdf2docx(doc_path: str, lang: str = "ch", dpi: int = 300, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        table_engine = PPStructure(recovery=True, lang=lang)
+        roi_indicies = parse_range(page_range, doc.page_count)
+        p = Path(doc_path)
+        if output_path is None:
+            output_dir = p.parent / "docx"
+            output_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            output_dir = Path(output_path)
+            output_dir.mkdir(parents=True, exist_ok=True)
+        for page_index in roi_indicies:
+            page = doc[page_index]
+            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+            img = np.frombuffer(buffer=pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, -1))
+            result = table_engine(img)
+            h, w, _ = img.shape
+            res = sorted_layout_boxes(result, w)
+            convert_info_docx(img, res, output_dir, f"{p.stem}-{page_index+1}")
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
@@ -470,4 +496,5 @@ def main():
         extract_item_from_pdf(doc_path=args.input_path, page_range=args.page_range, type=args.type, output_dir=args.output)
 
 if __name__ == "__main__":
-    main()
+    # main()
+    convert_pdf2docx(r"C:\Users\kevin\Desktop\书签测试\计算机网络-目录_提取.pdf")

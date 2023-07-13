@@ -822,13 +822,17 @@ func (a *App) WriteBookmarkByFile(inFile string, outFile string, tocFile string,
 	return nil
 }
 
-func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format string) error {
+func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format string, startNumber int, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, gap: %d\n", inFile, outFile, gap)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Println(err)
 		return err
 	}
 	args := []string{"bookmark", "add", "--method", "gap"}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	args = append(args, "--start-number", fmt.Sprintf("%d", startNumber))
 	args = append(args, "--gap", fmt.Sprintf("%d", gap))
 	if format != "" {
 		args = append(args, "--format", format)

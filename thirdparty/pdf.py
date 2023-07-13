@@ -868,14 +868,17 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
-def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", output_path: str = None):
+def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", start_number: int = 1, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
         p = Path(doc_path)
         toc = []
-        for i in range(0, doc.page_count, gap):
-            toc.append([1, format.replace("%p", str(i+1)), i+1])
-        toc.append([1, format.replace("%p", str(doc.page_count)), doc.page_count])
+        roi_indicies = parse_range(page_range, doc.page_count)
+        n = len(roi_indicies)
+        for i in range(0, n, gap):
+            toc.append([1, format.replace("%p", str(start_number)), roi_indicies[i]+1])
+            start_number += gap
+        # toc.append([1, format.replace("%p", str(doc.page_count)), doc.page_count])
         doc.set_toc(toc)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
@@ -2370,6 +2373,8 @@ def main():
     ### 页码书签
     bookmark_add_parser.add_argument("--gap", type=int, default=1, help="页码间隔")
     bookmark_add_parser.add_argument("--format", type=str, default="第%p页", help="页码格式")
+    bookmark_add_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    bookmark_add_parser.add_argument("--start-number", type=int, default=1, help="起始编号")
 
     ## 提取书签
     bookmark_extract_parser = bookmark_sub_parsers.add_parser("extract", help="提取书签")
@@ -2630,7 +2635,7 @@ def main():
             if args.method == "file":
                 add_toc_from_file(toc_path=args.toc, doc_path=args.input_path, offset=args.offset, output_path=args.output)
             elif args.method == "gap":
-                add_toc_by_gap(doc_path=args.input_path, gap=args.gap, format=args.format, output_path=args.output)
+                add_toc_by_gap(doc_path=args.input_path, gap=args.gap, format=args.format, start_number=args.start_number, page_range=args.page_range, output_path=args.output)
         elif args.bookmark_which == "extract":
             extract_toc(doc_path=args.input_path, format=args.format, output_path=args.output)
         elif args.bookmark_which == "transform":
@@ -2726,11 +2731,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\2023考研英语一真题-去水印版.pdf")
-    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\迅捷PDF编辑器v2.0使用手册-去水印版.pdf", "3-N")
-    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\2022-中国计算机学会推荐国际学术会议和期刊目录.pdf")
-    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\Computer Networking_ A Top-Down Approach, Global Edition, 8th Edition.pdf", "33-N")
-    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\项目任务书(最终签字版).pdf", "11-13")
-    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\SQL必知必会（第5版）.pdf", "18-N")
-    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\汤书操作系统课本.pdf", "10-N")
-    # extract_encrypt_pdf_hash(r"C:\Users\kevin\Downloads\Detecting Ponzi Schemes on Ethereum Proceedings of the 2018 World Wide Web-加密.pdf")

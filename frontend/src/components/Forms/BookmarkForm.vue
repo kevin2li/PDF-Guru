@@ -33,8 +33,15 @@
                 <a-form-item name="write_offset" label="页码偏移量" v-if="formState.write_type == 'file'">
                     <a-input-number v-model:value="formState.write_offset" />
                 </a-form-item>
+                <a-form-item name="page" label="页码范围" hasFeedback :validateStatus="validateStatus.page"
+                    :help="validateHelp.page">
+                    <a-input v-model:value="formState.page" placeholder="e.g. 3-N (留空表示全部页面)" allow-clear />
+                </a-form-item>
                 <a-form-item name="write_gap" label="间隔页数" v-if="formState.write_type == 'page'">
                     <a-input-number v-model:value="formState.write_gap" />
+                </a-form-item>
+                <a-form-item name="start_number" label="起始编号" v-if="formState.write_type == 'page'">
+                    <a-input-number v-model:value="formState.start_number"/>
                 </a-form-item>
                 <a-form-item name="bookmark.write_format" label="命名格式" v-if="formState.write_type == 'page'">
                     <a-input v-model:value="formState.write_format" placeholder="e.g. 第%p页(%p表示页码)" allow-clear />
@@ -208,6 +215,7 @@ export default defineComponent({
             default_level: 1,
             remove_blank_lines: true,
             recognize_type: "font",
+            start_number: 1,
         });
 
         const indentItems = reactive<{ items: IndentItem[] }>({
@@ -330,7 +338,7 @@ export default defineComponent({
                             break;
                         }
                         case "page": {
-                            await handleOps(WriteBookmarkByGap, [formState.input, formState.output, formState.write_gap, formState.write_format]);
+                            await handleOps(WriteBookmarkByGap, [formState.input, formState.output, formState.write_gap, formState.write_format, formState.start_number, formState.page]);
                             break;
                         }
                     }

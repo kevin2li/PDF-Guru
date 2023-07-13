@@ -154,6 +154,7 @@ interface BookmarkState {
     default_level: number;
     remove_blank_lines: boolean;
     recognize_type: string;
+    start_number: number;
 }
 
 interface OcrState {
