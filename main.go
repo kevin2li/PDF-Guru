@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -23,7 +24,13 @@ var (
 func main() {
 	// init logger
 	log = logrus.New()
-	file, err := os.OpenFile("access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	path, err := os.Executable()
+	if err != nil {
+		err = errors.Wrap(err, "failed to get executable path")
+		logger.Println("Error:", err)
+	}
+	logpath := filepath.Join(filepath.Dir(path), "access.log")
+	file, err := os.OpenFile(logpath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create log file")
 		log.Fatal(err)
@@ -62,7 +69,7 @@ func main() {
 	})
 
 	if err != nil {
-		err = errors.Wrap(err, "")
+		err = errors.Wrap(err, "run wails app failed")
 		println("Error:", err.Error())
 	}
 

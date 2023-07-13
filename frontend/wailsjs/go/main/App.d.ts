@@ -102,7 +102,7 @@ export function ReplacePDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:
 
 export function RotatePDF(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
 
-export function SaveConfig(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+export function SaveConfig(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
 
 export function ScalePDFByDim(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string,arg6:string):Promise<void>;
 

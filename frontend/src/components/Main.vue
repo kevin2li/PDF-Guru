@@ -140,6 +140,12 @@
                         </template>
                         {{ menuRecord['ocr'] }}
                     </a-menu-item>
+                    <!-- <a-menu-item key="crack">
+                        <template #icon>
+                            <tool-outlined />
+                        </template>
+                        {{ menuRecord['crack'] }}
+                    </a-menu-item> -->
                     <a-menu-item key="dual">
                         <template #icon>
                             <file-search-outlined />
@@ -186,6 +192,7 @@
                     <BackgroundForm v-if="state.selectedKeys.at(0) === 'background'" />
                     <!-- <MetaForm v-if="state.selectedKeys.at(0) === 'meta'" /> -->
                     <DualLayerForm v-if="state.selectedKeys.at(0) === 'dual'" />
+                    <PasswordCrackForm v-if="state.selectedKeys.at(0) === 'crack'" />
                 </div>
             </div>
         </a-col>
@@ -230,6 +237,7 @@ import {
     FieldBinaryOutlined,
     SyncOutlined,
     FileSearchOutlined,
+    ToolOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
@@ -256,6 +264,7 @@ import BackgroundForm from "./Forms/BackgroundForm.vue";
 import PageNumberForm from "./Forms/PageNumberForm.vue";
 import MetaForm from "./Forms/MetaForm.vue";
 import DualLayerForm from "./Forms/DualLayerForm.vue";
+import PasswordCrackForm from "./Forms/PasswordCrackForm.vue";
 
 
 const IconFont = createFromIconfontCN({ scriptUrl: '//at.alicdn.com/t/font_8d5l8fzk5b87iudi.js' });
@@ -299,6 +308,7 @@ export default defineComponent({
         FieldBinaryOutlined,
         SyncOutlined,
         FileSearchOutlined,
+        ToolOutlined,
         IconFont,
         // form
         // 合并
@@ -345,6 +355,8 @@ export default defineComponent({
         MetaForm,
         // 双层PDF
         DualLayerForm,
+        // 密码破解
+        PasswordCrackForm
     },
     setup() {
         const state = reactive({

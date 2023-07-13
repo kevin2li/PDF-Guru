@@ -8,10 +8,15 @@
                 <a-input v-model:value="formState.python_path" placeholder="填写python路径" :disabled="!formState.allow_modify"
                     allow-clear></a-input>
             </a-form-item>
-            <a-form-item name="python_path" label="tesseract路径" hasFeedback :validateStatus="validateStatus.python_path"
-                :help="validateHelp.python_path">
+            <a-form-item name="tesseract_path" label="tesseract路径" hasFeedback :validateStatus="validateStatus.tesseract_path"
+                :help="validateHelp.tesseract_path">
                 <a-input v-model:value="formState.tesseract_path" placeholder="填写tesseract路径"
                     :disabled="!formState.allow_modify" allow-clear></a-input>
+            </a-form-item>
+            <a-form-item name="hashcat_path" label="hashcat路径" hasFeedback :validateStatus="validateStatus.hashcat_path"
+                :help="validateHelp.hashcat_path">
+                <a-input v-model:value="formState.hashcat_path" placeholder="填写hashcat路径" :disabled="!formState.allow_modify"
+                    allow-clear></a-input>
             </a-form-item>
             <a-form-item name="pandoc_path" label="pandoc路径" hasFeedback :validateStatus="validateStatus.pandoc_path"
                 :help="validateHelp.pandoc_path">
@@ -66,16 +71,21 @@ export default defineComponent({
             python_path: "",
             tesseract_path: "",
             pandoc_path: "",
+            hashcat_path: "",
             allow_modify: false,
         });
         const button_text = ref("修改");
         const validateStatus = reactive({
             python_path: "",
             pandoc_path: "",
+            tesseract_path: "",
+            hashcat_path: "",
         });
         const validateHelp = reactive({
             python_path: "",
             pandoc_path: "",
+            tesseract_path: "",
+            hashcat_path: "",
         });
         const loadConfig = async () => {
             await LoadConfig().then((res: any) => {
@@ -126,6 +136,8 @@ export default defineComponent({
         const rules: Record<string, Rule[]> = {
             python_path: [{ validator: validateFileExists, trigger: 'change' }],
             pandoc_path: [{ validator: validateFileExists, trigger: 'change' }],
+            tesseract_path: [{ validator: validateFileExists, trigger: 'change' }],
+            hashcat_path: [{ validator: validateFileExists, trigger: 'change' }],
         };
         // 重置表单
         const resetFields = () => {
@@ -138,7 +150,7 @@ export default defineComponent({
             formState.allow_modify = !formState.allow_modify;
             button_text.value = formState.allow_modify ? "保存" : "修改";
             if (!formState.allow_modify) {
-                await SaveConfig(formState.pdf_path, formState.python_path, formState.tesseract_path, formState.pandoc_path).then((res: any) => {
+                await SaveConfig(formState.pdf_path, formState.python_path, formState.tesseract_path, formState.pandoc_path, formState.hashcat_path).then((res: any) => {
                     console.log({ res });
                     message.success("保存成功");
                 }).catch((err: any) => {

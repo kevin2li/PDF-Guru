@@ -39,6 +39,7 @@ type MyConfig struct {
 	PythonPath    string `json:"python_path"`
 	TesseractPath string `json:"tesseract_path"`
 	PandocPath    string `json:"pandoc_path"`
+	HashcatPath   string `json:"hashcat_path"`
 }
 
 type CmdOutput struct {
@@ -46,12 +47,13 @@ type CmdOutput struct {
 	Message string `json:"message"`
 }
 
-func (a *App) SaveConfig(pdfPath string, pythonPath string, tesseractPath string, pandocPath string) error {
+func (a *App) SaveConfig(pdfPath string, pythonPath string, tesseractPath string, pandocPath string, hashcatPath string) error {
 	var config MyConfig
 	config.PdfPath = pdfPath
 	config.PythonPath = pythonPath
 	config.TesseractPath = tesseractPath
 	config.PandocPath = pandocPath
+	config.HashcatPath = hashcatPath
 	jsonData, err := json.Marshal(config)
 	if err != nil {
 		err = errors.Wrap(err, "")
@@ -79,7 +81,7 @@ func (a *App) LoadConfig() (MyConfig, error) {
 			return config, err
 		}
 		path = filepath.Join(filepath.Dir(path), "pdf.exe")
-		err = a.SaveConfig(path, "", "", "")
+		err = a.SaveConfig(path, "", "", "", "")
 		if err != nil {
 			err = errors.Wrap(err, "")
 			return config, err
@@ -128,7 +130,7 @@ func GetCmdStatusAndMessage(cmd *exec.Cmd) error {
 	cmd.SysProcAttr = &windows.SysProcAttr{HideWindow: true}
 	out, err := cmd.Output()
 	if err != nil {
-		err = errors.Wrap(err, "get cmd output error")
+		err = errors.Wrap(err, "get cmd output error! \n args: "+strings.Join(cmd.Args, " ")+"\n stderr: "+string(err.(*exec.ExitError).Stderr))
 		logger.Println("Error:", err)
 		return err
 	}

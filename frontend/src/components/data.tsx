@@ -192,6 +192,7 @@ interface PreferencesState {
     python_path: string;
     tesseract_path: string;
     pandoc_path: string;
+    hashcat_path: string;
     allow_modify: boolean;
 }
 
@@ -281,6 +282,15 @@ interface DualLayerState {
     dpi: number;
     lang: string;
 }
+interface CrackState {
+    input: string;
+    output: string;
+    crack_type: string;
+    hash_type: string;
+    charset: string;
+    attack_mode: string;
+    dict_path: string;
+}
 
 
 const menuRecord: Record<string, string> = {
@@ -305,6 +315,7 @@ const menuRecord: Record<string, string> = {
     "ocr": "OCR识别",
     "meta": "查看元信息",
     "dual": "双层PDF制作",
+    "crack": "密码破解",
     "settings": "首选项"
 };
 
@@ -330,6 +341,7 @@ const menuDesc: Record<string, string> = {
     "ocr": "对PDF文件或图片(支持png、jpg格式)进行OCR识别",
     "meta": "查看文档属性",
     "dual": "双层PDF制作，可以为扫描件创建隐藏文字图层，从而支持文字复制、检索等功能",
+    "crack": "密码破解",
     "settings": "对软件功能进行配置"
 }
 
@@ -374,4 +386,5 @@ export type {
     HeaderAndFooterState,
     PageNumberState,
     DualLayerState,
+    CrackState,
 };

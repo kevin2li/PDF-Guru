@@ -2067,6 +2067,7 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
             dump_json(cmd_output_path, {"status": "error", "message": "没有发现矩形注释！"})
             return
 
+        level_styles = {}
         for i, item in enumerate(toc_examples):
             page = doc[item['page']]
             blocks = page.get_text("dict", flags=11)['blocks']
@@ -2091,11 +2092,18 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
                                 'ascender': span['ascender'],
                                 'descender': span['ascender'],
                             }
-                            roi_words['properties'].append(properties)
+                            properties_str = json.dumps(properties)
+                            roi_words['properties'].append(properties_str)
                             break
-            toc_examples[i]['style'] = roi_words['properties']
-            toc_examples[i]['words'] = roi_words['words']
-        logger.debug(toc_examples)
+            if item['level'] not in level_styles:
+                level_styles[item['level']] = roi_words['properties']
+            else:
+                level_styles[item['level']].extend(roi_words['properties'])
+        # remove duplicate styles
+        for level, styles in level_styles.items():
+            level_styles[level] = list(set(styles))
+
+        logger.debug(level_styles)
 
         toc = []
         roi_indicies = parse_range(page_range, doc.page_count)
@@ -2104,7 +2112,7 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
             words = page.get_text("words") # (x0, y0, x1, y1, "string", blocknumber, linenumber, wordnumber)
             blocks = page.get_text("dict", flags=11)['blocks']
             temp = ""
-            last_level = ""
+            last_level = -1
             last_block = -1
             for word in words:
                 *word_rect, text, blocknumber, linenumber, wordnumber = word
@@ -2120,11 +2128,12 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
                             'ascender': span['ascender'],
                             'descender': span['ascender'],
                         }
-                        for item in toc_examples:
-                            if properties in item['style']:
+                        properties_str = json.dumps(properties)
+                        for level, styles in level_styles.items():
+                            if properties_str in styles:
                                 FOUND_FLAG = True
                                 if last_block == -1 or last_block == blocknumber:
-                                    if last_level == "" or item['level'] == last_level:
+                                    if last_level == -1 or level == last_level:
                                         temp = f"{temp} {text}"
                                     else:
                                         if temp.strip():
@@ -2134,17 +2143,17 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
                                     if temp.strip():
                                         toc.append([last_level, temp.strip(), page_index+1])
                                     temp = text
-                                
-                                last_level = item['level']
+
+                                last_level = level
                                 last_block = blocknumber
                                 break
                         break
                 if not FOUND_FLAG:
                     if temp.strip():
                         toc.append([last_level, temp.strip(), page_index+1])
-                        last_level = ""
+                        last_level = -1
                     temp = ""
-                    last_level = ""
+                    last_level = -1
                     last_block = -1
         # 校正层级
         levels = [v[0] for v in toc]
@@ -2163,13 +2172,14 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
         doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
+        p = Path(doc_path)
         toc_output_path = str(p.parent / f"{p.stem}-目录.txt")
         with open(toc_output_path, "w", encoding='utf-8') as f:
             for line in toc:
                 indent = (line[0]-1)*"\t"
                 f.writelines(f"{indent}{line[1]} {line[2]}\n")
         logger.error(traceback.format_exc())
-        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+        dump_json(cmd_output_path, {"status": "error", "message": f"请在'{toc_output_path}'中查看目录识别结果！\n" + traceback.format_exc()})
 
 def make_dual_layer_pdf(input_path: str, page_range: str = 'all', lang: str = 'chi_sim', dpi: int = 300, output_path: str = None):
     try:
@@ -2241,6 +2251,21 @@ def make_dual_layer_pdf_from_image(doc_path: str, lang: str = 'chi_sim',  output
             logger.error(result)
             dump_json(cmd_output_path, {"status": "error", "message": str(result)})
             return
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+
+def extract_encrypt_pdf_hash(doc_path: str):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        out = doc.metadata
+        logger.debug(out)
+        xreflen = doc.xref_length()  # length of objects table
+        for xref in range(1, xreflen):  # skip item 0!
+                print("")
+                print("object %i (stream: %s)" % (xref, doc.xref_is_stream(xref)))
+                print(doc.xref_object(xref, compressed=False))
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -2707,3 +2732,5 @@ if __name__ == "__main__":
     # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\Computer Networking_ A Top-Down Approach, Global Edition, 8th Edition.pdf", "33-N")
     # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\项目任务书(最终签字版).pdf", "11-13")
     # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\SQL必知必会（第5版）.pdf", "18-N")
+    # find_title_by_rect_annot(r"C:\Users\kevin\Desktop\书签测试\汤书操作系统课本.pdf", "10-N")
+    # extract_encrypt_pdf_hash(r"C:\Users\kevin\Downloads\Detecting Ponzi Schemes on Ethereum Proceedings of the 2018 World Wide Web-加密.pdf")

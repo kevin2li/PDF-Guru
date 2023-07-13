@@ -1,6 +1,7 @@
 import argparse
 import glob
 import json
+import logging
 import os
 import re
 import shutil
@@ -9,15 +10,29 @@ from pathlib import Path
 
 import cv2
 import fitz
+import matplotlib.pyplot as plt
 import numpy as np
-from loguru import logger
 from paddleocr import PaddleOCR, PPStructure, draw_ocr
 from PIL import Image
 from tqdm import tqdm
 
 ocr_engine_ch = PaddleOCR(use_angle_cls=True, lang='ch', show_log=False) # need to run only once to download and load model into memory
 ocr_engine_en = PaddleOCR(use_angle_cls=True, lang='en', show_log=False) # need to run only once to download and load model into memory
+structure_engine = PPStructure(table=False, ocr=False, show_log=False)
+
 cmd_output_path = "cmd_output.json"
+
+def init_logger(name: str, logpath: str):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh = logging.FileHandler(logpath)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    return logger
+
+logger = init_logger(name="pdf guru: ocr_logger", logpath="pdf_guru-ocr.log")
 
 def dump_json(path, obj):
     with open(path, "w", encoding="utf-8") as f:
@@ -39,6 +54,23 @@ def batch_process(func):
             func(*args, **kwargs)
         func(*args, **kwargs)
     return wrapper
+
+def plot_roi_region(img, ppstructure_result, output_path: str, type: str = 'title'):
+    if isinstance(img, str):
+        img = cv2.imread(img)
+    elif isinstance(img, np.ndarray):
+        pass
+    else:
+        raise ValueError("不支持的输入类型")
+    logger.debug(img.shape)
+    for item in ppstructure_result:
+        if item['type'] == type:
+            logger.debug("found!")
+            x1, y1, x2, y2 = item['bbox']
+            cv2.rectangle(img, (x1, y1), (x2, y2), color=(255, 0, 0), thickness=2)
+    logger.debug(f"output_path: {output_path}")
+    plt.imsave(output_path, img)
+    # cv2.imwrite(output_path, img) # 保存中文路径失败
 
 def title_preprocess(title: str):
     """提取标题层级和标题内容
@@ -82,12 +114,6 @@ def title_preprocess(title: str):
         traceback.print_exc()
         return {'level': 1, "text": title}
     
-def ppstructure_analysis(input_path: str):
-    img = cv2.imread(input_path)
-    structure_engine = PPStructure(table=False, ocr=False, show_log=False)
-    result = structure_engine(img)
-    return result
-
 def parse_range(page_range: str, page_count: int, is_multi_range: bool = False, is_reverse: bool = False, is_unique: bool = True):
     # e.g.: "1-3,5-6,7-10", "1,4-5", "3-N", "even", "odd"
     page_range = page_range.strip()
@@ -187,14 +213,9 @@ def write_ocr_result(ocr_results, output_path: str, offset: int = 5, mode: str =
 @batch_process
 def ocr_from_image(input_path: str, lang: str = 'ch', output_path: str = None, offset: float = 5., use_double_columns: bool = False, show_log: bool = False):
     try:
-        if "*" in input_path:
-            input_path_list = glob.glob(input_path)
-            for input_path in input_path_list:
-                ocr_from_image(input_path, lang, output_path, offset, use_double_columns, show_log)
-            return
         p = Path(input_path)
         if output_path is None:
-            output_dir = p.parent / f"OCR识别结果-{p.stem}"
+            output_dir = p.parent / f"{p.stem}-OCR识别"
         else:
             output_dir = Path(output_path)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -205,7 +226,7 @@ def ocr_from_image(input_path: str, lang: str = 'ch', output_path: str = None, o
             ocr_engine = ocr_engine_en
         else:
             raise ValueError("不支持的语言")
-        img = cv2.imread(input_path)
+        img = cv2.imdecode(np.fromfile(input_path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)[..., :3]
         result = None
         if use_double_columns:
             height, width = img.shape[:2]
@@ -217,7 +238,7 @@ def ocr_from_image(input_path: str, lang: str = 'ch', output_path: str = None, o
             write_ocr_result(left_result, text_output_path, offset)
             write_ocr_result(right_result, text_output_path, offset, mode="a")
         else:
-            result = ocr_engine.ocr(img, cls=False)[0]
+            result = ocr_engine.ocr(input_path, cls=False)[0]
             write_ocr_result(result, text_output_path, offset)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
@@ -230,7 +251,7 @@ def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', out
         doc: fitz.Document = fitz.open(input_path)
         p = Path(input_path)
         if output_path is None:
-            output_path = p.parent / f"OCR识别结果-{p.stem}"
+            output_path = p.parent / f"{p.stem}-OCR识别"
             if not output_path.exists():
                 output_path.mkdir(parents=True, exist_ok=True)
             else:
@@ -279,12 +300,23 @@ def ocr_from_pdf(input_path: str, page_range: str = 'all', lang: str = 'ch', out
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-
-def extract_title(input_path: str, lang: str = 'ch', use_double_columns: bool = False) -> list:
+def extract_title(input_path: str, lang: str = 'ch', use_double_columns: bool = False, show_path: str = None) -> list:
     # TODO: 存在标题识别不全bug
-    ocr_engine = PaddleOCR(use_angle_cls=True, lang=lang, show_log=False) # need to run only once to download and load model into memory
-    img = cv2.imread(input_path)
-    result = ppstructure_analysis(input_path)
+    if lang == 'ch':
+        ocr_engine = ocr_engine_ch
+    elif lang == 'en':
+        ocr_engine = ocr_engine_en
+    else:
+        raise ValueError("不支持的语言")
+    if isinstance(input_path, str):
+        img = cv2.imread(input_path)
+    elif isinstance(input_path, np.ndarray):
+        img = input_path
+    else:
+        raise ValueError("不支持的输入类型")
+    result = structure_engine(img)
+    if show_path is not None:
+        plot_roi_region(img=img, ppstructure_result=result, output_path=show_path, type="title")
     title_items = [v for v in result if v['type']=='title']       # 提取title项
     title_items = sorted(title_items, key=lambda x: x['bbox'][1]) # 从上往下排序
     if use_double_columns:
@@ -311,20 +343,22 @@ def extract_title(input_path: str, lang: str = 'ch', use_double_columns: bool = 
                 out.append([new_pos, (title, prob)])
     return out
 
-def add_toc_from_ocr(input_path: str, lang: str='ch', use_double_columns: bool = False, output_path: str = None):
+def add_toc_from_ocr(input_path: str, lang: str='ch', use_double_columns: bool = False, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(input_path)
         p = Path(input_path)
-        tmp_dir = p.parent / 'tmp'
+        tmp_dir = p.parent / 'temp'
         tmp_dir.mkdir(parents=True, exist_ok=True)
         
         toc = []
         dpi = 300
-        for page in tqdm(doc, total=doc.page_count):
+        roi_indices = parse_range(page_range, doc.page_count)
+        for page_index in tqdm(roi_indices):
+            page = doc[page_index]
             pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-            savepath = str(tmp_dir / f"page-{page.number+1}.png")
-            pix.save(savepath)
-            result = extract_title(savepath, lang, use_double_columns)
+            show_path = str(tmp_dir / f"{page_index+1}.png")
+            img = np.frombuffer(buffer=pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, -1))
+            result = extract_title(img, lang, use_double_columns, show_path=show_path)
             for item in result:
                 pos, (title, prob) = item
                 # 书签格式：[|v|, title, page [, dest]]  (层级，标题，页码，高度)
@@ -338,17 +372,23 @@ def add_toc_from_ocr(input_path: str, lang: str='ch', use_double_columns: bool =
         indices = np.where(diff>1)[0]
         for idx in indices:
             toc[idx][0] = toc[idx+1][0]
-
+        logger.debug(toc)
         # 设置目录
         doc.set_toc(toc)
         if output_path is None:
-            output_path = str(p.parent / f"{p.stem}-toc.pdf")
+            output_path = str(p.parent / f"{p.stem}-OCR生成目录版.pdf")
         doc.save(output_path)
         shutil.rmtree(tmp_dir)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
+        p = Path(input_path)
+        toc_output_path = str(p.parent / f"{p.stem}-OCR识别目录.txt")
+        with open(toc_output_path, "w", encoding='utf-8') as f:
+            for line in toc:
+                indent = (line[0]-1)*"\t"
+                f.writelines(f"{indent}{line[1]} {line[2]}\n")
         logger.error(traceback.format_exc())
-        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+        dump_json(cmd_output_path, {"status": "error", "message": f"请在'{toc_output_path}'中查看目录识别结果！\n" + traceback.format_exc()})
 
 def extract_item_from_pdf(doc_path: str, page_range: str = 'all', type: str = "figure", output_dir: str = None):
     """
@@ -369,11 +409,10 @@ def extract_item_from_pdf(doc_path: str, page_range: str = 'all', type: str = "f
         for page_index in tqdm(roi_indices, total=len(roi_indices)):
             page = doc[page_index]
             pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-            savepath = str(tmp_dir / f"page-{page.number+1}.png")
-            pix.save(savepath)
-            result = ppstructure_analysis(savepath)
+            img = np.frombuffer(buffer=pix.samples, dtype=np.uint8).reshape((pix.height, pix.width, -1))
+            result = structure_engine(img)
             result = [v for v in result if v['type']==type]
-            
+
             idx = 1
             for item in result:
                 im_show = Image.fromarray(item['img'])
@@ -416,6 +455,7 @@ def main():
     extract_parser.add_argument("-o", "--output", type=str, default=None, dest="output_dir", help="结果保存路径")
 
     args = parser.parse_args()
+    logger.debug(args)
     if args.which == "ocr":
         p = Path(args.input_path)
         if p.suffix in [".png", '.jpg', ".jpeg"]:
@@ -425,7 +465,7 @@ def main():
         else:
             raise ValueError("不支持的文件格式")
     elif args.which == "bookmark":
-        add_toc_from_ocr(input_path=args.input_path, lang=args.lang, use_double_columns=args.use_double_column, output_path=args.output_path)
+        add_toc_from_ocr(input_path=args.input_path, lang=args.lang, use_double_columns=args.use_double_column, page_range=args.page_range, output_path=args.output_path)
     elif args.which == "extract":
         extract_item_from_pdf(doc_path=args.input_path, page_range=args.page_range, type=args.type, output_dir=args.output)
 

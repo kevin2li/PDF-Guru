@@ -110,7 +110,7 @@ windows:
 2. 创建虚拟环境,并安装paddleocr
 ```bash
 # 创建环境
-conda env create -n ocr python=3.10
+conda create -n ocr python=3.10
 
 # 激活环境
 conda activate ocr
@@ -119,13 +119,14 @@ conda activate ocr
 pip install paddlepaddle -i https://pypi.tuna.tsinghua.edu.cn/simple
 pip install "paddleocr>=2.0.1"
 ```
+
 3. 查看环境中python解释器路径
 
 可以通过`conda env list`命令查看`ocr`环境的绝对路径，如:`C:\Users\{用户名}\miniconda3\envs\ocr\`
 
 则python解释器路径为：`C:\Users\{用户名}\miniconda3\envs\ocr\python.exe`
 
-4. 在PDF Guru的“首选项”中配置ocr路径
+1. 在PDF Guru的“首选项”中配置装有paddleocr的python路径
 
 ![首选项](assets/settings.png)
 
@@ -176,9 +177,9 @@ Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝�
 
 插入：支持插入空白页和插入其他文件两种选项。
 
-![](https://minio.kevin2li.top/image-bed/blog/20230708204539.png)
+![](https://minio.kevin2li.top/image-bed/blog/20230713140301.png)
 
-![](https://minio.kevin2li.top/image-bed/blog/20230708210009.png)
+![](https://minio.kevin2li.top/image-bed/blog/20230713140326.png)
 
 替换：用目标PDF的指定页码范围来替换源PDF中指定的页码范围(此处的页码范围只支持`1`或`1-3`两种方式)
 
