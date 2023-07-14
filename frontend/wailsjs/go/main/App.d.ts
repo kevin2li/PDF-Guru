@@ -12,6 +12,8 @@ export function AddPDFPageNumber(arg1:string,arg2:string,arg3:string,arg4:number
 
 export function CheckFileExists(arg1:string):Promise<void>;
 
+export function CheckOS():Promise<string>;
+
 export function CheckOutputDirExists(arg1:string):Promise<void>;
 
 export function CheckOutputFileExists(arg1:string):Promise<void>;
@@ -35,8 +37,6 @@ export function ConvertMd2PDF(arg1:string,arg2:string):Promise<void>;
 export function ConvertMd2RevealJs(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertMd2Tex(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertPDF(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function ConvertPDF2Docx(arg1:string,arg2:string):Promise<void>;
 

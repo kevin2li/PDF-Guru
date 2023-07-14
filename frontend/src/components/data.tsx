@@ -1,5 +1,5 @@
 import { message, Modal } from 'ant-design-vue';
-
+import type { SelectProps } from 'ant-design-vue';
 interface MergeState {
     input_path_list: string[];
     output: string;
@@ -346,6 +346,31 @@ const menuDesc: Record<string, string> = {
     "settings": "对软件功能进行配置"
 }
 
+const windows_fonts_options: SelectProps['options'] = [
+    { value: "msyh.ttc", label: "微软雅黑" },
+    { value: "simsun.ttc", label: "宋体" },
+    { value: "simhei.ttf", label: "黑体" },
+    { value: "simkai.ttf", label: "楷体" },
+    { value: "simfang.ttf", label: "仿宋" },
+    { value: "SIMYOU.TTF", label: "幼圆" },
+    { value: "STHUPO.TTF", label: "华文琥珀" },
+    { value: "FZSTK.TTF", label: "方正舒体" },
+    { value: "STZHONGS.TTF", label: "华文中宋" },
+    { value: "arial.ttf", label: "Arial" },
+    { value: "times.ttf", label: "TimesNewRoman" },
+    { value: "calibri.ttf", label: "Calibri" },
+    { value: "consola.ttf", label: "Consola" },
+];
+
+const mac_fonts_options: SelectProps['options'] = [
+    { value: "STHeiti Light.ttc", label: "黑体" },
+    { value: "Songti.ttc", label: "华文宋体" },
+    // { value: "PingFang.ttc", label: "苹方" },
+    { value: "Arial.ttf", label: "Arial" },
+    { value: "Times New Roman.ttf", label: "TimesNewRoman" },
+    { value: "Helvetica.ttc", label: "Helvetica" },
+];
+
 async function handleOps(func: any, args: any[]) {
     await func(...args).then((res: any) => {
         console.log({ res });
@@ -389,3 +414,8 @@ export type {
     DualLayerState,
     CrackState,
 };
+
+export {
+    windows_fonts_options,
+    mac_fonts_options
+}

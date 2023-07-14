@@ -1,4 +1,4 @@
-//go:build windows
+//go:build darwin || linux
 
 package main
 
@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
@@ -161,9 +160,6 @@ func CheckCmdError(cmd *exec.Cmd) error {
 }
 
 func GetCmdStatusAndMessage(cmd *exec.Cmd) error {
-	if runtime.GOOS == "windows" {
-		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
-	}
 	out, err := cmd.Output()
 	if err != nil {
 		err = errors.Wrap(err, "get cmd output error! \n args: "+strings.Join(cmd.Args, " ")+"\n stderr: "+string(err.(*exec.ExitError).Stderr))

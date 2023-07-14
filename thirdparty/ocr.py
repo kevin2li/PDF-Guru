@@ -3,6 +3,7 @@ import glob
 import json
 import logging
 import os
+import platform
 import re
 import shutil
 import traceback
@@ -22,7 +23,13 @@ ocr_engine_ch = PaddleOCR(use_angle_cls=True, lang='ch', show_log=False) # need 
 ocr_engine_en = PaddleOCR(use_angle_cls=True, lang='en', show_log=False) # need to run only once to download and load model into memory
 structure_engine = PPStructure(table=False, ocr=False, show_log=False)
 
-cmd_output_path = "cmd_output.json"
+if platform.system() == "Windows":
+    logdir = Path(os.environ['USERPROFILE']) / ".pdf_guru"
+else:
+    logdir = Path(os.environ['HOME']) / ".pdf_guru"
+logdir.mkdir(parents=True, exist_ok=True)
+logpath = str(logdir / "pdf.log")
+cmd_output_path = str(logdir / "cmd_output.json")
 
 def init_logger(name: str, logpath: str):
     logger = logging.getLogger(name)
@@ -34,7 +41,7 @@ def init_logger(name: str, logpath: str):
     logger.addHandler(fh)
     return logger
 
-logger = init_logger(name="pdf guru: ocr_logger", logpath="pdf_guru-ocr.log")
+logger = init_logger(name="pdf guru: ocr_logger", logpath=logpath)
 
 def dump_json(path, obj):
     with open(path, "w", encoding="utf-8") as f:
@@ -54,7 +61,6 @@ def batch_process(func):
                     func(*args, **kwargs)
         else:
             func(*args, **kwargs)
-        func(*args, **kwargs)
     return wrapper
 
 def plot_roi_region(img, ppstructure_result, output_path: str, type: str = 'title'):

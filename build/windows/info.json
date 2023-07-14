@@ -4,12 +4,12 @@
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "{{.Info.ProductVersion}}",
-			"CompanyName": "{{.Info.CompanyName}}",
-			"FileDescription": "{{.Info.ProductName}}",
-			"LegalCopyright": "{{.Info.Copyright}}",
-			"ProductName": "{{.Info.ProductName}}",
-			"Comments": "{{.Info.Comments}}"
+			"ProductVersion": "1.0.4",
+			"CompanyName": "Kevin2li",
+			"FileDescription": "PDF Guru",
+			"LegalCopyright": "Copyright (c) 2023",
+			"ProductName": "PDF Guru",
+			"Comments": ""
 		}
 	}
 }

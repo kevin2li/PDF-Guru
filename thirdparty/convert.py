@@ -2,13 +2,21 @@ import argparse
 import glob
 import json
 import logging
+import os
+import platform
 import re
 import traceback
 from pathlib import Path
 
 import fitz
 
-cmd_output_path = "cmd_output.json"
+if platform.system() == "Windows":
+    logdir = Path(os.environ['USERPROFILE']) / ".pdf_guru"
+else:
+    logdir = Path(os.environ['HOME']) / ".pdf_guru"
+logdir.mkdir(parents=True, exist_ok=True)
+logpath = str(logdir / "pdf.log")
+cmd_output_path = str(logdir / "cmd_output.json")
 
 def dump_json(path, obj):
     with open(path, "w", encoding="utf-8") as f:
