@@ -50,7 +50,7 @@
 
 - 编译安装
 
-1. 安装[go](https://go.dev/dl/)环境和[node](https://nodejs.org/en/download/)环境和[python](https://docs.conda.io/en/latest/miniconda.html)环境
+1. 安装[go](https://go.dev/dl/)环境、[node](https://nodejs.org/en/download/)环境和[python](https://docs.conda.io/en/latest/miniconda.html)环境
 
 ```bash
 # 确认go安装成功
@@ -63,9 +63,6 @@ echo $PATH | grep go/bin
 
 # 确认nodejs安装成功
 npm --version
-
-# 安装pnpm
-npm install -g pnpm
 ```
 
 2. 编译项目
@@ -73,26 +70,34 @@ npm install -g pnpm
 ```bash
 git clone https://github.com/kevin2li/PDF-Guru.git
 cd PDF-Guru
+ROOT=$(pwd)
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
 go mod tidy
 
 # 安装前端依赖
-cd frontend
-pnpm install
+cd ${ROOT}/frontend
+npm install
 
 # 安装后端环境
-cd thirdparty
+cd ${ROOT}/thirdparty
 pip install pymupdf reportlab pillow loguru pyinstaller
 pyinstaller -F -w pdf.py
+mkdir ${ROOT}/build/bin
 
-cd .. # 切到根目录
+# 1) for darwin, linux
+cp dist/pdf ocr.py convert.py ${ROOT}/build/bin
+
+# 2) for windows
+cp dist/pdf.exe ${ROOT}/build/bin
+cp ocr.py ${ROOT}/build/bin
+cp convert.py ${ROOT}/build/bin
+
+cd $ROOT
 wails dev # 开发预览
 wails build # 编译
 ```
-windows:
 
-将`pdf.exe`、`PDF Guru.exe`、`ocr.py`、`convert.py`放在一个文件夹下，运行`PDF Guru.exe`即可。
+将`build/bin`目录打包，运行`PDF Guru`即可。
 
 <details close>
 <summary><h4>额外安装(可选)</h4></summary>
@@ -122,11 +127,24 @@ pip install "paddleocr>=2.0.1"
 
 3. 查看环境中python解释器路径
 
-可以通过`conda env list`命令查看`ocr`环境的绝对路径，如:`C:\Users\{用户名}\miniconda3\envs\ocr\`
+可以通过`conda env list`命令查看`ocr`环境的绝对路径, 注意下面的`{用户名}`请根据自己实际情况进行替换。
 
+ - windows
+
+如:`C:\Users\{用户名}\miniconda3\envs\ocr\`  
 则python解释器路径为：`C:\Users\{用户名}\miniconda3\envs\ocr\python.exe`
 
-1. 在PDF Guru的“首选项”中配置装有paddleocr的python路径
+  - Mac
+
+如:`/Users/{用户名}/miniconda3/envs/ocr`  
+则python解释器路径为：`/Users/{用户名}/miniconda3/envs/ocr/bin/python`
+
+  - Linux
+
+如:`/home/{用户名}/miniconda3/envs/ocr`  
+则python解释器路径为：`/home/{用户名}/miniconda3/envs/ocr/bin/python`
+
+4. 在PDF Guru的“首选项”中配置装有paddleocr的python路径
 
 ![首选项](assets/settings.png)
 
@@ -158,13 +176,16 @@ https://pandoc.org/installing.html
 
 3. 路径格式
 
-全部使用绝对路径，类似：`C:\Users\kevin\Downloads\test.txt`。
+全部使用绝对路径，类似：`C:\Users\kevin\Downloads\test.txt`, 注意不要用引号包裹路径。
 
-Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝对路径。
+> 如何快速获取文件绝对路径?
+> 1. Windows下可以选中目标文件后使用`Ctrl+Shift+C`快速复制文件绝对路径。
+> 2. MacOS下可以选中目标文件后使用`Command+Opion+C`快速复制文件绝对路径。
 
 软件会自动检测路径是否存在，不合法的路径将不会被通过，也不会进行继续的处理。
 
-如果想批量操作，可以使用通配符`*`。例如批量对PDF文件进行旋转，路径可以填`C:\Users\kevin\Downloads\*.pdf`，将会匹配`C:\Users\kevin\Downloads`目录下所有的PDF文件。除少数功能(插入/替换等)外，大部分都支持批量操作。
+如果想批量操作，可以使用通配符`*`。
+例如批量对PDF文件进行旋转，路径可以填`C:\Users\kevin\Downloads\*.pdf`，将会匹配`C:\Users\kevin\Downloads`目录下所有的PDF文件。除少数功能(插入/替换等)外，大部分都支持批量操作。
 
 4. 坐标
 

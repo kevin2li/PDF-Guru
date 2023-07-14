@@ -9,49 +9,53 @@
                     <a-radio-button value="decrypt">解密</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;" v-if="formState.op == 'encrypt'">
-                <a-form-item name="is_set_upw" label="设置打开密码" :disabled="!formState.is_set_upw">
-                    <a-checkbox v-model:checked="formState.is_set_upw"></a-checkbox>
-                </a-form-item>
-                <a-form-item :name="formState.is_set_upw ? 'upw' : 'upw-none'" label="设置密码" hasFeedback
-                    :validateStatus="validateStatus.encrypt_upw">
-                    <a-input-password v-model:value="formState.upw" placeholder="不少于6位" allow-clear
-                        :disabled="!formState.is_set_upw" />
-                </a-form-item>
-                <a-form-item :name="formState.is_set_upw ? 'upw_confirm' : 'upw_confirm-none'" label="确认密码" hasFeedback
-                    :validateStatus="validateStatus.encrypt_upw_confirm">
-                    <a-input-password v-model:value="formState.upw_confirm" placeholder="再次输入密码" allow-clear
-                        :disabled="!formState.is_set_upw" />
+            <div v-if="formState.op == 'encrypt'">
+                <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;">
+                    <a-form-item name="is_set_upw" label="设置打开密码" :disabled="!formState.is_set_upw">
+                        <a-checkbox v-model:checked="formState.is_set_upw"></a-checkbox>
+                    </a-form-item>
+                    <a-form-item :name="formState.is_set_upw ? 'upw' : 'upw-none'" label="设置密码" hasFeedback
+                        :validateStatus="validateStatus.encrypt_upw">
+                        <a-input-password v-model:value="formState.upw" placeholder="不少于6位" allow-clear
+                            :disabled="!formState.is_set_upw" />
+                    </a-form-item>
+                    <a-form-item :name="formState.is_set_upw ? 'upw_confirm' : 'upw_confirm-none'" label="确认密码" hasFeedback
+                        :validateStatus="validateStatus.encrypt_upw_confirm">
+                        <a-input-password v-model:value="formState.upw_confirm" placeholder="再次输入密码" allow-clear
+                            :disabled="!formState.is_set_upw" />
+                    </a-form-item>
+                </div>
+                <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;">
+                    <a-form-item name="is_set_opw" label="设置权限密码">
+                        <a-checkbox v-model:checked="formState.is_set_opw"></a-checkbox>
+                    </a-form-item>
+                    <a-form-item :name="formState.is_set_opw ? 'opw' : 'opw-none'" label="设置密码" hasFeedback
+                        :validateStatus="validateStatus.encrypt_opw">
+                        <a-input-password v-model:value="formState.opw" placeholder="不少于6位" allow-clear
+                            :disabled="!formState.is_set_opw" />
+                    </a-form-item>
+                    <a-form-item :name="formState.is_set_opw ? 'opw_confirm' : 'opw_confirm-none'" label="确认密码" hasFeedback
+                        :validateStatus="validateStatus.encrypt_opw_confirm">
+                        <a-input-password v-model:value="formState.opw_confirm" allow-clear placeholder="再次输入密码"
+                            :disabled="!formState.is_set_opw" />
+                    </a-form-item>
+                    <a-form-item :name="formState.is_set_opw ? 'perm' : 'perm-none'" label="保护功能">
+                        <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate"
+                            :disabled="!formState.is_set_opw" @change="onCheckAllChange">全选</a-checkbox>
+                        <a-divider type="vertical" />
+                        <a-checkbox-group v-model:value="formState.perm" :options="encrypt_perm_options"
+                            :disabled="!formState.is_set_opw" />
+                    </a-form-item>
+                </div>
+            </div>
+            <div v-if="formState.op == 'decrypt'">
+                <a-form-item name="upw" label="密码" :rules="[{
+                    required: true, message: '请填写密码'
+                }]">
+                    <a-input-password v-model:value="formState.upw" placeholder="解密密码" allow-clear />
                 </a-form-item>
             </div>
 
-            <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;" v-if="formState.op == 'encrypt'">
-                <a-form-item name="is_set_opw" label="设置权限密码">
-                    <a-checkbox v-model:checked="formState.is_set_opw"></a-checkbox>
-                </a-form-item>
-                <a-form-item :name="formState.is_set_opw ? 'opw' : 'opw-none'" label="设置密码" hasFeedback
-                    :validateStatus="validateStatus.encrypt_opw">
-                    <a-input-password v-model:value="formState.opw" placeholder="不少于6位" allow-clear
-                        :disabled="!formState.is_set_opw" />
-                </a-form-item>
-                <a-form-item :name="formState.is_set_opw ? 'opw_confirm' : 'opw_confirm-none'" label="确认密码" hasFeedback
-                    :validateStatus="validateStatus.encrypt_opw_confirm">
-                    <a-input-password v-model:value="formState.opw_confirm" allow-clear placeholder="再次输入密码"
-                        :disabled="!formState.is_set_opw" />
-                </a-form-item>
-                <a-form-item :name="formState.is_set_opw ? 'perm' : 'perm-none'" label="保护功能">
-                    <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate" :disabled="!formState.is_set_opw"
-                        @change="onCheckAllChange">全选</a-checkbox>
-                    <a-divider type="vertical" />
-                    <a-checkbox-group v-model:value="formState.perm" :options="encrypt_perm_options"
-                        :disabled="!formState.is_set_opw" />
-                </a-form-item>
-            </div>
-            <a-form-item name="upw" label="密码" v-if="formState.op == 'decrypt'" :rules="[{
-                required: true, message: '请填写密码'
-            }]">
-                <a-input-password v-model:value="formState.upw" placeholder="解密密码" allow-clear />
-            </a-form-item>
             <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
                 :help="validateHelp.input">
                 <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
@@ -110,7 +114,7 @@ export default defineComponent({
             validateStatus["input"] = 'validating';
             if (value === '') {
                 validateStatus["input"] = 'error';
-            validateHelp["input"] = "请填写路径";
+                validateHelp["input"] = "请填写路径";
                 return Promise.reject();
             }
             await CheckFileExists(value).then((res: any) => {

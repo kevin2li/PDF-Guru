@@ -17,9 +17,17 @@ from PIL import Image
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
+import platform
 
-logger.add("pdf.log", rotation="1 week", retention="10 days", level="DEBUG", encoding="utf-8")
-cmd_output_path = "cmd_output.json"
+if platform.system() == "Windows":
+    logdir = Path(os.environ['USERPROFILE']) / ".pdf_guru"
+else:
+    logdir = Path(os.environ['HOME']) / ".pdf_guru"
+logdir.mkdir(parents=True, exist_ok=True)
+logpath = str(logdir / "pdf.log")
+cmd_output_path = str(logdir / "cmd_output.json")
+
+logger.add(logpath, rotation="1 week", retention="10 days", level="DEBUG", encoding="utf-8")
 
 # 工具类函数
 def parse_range(page_range: str, page_count: int, is_multi_range: bool = False, is_reverse: bool = False, is_unique: bool = True):
@@ -221,7 +229,6 @@ def batch_process(func):
                     func(*args, **kwargs)
         else:
             func(*args, **kwargs)
-        func(*args, **kwargs)
     return wrapper
 
 # 功能类函数
@@ -999,6 +1006,9 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
             doc.authenticate(password)
             n = doc.page_count
             doc.select(range(n))
+        else:
+            dump_json(cmd_output_path, {"status": "error", "message": "文件没有加密!"})
+            return
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-解密.pdf")
         doc.save(output_path, garbage=3, deflate=True)
@@ -1108,7 +1118,7 @@ def create_text_wartmark(
         y_offset             : Union[int, float] = 0,
         multiple_mode        : bool = False,
         output_path          : str = None,
-    ) -> None:
+    ):
     try:
         if output_path is None:
             output_path = "watermark.pdf"
@@ -1148,9 +1158,11 @@ def create_text_wartmark(
                 c.drawString(start_x,start_y-i*line_height,part)
         c.save()
         dump_json(cmd_output_path, {"status": "success", "message": ""})
+        return True
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+        return False
 
 def create_image_wartmark(
         width        : Union[int, float],
@@ -1195,9 +1207,11 @@ def create_image_wartmark(
         c.showPage()
         c.save()
         dump_json(cmd_output_path, {"status": "success", "message": ""})
+        return True
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+        return False
 
 @batch_process
 def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", layer: str = "bottom", output_path: str = None, **args):
@@ -1206,7 +1220,9 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
         page = doc[-1]
         p = Path(doc_path)
         tmp_wm_path = str(p.parent / "tmp_wm.pdf")
-        create_text_wartmark(wm_text=wm_text, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
+        ok = create_text_wartmark(wm_text=wm_text, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
+        if not ok:
+            return
         wm_doc: fitz.Document = fitz.open(tmp_wm_path)
         roi_indices = parse_range(page_range, doc.page_count)
         for page_index in range(doc.page_count):
@@ -1233,7 +1249,9 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
         page = doc[-1]
         p = Path(doc_path)
         tmp_wm_path = str(p.parent / "tmp_wm.pdf")
-        create_image_wartmark(wm_image_path=wm_path, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
+        ok = create_image_wartmark(wm_image_path=wm_path, width=page.rect.width, height=page.rect.height, output_path=tmp_wm_path, **args)
+        if not ok:
+            return
         wm_doc = fitz.open(tmp_wm_path)
         roi_indices = parse_range(page_range, doc.page_count)
         for i in roi_indices:

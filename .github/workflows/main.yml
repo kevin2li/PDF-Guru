@@ -3,7 +3,7 @@ run-name: ${{ github.actor }}
 on: 
   push:
     branches:
-      - main
+      - dev
 jobs:
   deploy-macos:
     runs-on: macos-latest
@@ -19,28 +19,137 @@ jobs:
           node-version: 18
 
       - name: 安装 Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: 1.20.5
 
       - name: 安装 Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: 3.10.11
 
-      - name: 编译
+      - name: 安装依赖 && 编译
         run: |
+          ROOT=$(pwd)
+          mkdir -p ${ROOT}/build/bin
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
           go mod tidy
-          cd frontend
-          npm install
-          cd ../third_party
-          pip install -r requirements.txt
-          cd ..
-          wails build
 
-      - name: 部署Artifacts
-        uses: JamesIves/github-pages-deploy-action@v4
+          cd ${ROOT}/frontend
+          npm install
+
+          cd ${ROOT}/thirdparty
+          pip install -r requirements.txt
+          pyinstaller -F -w pdf.py
+          cp dist/pdf ${ROOT}/build/bin/
+          cp ocr.py convert.py ${ROOT}/build/bin/
+          
+          cd $ROOT
+          brew install upx
+          wails build -upx -ldflags "-s -w"
+
+      - name: 上传Artifacts
+        uses: actions/upload-artifact@v3
         with:
-          branch: release
-          folder: build/bin
+          name: pdf-guru-darwin-amd64
+          path: build/bin
+
+  deploy-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: 安装 Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.20.5
+
+      - name: 安装 Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.11
+
+      - name: 安装依赖 && 编译
+        run: |
+          $ROOT=$(pwd)
+          mkdir -p ${ROOT}\build\bin
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          go mod tidy
+
+          cd ${ROOT}\frontend
+          npm install
+
+          cd ${ROOT}\thirdparty
+          pip install -r requirements.txt
+          pyinstaller -F -w pdf.py
+          cp dist/pdf.exe ${ROOT}\build\bin\
+          cp ocr.py ${ROOT}\build\bin\
+          cp convert.py ${ROOT}\build\bin\
+          
+          cd $ROOT
+          choco install -y upx
+          wails build -upx
+
+      - name: 上传Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: pdf-guru-windows-amd64
+          path: build/bin
+
+  deploy-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: 安装 Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.20.5
+
+      - name: 安装 Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.11
+
+      - name: 安装依赖 && 编译
+        run: |
+          ROOT=$(pwd)
+          mkdir -p ${ROOT}/build/bin
+          go install github.com/wailsapp/wails/v2/cmd/wails@latest
+          go mod tidy
+
+          cd ${ROOT}/frontend
+          npm install
+
+          cd ${ROOT}/thirdparty
+          pip install -r requirements.txt
+          pyinstaller -F -w pdf.py
+          cp dist/pdf ${ROOT}/build/bin/
+          cp ocr.py convert.py ${ROOT}/build/bin/
+          
+          cd $ROOT
+          sudo apt-get update
+          sudo apt-get install libgtk-3-dev libwebkit2gtk-4.0-dev build-essential upx
+          wails build -upx -ldflags "-s -w"
+
+      - name: 上传Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: pdf-guru-linux-amd64
+          path: build/bin

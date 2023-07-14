@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -19,17 +20,23 @@ var assets embed.FS
 var (
 	log    *logrus.Logger
 	logger *logrus.Entry
+	logdir string
 )
 
 func main() {
 	// init logger
 	log = logrus.New()
-	path, err := os.Executable()
-	if err != nil {
-		err = errors.Wrap(err, "failed to get executable path")
-		logger.Println("Error:", err)
+	if runtime.GOOS == "windows" {
+		logdir = filepath.Join(os.Getenv("USERPROFILE"), ".pdf_guru")
+	} else {
+		logdir = filepath.Join(os.Getenv("HOME"), ".pdf_guru")
 	}
-	logpath := filepath.Join(filepath.Dir(path), "access.log")
+	err := os.MkdirAll(logdir, 0755)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create log directory")
+		log.Fatal(err)
+	}
+	logpath := filepath.Join(logdir, "access.log")
 	file, err := os.OpenFile(logpath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create log file")

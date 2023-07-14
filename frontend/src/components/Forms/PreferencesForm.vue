@@ -8,15 +8,15 @@
                 <a-input v-model:value="formState.python_path" placeholder="填写python路径" :disabled="!formState.allow_modify"
                     allow-clear></a-input>
             </a-form-item>
-            <a-form-item name="tesseract_path" label="tesseract路径" hasFeedback :validateStatus="validateStatus.tesseract_path"
-                :help="validateHelp.tesseract_path">
+            <a-form-item name="tesseract_path" label="tesseract路径" hasFeedback
+                :validateStatus="validateStatus.tesseract_path" :help="validateHelp.tesseract_path">
                 <a-input v-model:value="formState.tesseract_path" placeholder="填写tesseract路径"
                     :disabled="!formState.allow_modify" allow-clear></a-input>
             </a-form-item>
             <a-form-item name="hashcat_path" label="hashcat路径" hasFeedback :validateStatus="validateStatus.hashcat_path"
                 :help="validateHelp.hashcat_path">
-                <a-input v-model:value="formState.hashcat_path" placeholder="填写hashcat路径" :disabled="!formState.allow_modify"
-                    allow-clear></a-input>
+                <a-input v-model:value="formState.hashcat_path" placeholder="填写hashcat路径"
+                    :disabled="!formState.allow_modify" allow-clear></a-input>
             </a-form-item>
             <a-form-item name="pandoc_path" label="pandoc路径" hasFeedback :validateStatus="validateStatus.pandoc_path"
                 :help="validateHelp.pandoc_path">
@@ -96,7 +96,11 @@ export default defineComponent({
                 formState.pandoc_path = res.pandoc_path;
             }).catch((err: any) => {
                 console.log({ err });
-                message.error("加载配置失败");
+                // message.error("加载配置失败");
+                Modal.error({
+                    title: "加载配置失败",
+                    content: err,
+                })
             });
         }
         const validateFileExists = async (_rule: Rule, value: string) => {
@@ -155,7 +159,11 @@ export default defineComponent({
                     message.success("保存成功");
                 }).catch((err: any) => {
                     console.log({ err });
-                    message.error("保存失败");
+                    // message.error("保存失败");
+                    Modal.error({
+                        title: "保存失败",
+                        content: err,
+                    })
                 });
             }
             formRef.value?.clearValidate();

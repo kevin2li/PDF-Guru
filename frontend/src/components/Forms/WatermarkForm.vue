@@ -23,20 +23,7 @@
                     </a-form-item>
                     <a-form-item name="watermark_font_size" label="字体属性" hasFeedback>
                         <a-space size="large">
-                            <a-select v-model:value="formState.font_family" style="width: 200px">
-                                <a-select-option value="msyh.ttc">微软雅黑</a-select-option>
-                                <a-select-option value="simsun.ttc">宋体</a-select-option>
-                                <a-select-option value="simhei.ttf">黑体</a-select-option>
-                                <a-select-option value="simkai.ttf">楷体</a-select-option>
-                                <a-select-option value="simfang.ttf">仿宋</a-select-option>
-                                <a-select-option value="SIMYOU.TTF">幼圆</a-select-option>
-                                <a-select-option value="STHUPO.TTF">华文琥珀</a-select-option>
-                                <a-select-option value="FZSTK.TTF">方正舒体</a-select-option>
-                                <a-select-option value="STZHONGS.TTF">华文中宋</a-select-option>
-                                <a-select-option value="arial.ttf">Arial</a-select-option>
-                                <a-select-option value="times.ttf">TimesNewRoman</a-select-option>
-                                <a-select-option value="calibri.ttf">Calibri</a-select-option>
-                                <a-select-option value="consola.ttf">Consola</a-select-option>
+                            <a-select v-model:value="formState.font_family" style="width: 200px" :options="font_options">
                             </a-select>
                             <a-tooltip>
                                 <template #title>字号</template>
@@ -296,9 +283,10 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, watch, ref } from 'vue';
+import { defineComponent, reactive, onMounted, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
+    CheckOS,
     CheckFileExists,
     CheckRangeFormat,
     WatermarkPDFByText,
@@ -313,8 +301,9 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { FontSizeOutlined, FontColorsOutlined } from '@ant-design/icons-vue';
+import type { SelectProps } from 'ant-design-vue';
 import type { WatermarkState } from "../data";
-import { handleOps } from "../data";
+import { handleOps, windows_fonts_options, mac_fonts_options } from "../data";
 export default defineComponent({
     components: {
         FontSizeOutlined,
@@ -373,6 +362,24 @@ export default defineComponent({
             input: "",
             page: "",
             font_color: "",
+        });
+
+        let font_options = ref<SelectProps['options']>([]);
+
+        const setFontOptions = async () => {
+            await CheckOS().then((res: any) => {
+                if (res === "windows") {
+                    font_options.value = windows_fonts_options;
+                } else if (res === "darwin") {
+                    font_options.value = mac_fonts_options;
+                    formState.font_family = 'STHeiti Light.ttc';
+                }
+            }).catch((err: any) => {
+                console.log({ err });
+            })
+        }
+        onMounted(async () => {
+            await setFontOptions();
         });
 
         const validateFileExists = async (_rule: Rule, value: string) => {
@@ -582,6 +589,7 @@ export default defineComponent({
             resetFields,
             onFinish,
             onFinishFailed,
+            font_options,
         };
     }
 })

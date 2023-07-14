@@ -22,6 +22,10 @@ export function CheckFileExists(arg1) {
   return window['go']['main']['App']['CheckFileExists'](arg1);
 }
 
+export function CheckOS() {
+  return window['go']['main']['App']['CheckOS']();
+}
+
 export function CheckOutputDirExists(arg1) {
   return window['go']['main']['App']['CheckOutputDirExists'](arg1);
 }
@@ -68,10 +72,6 @@ export function ConvertMd2RevealJs(arg1, arg2) {
 
 export function ConvertMd2Tex(arg1, arg2) {
   return window['go']['main']['App']['ConvertMd2Tex'](arg1, arg2);
-}
-
-export function ConvertPDF(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['ConvertPDF'](arg1, arg2, arg3, arg4);
 }
 
 export function ConvertPDF2Docx(arg1, arg2) {
