@@ -496,5 +496,4 @@ def main():
         extract_item_from_pdf(doc_path=args.input_path, page_range=args.page_range, type=args.type, output_dir=args.output)
 
 if __name__ == "__main__":
-    # main()
-    convert_pdf2docx(r"C:\Users\kevin\Desktop\书签测试\计算机网络-目录_提取.pdf")
+    main()

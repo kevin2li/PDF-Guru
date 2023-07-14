@@ -1,0 +1,52 @@
+version: 2.1
+jobs:
+  build:
+    macos:
+      xcode: "13.2.1"
+    environment:
+      GOROOT: /usr/local/go
+      PATH: $PATH:$GOROOT/bin:$HOME/go/bin
+    steps:
+      - checkout:
+          ref: main
+      - run:
+          name: Install Go
+          command: |
+            curl -O https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.20.6.linux-amd64.tar.gz
+            go version
+      - run:
+          name: Install Node.js
+          command: |
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            nvm install 18.16.0
+            node -v
+      - run:
+          name: Install Python
+          command: |
+            brew install python@3.10
+            python3 -m venv venv
+            source venv/bin/activate
+            python --version
+      - run:
+          name: Build
+          command: |
+            cd PDF-Guru
+            go install github.com/wailsapp/wails/v2/cmd/wails@latest
+            go mod tidy
+            cd frontend
+            npm install
+            cd ../thirdparty
+            pip install pymupdf reportlab pillow loguru pyinstaller
+            pyinstaller -F -w pdf.py
+            cd ..
+            wails build
+      # - run:
+      #     name: Publish to New Branch
+      #     command: |
+      #       git checkout -b build-branch
+      #       git add .
+      #       git commit -m "Build and test result"
+      #       git push origin build-branch
