@@ -230,7 +230,7 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         async function submit() {
-            if (!formState.is_set_opw && !formState.is_set_upw) {
+            if (formState.op === 'encrypt' && !formState.is_set_opw && !formState.is_set_upw) {
                 message.error("请至少设置一种密码");
                 return;
             }
