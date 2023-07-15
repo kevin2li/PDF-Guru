@@ -16,6 +16,7 @@
   - [上手指南](#上手指南)
     - [安装](#安装)
     - [使用](#使用)
+  - [FAQ](#faq)
   - [Authors](#authors)
   - [License](#license)
   - [Acknowledgments](#acknowledgments)
@@ -363,6 +364,42 @@ https://pandoc.org/installing.html
 对于额外安装的功能需要在此处进行配置，即填写外部工具的可执行文件路径。
 
 ![](https://minio.kevin2li.top/image-bed/blog/20230715191017.png)
+
+
+## FAQ
+
+1. macos显示应用程序“PDF Guru”无法打开  
+
+如下：
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715195912.png)
+
+**解决方法**：
+
+打开终端，切换到应用安装目录，输入以下命令：
+
+```bash
+chmod +x pdf
+chmod +x "${PWD}/PDF Guru.app/Contents/MacOS/PDF Guru"
+```
+
+2. windows下应用程序被杀毒软件误删
+
+**解决方法**：
+
+打开windows安全中心，将程序安装目录设置为免检测。具体步骤如下：
+
+打开“病毒威胁防护设置”
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715195247.png)
+
+打开排除项
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715195356.png)
+
+添加程序安装目录为排除项
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715195747.png)
 
 ## Authors
 
