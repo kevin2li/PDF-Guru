@@ -12,6 +12,7 @@
 
 - [PDF Guru](#pdf-guru)
   - [项目介绍](#项目介绍)
+  - [应用截图](#应用截图)
   - [上手指南](#上手指南)
     - [安装](#安装)
     - [使用](#使用)
@@ -35,11 +36,24 @@
 本项目具有如下优势：
 1. 完全本地化：无需联网，不必担心隐私泄露
 2. 功能丰富：支持包括PDF批量合并、拆分、添加水印、加密/解密、提取、OCR识别在内的20余项功能
-3. 跨平台：支持在Windows、Mac设备上使用
+3. 跨平台：支持在Windows、Mac、Linux设备上使用
 4. 开源免费
 5. 界面简洁，使用简单
 6. 体积小巧，绿色免安装，随用随开
 7. 插件化：根据需要选择是否安装额外组件，减小安装包体积
+
+## 应用截图
+- MacOS
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715190552.png)
+
+- Windows
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715190650.png)
+
+- Linux
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715190732.png)
 
 ## 上手指南
 ### 安装
@@ -348,7 +362,7 @@ https://pandoc.org/installing.html
 
 对于额外安装的功能需要在此处进行配置，即填写外部工具的可执行文件路径。
 
-![](https://minio.kevin2li.top/image-bed/blog/20230708205834.png)
+![](https://minio.kevin2li.top/image-bed/blog/20230715191017.png)
 
 ## Authors
 
