@@ -7,14 +7,16 @@
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-AGPL%203-dfd.svg"></a>
     <a href="https://github.com/kevin2li/PDF-Guru/releases"><img src="https://img.shields.io/github/v/release/kevin2li/PDF-Guru?color=ffa"></a>
     <a href=""><img src="https://img.shields.io/badge/python-3.10+-aff.svg"></a>
-    <a href=""><img src="https://img.shields.io/badge/os-win%2C%20mac-pink.svg"></a>
+    <a href=""><img src="https://img.shields.io/badge/os-win%2C%20mac%2C%20linux-pink.svg"></a>
 </p
 
 - [PDF Guru](#pdf-guru)
   - [项目介绍](#项目介绍)
+  - [应用截图](#应用截图)
   - [上手指南](#上手指南)
     - [安装](#安装)
     - [使用](#使用)
+  - [FAQ](#faq)
   - [Authors](#authors)
   - [License](#license)
   - [Acknowledgments](#acknowledgments)
@@ -35,11 +37,24 @@
 本项目具有如下优势：
 1. 完全本地化：无需联网，不必担心隐私泄露
 2. 功能丰富：支持包括PDF批量合并、拆分、添加水印、加密/解密、提取、OCR识别在内的20余项功能
-3. 跨平台：支持在Windows、Mac设备上使用
+3. 跨平台：支持在Windows、Mac、Linux设备上使用
 4. 开源免费
 5. 界面简洁，使用简单
 6. 体积小巧，绿色免安装，随用随开
 7. 插件化：根据需要选择是否安装额外组件，减小安装包体积
+
+## 应用截图
+- MacOS
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715190552.png)
+
+- Windows
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715190650.png)
+
+- Linux
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715190732.png)
 
 ## 上手指南
 ### 安装
@@ -348,7 +363,43 @@ https://pandoc.org/installing.html
 
 对于额外安装的功能需要在此处进行配置，即填写外部工具的可执行文件路径。
 
-![](https://minio.kevin2li.top/image-bed/blog/20230708205834.png)
+![](https://minio.kevin2li.top/image-bed/blog/20230715191017.png)
+
+
+## FAQ
+
+1. macos显示应用程序“PDF Guru”无法打开  
+
+如下：
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715195912.png)
+
+**解决方法**：
+
+打开终端，切换到应用安装目录，输入以下命令：
+
+```bash
+chmod +x pdf
+chmod +x "${PWD}/PDF Guru.app/Contents/MacOS/PDF Guru"
+```
+
+2. windows下应用程序被杀毒软件误删
+
+**解决方法**：
+
+打开windows安全中心，将程序安装目录设置为免检测。具体步骤如下：
+
+打开“病毒威胁防护设置”
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715195247.png)
+
+打开排除项
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715195356.png)
+
+添加程序安装目录为排除项
+
+![](https://minio.kevin2li.top/image-bed/blog/20230715195747.png)
 
 ## Authors
 
