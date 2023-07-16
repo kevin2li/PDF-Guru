@@ -338,7 +338,7 @@ const menuDesc: Record<string, string> = {
     "extract": "从原始PDF文件中提取指定的内容，包括页面、文本、图片、表格等",
     "compress": "通过去除内嵌字体和图片等多余的页面资源来优化原始PDF文件以最大化PDF压缩",
     "convert": "PDF转换，支持将PDF文件转换为png、svg、docx等多种格式，或将其他格式文件转换为PDF文件",
-    "encrypt": "对PDF文件进行加密或解密",
+    "encrypt": "对PDF文件进行加密或解密,解密后的PDF自动获取全部权限",
     "ocr": "对PDF文件或图片(支持png、jpg格式)进行OCR识别",
     "meta": "查看文档属性",
     "dual": "双层PDF制作，可以为扫描件创建隐藏文字图层，从而支持文字复制、检索等功能",

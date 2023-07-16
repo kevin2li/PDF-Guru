@@ -1018,6 +1018,23 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 @batch_process
+def recover_permission_pdf(doc_path: str, output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if doc.isEncrypted:
+            dump_json(cmd_output_path, {"status": "error", "message": "文件已加密，请先解密!"})
+            return
+        doc.select(range(doc.page_count))
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-权限恢复.pdf")
+        doc.save(output_path, garbage=3, deflate=True)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+@batch_process
 def compress_pdf(doc_path: str, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -2638,7 +2655,10 @@ def main():
     elif args.which == "encrypt":
         encrypt_pdf(doc_path=args.input_path, user_password=args.user_password, owner_password=args.owner_password, perm=args.perm, output_path=args.output)
     elif args.which == "decrypt":
-        decrypt_pdf(doc_path=args.input_path, password=args.password, output_path=args.output)
+        if args.password:
+            decrypt_pdf(doc_path=args.input_path, password=args.password, output_path=args.output)
+        else:
+            recover_permission_pdf(doc_path=args.input_path, output_path=args.output)
     elif args.which == "compress":
         compress_pdf(doc_path=args.input_path, output_path=args.output)
     elif args.which == "resize":
@@ -2700,7 +2720,7 @@ def main():
                 convert_svg2pdf(input_path=args.input_path, is_merge=args.is_merge,output_path=args.output)
             elif args.source_type == "mobi":
                 convert_anydoc2pdf(input_path=args.input_path, output_path=args.output)
-            elif args.source_type == "equb":
+            elif args.source_type == "epub":
                 convert_anydoc2pdf(input_path=args.input_path, output_path=args.output)
     elif args.which == "watermark":
         if args.watermark_which == "add":

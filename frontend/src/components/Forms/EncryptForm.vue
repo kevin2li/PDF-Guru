@@ -5,8 +5,9 @@
             @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="encrypt_op" label="操作" style="margin-bottom: 1.8vh;">
                 <a-radio-group button-style="solid" v-model:value="formState.op">
-                    <a-radio-button value="encrypt">加密</a-radio-button>
-                    <a-radio-button value="decrypt">解密</a-radio-button>
+                    <a-radio-button value="encrypt">添加密码</a-radio-button>
+                    <a-radio-button value="decrypt">移除密码</a-radio-button>
+                    <a-radio-button value="recover">权限恢复</a-radio-button>
                 </a-radio-group>
             </a-form-item>
             <div v-if="formState.op == 'encrypt'">
@@ -252,6 +253,10 @@ export default defineComponent({
                 }
                 case "decrypt": {
                     await handleOps(DecryptPDF, [formState.input, formState.output, formState.upw]);
+                    break;
+                }
+                case "recover": {
+                    await handleOps(DecryptPDF, [formState.input, formState.output, ""]);
                     break;
                 }
             }
