@@ -101,12 +101,18 @@ jobs:
           wails build -upx
           iscc.exe build\windows\installer\setup.iss
 
-      - name: 上传Artifacts
+      - name: 上传Artifacts(zip)
         uses: actions/upload-artifact@v3
         with:
           name: pdf-guru-windows-amd64-${{ env.VERRSION }}
           path: |
             build/bin
+
+      - name: 上传Artifacts(installer)
+        uses: actions/upload-artifact@v3
+        with:
+          name: pdf-guru-setup-windows-amd64-${{ env.VERRSION }}
+          path: |
             build/*.exe
 
   deploy-linux:

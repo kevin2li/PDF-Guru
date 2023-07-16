@@ -246,7 +246,9 @@ export default defineComponent({
                     if (formState.is_set_opw) {
                         opw = formState.opw;
                         perm = formState.perm;
-                        perm.push("打开");
+                        if(!perm.includes("打开")){
+                            perm.push("打开");
+                        }
                     }
                     await handleOps(EncryptPDF, [formState.input, formState.output, upw, opw, perm]);
                     break;
