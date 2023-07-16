@@ -95,7 +95,7 @@ npm install
 
 # 安装后端环境
 cd ${ROOT}/thirdparty
-pip install pymupdf reportlab pillow loguru pyinstaller
+pip install -r requirements.txt
 pyinstaller -F -w pdf.py
 mkdir ${ROOT}/build/bin
 

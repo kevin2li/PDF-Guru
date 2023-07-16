@@ -18,7 +18,7 @@
                     <a-select-opt-group label="其他转PDF">
                         <a-select-option value="png2pdf">png转pdf</a-select-option>
                         <a-select-option value="svg2pdf">svg转pdf</a-select-option>
-                        <a-select-option value="equb2pdf-python">equb转pdf</a-select-option>
+                        <a-select-option value="epub2pdf-python">epub转pdf</a-select-option>
                         <a-select-option value="mobi2pdf">mobi转pdf</a-select-option>
                         <a-select-option value="md2pdf">
                             markdown转pdf
@@ -59,8 +59,8 @@
                             latex转pdf
                             <a-tag color="blue">pandoc</a-tag>
                         </a-select-option>
-                        <a-select-option value="equb2pdf">
-                            equb转pdf
+                        <a-select-option value="epub2pdf">
+                            epub转pdf
                             <a-tag color="blue">pandoc</a-tag>
                         </a-select-option>
                     </a-select-opt-group>
@@ -237,13 +237,13 @@ export default defineComponent({
                     ])
                     break;
                 }
-                case "equb2pdf-python": {
+                case "epub2pdf-python": {
                     await handleOps(PDFConversion, [
                         formState.input,
                         formState.output,
                         formState.dpi,
                         false,
-                        "equb",
+                        "epub",
                         "pdf",
                         formState.page,
                     ])

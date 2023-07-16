@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - dev
+env:
+  VERRSION: "1.0.5"
 jobs:
   deploy-macos:
     runs-on: macos-latest
@@ -51,7 +53,7 @@ jobs:
       - name: 上传Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: pdf-guru-darwin-amd64
+          name: pdf-guru-darwin-amd64-${{ env.VERRSION }}
           path: build/bin
 
   deploy-windows:
@@ -97,12 +99,21 @@ jobs:
           cd $ROOT
           choco install -y upx
           wails build -upx
+          iscc.exe build\windows\installer\setup.iss
 
-      - name: 上传Artifacts
+      - name: 上传Artifacts(zip)
         uses: actions/upload-artifact@v3
         with:
-          name: pdf-guru-windows-amd64
-          path: build/bin
+          name: pdf-guru-windows-amd64-${{ env.VERRSION }}
+          path: |
+            build/bin
+
+      - name: 上传Artifacts(installer)
+        uses: actions/upload-artifact@v3
+        with:
+          name: pdf-guru-setup-windows-amd64-${{ env.VERRSION }}
+          path: |
+            build/*.exe
 
   deploy-linux:
     runs-on: ubuntu-latest
@@ -151,5 +162,5 @@ jobs:
       - name: 上传Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: pdf-guru-linux-amd64
+          name: pdf-guru-linux-amd64-${{ env.VERRSION }}
           path: build/bin
