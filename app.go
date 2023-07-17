@@ -81,6 +81,20 @@ func (a *App) SelectDir() string {
 	return d
 }
 
+func (a *App) SaveFile() string {
+	d, err := wails_runtime.SaveFileDialog(a.ctx, wails_runtime.SaveDialogOptions{})
+	if err != nil {
+		logger.Errorln(err)
+		return ""
+	}
+	logger.Debugf("%v\n", d)
+	return d
+}
+
+func (a *App) OpenUrl(url string) {
+	wails_runtime.BrowserOpenURL(a.ctx, url)
+}
+
 func (a *App) SaveConfig(pdfPath string, pythonPath string, tesseractPath string, pandocPath string, hashcatPath string) error {
 	var config MyConfig
 	config.PdfPath = pdfPath
@@ -1430,7 +1444,7 @@ func (a *App) PDFConversion(
 		args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
 	}
 	if isMerge {
-		args = append(args, "--merge")
+		args = append(args, "--is_merge")
 	}
 	args = append(args, inFile)
 	logger.Println(args)

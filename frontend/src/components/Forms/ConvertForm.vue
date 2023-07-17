@@ -4,7 +4,7 @@
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="convert_type" label="转换类型">
-                <a-select v-model:value="formState.type" style="width: 300px" listHeight="150px">
+                <a-select v-model:value="formState.type" style="width: 300px">
                     <a-select-opt-group label="PDF转其他">
                         <a-select-option value="pdf2png">pdf转png</a-select-option>
                         <a-select-option value="pdf2svg">pdf转svg</a-select-option>
@@ -71,16 +71,20 @@
                     <a-input-number v-model:value="formState.dpi" style="width: 200px" min="1" max="1000" />
                 </a-form-item>
             </div>
+            <div v-if="formState.type === 'png2pdf' || formState.type === 'svg2pdf'">
+                <a-form-item name="is_merge" label="是否合并">
+                    <a-checkbox v-model:checked="formState.is_merge"></a-checkbox>
+                </a-form-item>
+            </div>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围" v-if="formState.type.startsWith('pdf')">
                 <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-3,9-10" allow-clear />
             </a-form-item>
-            <a-form-item name="input" label="输入"  :validateStatus="validateStatus.input"
-                :help="validateHelp.input">
+            <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
+                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -100,7 +104,7 @@
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
                                 <template #title>选择文件</template>
-                                <a-button @click="selectFile('output')"><ellipsis-outlined /></a-button>
+                                <a-button @click="saveFile('output')"><ellipsis-outlined /></a-button>
                             </a-tooltip>
                         </a-col>
                     </a-row>
@@ -118,6 +122,7 @@ import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
     SelectFile,
+    SaveFile,
     CheckFileExists,
     CheckRangeFormat,
     ConvertPDF2Docx,
@@ -233,7 +238,7 @@ export default defineComponent({
                         formState.input,
                         formState.output,
                         formState.dpi,
-                        false,
+                        formState.is_merge,
                         "png",
                         "pdf",
                         formState.page,
@@ -257,7 +262,7 @@ export default defineComponent({
                         formState.input,
                         formState.output,
                         formState.dpi,
-                        false,
+                        formState.is_merge,
                         "svg",
                         "pdf",
                         formState.page,
@@ -365,8 +370,20 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+        const saveFile = async (field: string) => {
+            await SaveFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
         return {
             selectFile,
+            saveFile,
             formState,
             rules,
             formRef,

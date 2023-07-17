@@ -86,6 +86,8 @@ export function OCRExtract(arg1:string,arg2:string,arg3:string,arg4:string):Prom
 
 export function OCRPDFBookmark(arg1:string,arg2:string,arg3:string,arg4:string,arg5:boolean):Promise<void>;
 
+export function OpenUrl(arg1:string):Promise<void>;
+
 export function PDFConversion(arg1:string,arg2:string,arg3:number,arg4:boolean,arg5:string,arg6:string,arg7:string,arg8:string):Promise<void>;
 
 export function RemovePDFHeaderAndFooter(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<string>,arg5:string,arg6:string):Promise<void>;
@@ -103,6 +105,8 @@ export function ReplacePDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:
 export function RotatePDF(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
 
 export function SaveConfig(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
+
+export function SaveFile():Promise<string>;
 
 export function ScalePDFByDim(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string,arg6:string):Promise<void>;
 

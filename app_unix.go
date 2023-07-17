@@ -80,6 +80,20 @@ func (a *App) SelectDir() string {
 	return d
 }
 
+func (a *App) SaveFile() string {
+	d, err := wails_runtime.SaveFileDialog(a.ctx, wails_runtime.SaveDialogOptions{})
+	if err != nil {
+		logger.Errorln(err)
+		return ""
+	}
+	logger.Debugf("%v\n", d)
+	return d
+}
+
+func (a *App) OpenUrl(url string) {
+	wails_runtime.BrowserOpenURL(a.ctx, url)
+}
+
 func (a *App) SaveConfig(pdfPath string, pythonPath string, tesseractPath string, pandocPath string, hashcatPath string) error {
 	var config MyConfig
 	config.PdfPath = pdfPath
@@ -191,6 +205,11 @@ func CheckCmdError(cmd *exec.Cmd) error {
 }
 
 func GetCmdStatusAndMessage(cmd *exec.Cmd) error {
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Fatalln(err)
+		}
+	}()
 	out, err := cmd.Output()
 	if err != nil {
 		err = errors.Wrap(err, "get cmd output error! \n args: "+strings.Join(cmd.Args, " ")+"\n stderr: "+string(err.(*exec.ExitError).Stderr))
@@ -852,7 +871,13 @@ func (a *App) OCR(inFile string, outFile string, pages string, lang string, doub
 		logger.Errorln(err)
 		return err
 	}
-	path := filepath.Join(tmpDir, "ocr.py")
+	// path := filepath.Join(tmpDir, "ocr.py")
+	path, err := os.Executable()
+	if err != nil {
+		logger.Errorln(err)
+		return err
+	}
+	path = filepath.Join(filepath.Dir(path), "ocr.py")
 	args := []string{path, "ocr"}
 	if lang != "" {
 		args = append(args, "--lang", lang)
@@ -877,7 +902,13 @@ func (a *App) OCRPDFBookmark(inFile string, outFile string, pages string, lang s
 		logger.Errorln(err)
 		return err
 	}
-	path := filepath.Join(tmpDir, "ocr.py")
+	// path := filepath.Join(tmpDir, "ocr.py")
+	path, err := os.Executable()
+	if err != nil {
+		logger.Errorln(err)
+		return err
+	}
+	path = filepath.Join(filepath.Dir(path), "ocr.py")
 	args := []string{path, "bookmark"}
 	if lang != "" {
 		args = append(args, "--lang", lang)
@@ -1409,7 +1440,7 @@ func (a *App) PDFConversion(
 		args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
 	}
 	if isMerge {
-		args = append(args, "--merge")
+		args = append(args, "--is_merge")
 	}
 	args = append(args, inFile)
 	logger.Println(args)

@@ -3,12 +3,11 @@
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="input" label="输入"  :validateStatus="validateStatus.input"
-                :help="validateHelp.input">
+            <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
+                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -127,6 +126,7 @@ import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
     SelectFile,
+    SaveFile,
     CheckFileExists,
     CheckRangeFormat
 } from '../../../wailsjs/go/main/App';
@@ -248,9 +248,21 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+        const saveFile = async (field: string) => {
+            await SaveFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
 
         return {
             selectFile,
+            saveFile,
             formState,
             rules,
             formRef,

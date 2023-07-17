@@ -27,7 +27,7 @@ var (
 	log    *logrus.Logger
 	logger *logrus.Entry
 	logdir string
-	tmpDir string
+	// tmpDir string
 )
 
 func main() {
@@ -98,10 +98,11 @@ func main() {
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title:    "PDF Guru",
-		Width:    1280,
-		Height:   880,
-		MinWidth: 400,
+		Title:     "PDF Guru",
+		Width:     1280,
+		Height:    880,
+		MinWidth:  1000,
+		MinHeight: 600,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

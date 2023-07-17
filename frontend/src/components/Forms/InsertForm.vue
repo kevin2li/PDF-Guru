@@ -206,7 +206,7 @@
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
                                 <template #title>选择文件</template>
-                                <a-button @click="selectFile('output')"><ellipsis-outlined /></a-button>
+                                <a-button @click="saveFile('output')"><ellipsis-outlined /></a-button>
                             </a-tooltip>
                         </a-col>
                     </a-row>
@@ -228,7 +228,8 @@ import {
     InsertPDF,
     InsertBlankPDF,
     ReplacePDF,
-    SelectFile
+    SelectFile,
+    SaveFile,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -413,7 +414,30 @@ export default defineComponent({
                 console.log({ err });
             });
         }
-        return { selectFile, formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
+        const saveFile = async (field: string) => {
+            await SaveFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        return {
+            selectFile,
+            saveFile,
+            formState,
+            rules,
+            formRef,
+            validateStatus,
+            validateHelp,
+            confirmLoading,
+            resetFields,
+            onFinish,
+            onFinishFailed
+        };
     }
 })
 </script>

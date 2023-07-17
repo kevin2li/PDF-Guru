@@ -42,7 +42,7 @@
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
                                 <template #title>选择文件</template>
-                                <a-button @click="selectFile('output')"><ellipsis-outlined /></a-button>
+                                <a-button @click="saveFile('output')"><ellipsis-outlined /></a-button>
                             </a-tooltip>
                         </a-col>
                     </a-row>
@@ -60,6 +60,7 @@ import { defineComponent, reactive, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
     SelectFile,
+    SaveFile,
     SelectMultipleFiles,
     CheckFileExists,
     CheckRangeFormat,
@@ -225,6 +226,17 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+        const saveFile = async (field: string) => {
+            await SaveFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
         const selectMultipleFiles = async () => {
             await SelectMultipleFiles().then((res: any) => {
                 console.log({ res });
@@ -234,6 +246,7 @@ export default defineComponent({
         }
         return {
             selectFile,
+            saveFile,
             selectMultipleFiles,
             formState,
             rules,

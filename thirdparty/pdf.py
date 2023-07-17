@@ -1,5 +1,6 @@
 import argparse
 import colorsys
+import functools
 import glob
 import json
 import math
@@ -215,24 +216,27 @@ def human_readable_size(size):
         size /= 1024.0
     return f"{size:.2f} PB"
 
-def batch_process(func):
-    def wrapper(*args, **kwargs):
-        logger.debug(args)
-        logger.debug(kwargs)
-        doc_path = kwargs['doc_path']
-        if "*" in doc_path:
-            path_list = glob.glob(doc_path)
-            logger.debug(f"path_list length: {len(path_list) if path_list else 0}")
-            if path_list:
-                for path in path_list:
-                    kwargs["doc_path"] = path
-                    func(*args, **kwargs)
-        else:
-            func(*args, **kwargs)
-    return wrapper
+def batch_process(field: str = "doc_path"):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            logger.debug(args)
+            logger.debug(kwargs)
+            doc_path = kwargs[field]
+            if "*" in doc_path:
+                path_list = glob.glob(doc_path)
+                logger.debug(f"path_list length: {len(path_list) if path_list else 0}")
+                if path_list:
+                    for path in path_list:
+                        kwargs[field] = path
+                        func(*args, **kwargs)
+            else:
+                func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 # 功能类函数
-@batch_process
+@batch_process()
 def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, is_reverse: bool = False):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -251,7 +255,7 @@ def slice_pdf(doc_path: str, page_range: str = "all", output_path: str = None, i
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -272,7 +276,7 @@ def split_pdf_by_chunk(doc_path: str, chunk_size: int, output_path: str = None):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -295,7 +299,7 @@ def split_pdf_by_page(doc_path: str, page_range: str = "all", output_path: str =
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -335,7 +339,7 @@ def split_pdf_by_toc(doc_path: str, level: int = 1, output_path: str = None):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -352,7 +356,7 @@ def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None)
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def insert_blank_pdf(doc_path: str, pos: int, pos_type: str, count: int, orientation: str, paper_size: str, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -533,7 +537,7 @@ def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direc
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -551,7 +555,7 @@ def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: 
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str = "pt", keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -578,7 +582,7 @@ def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str =
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], unit: str = "pt", keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -605,7 +609,7 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -630,7 +634,7 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "al
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoints: List[float], page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -665,7 +669,7 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4", orientation: str = "portrait", page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -699,7 +703,7 @@ def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4"
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -726,7 +730,7 @@ def extract_pdf_images(doc_path: str, page_range: str = "all", output_path: str 
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def extract_pdf_text(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -820,7 +824,7 @@ def title_preprocess(title: str, rules: List[dict] = None):
     except:
         return {'level': 1, "text": title}
 
-@batch_process
+@batch_process()
 def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: str = None):
     """从目录文件中导入书签到pdf文件(若文件中存在行没指定页码则按1算)
 
@@ -874,7 +878,7 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", start_number: int = 1, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -895,7 +899,7 @@ def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", start_
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -964,7 +968,7 @@ def transform_toc_file(toc_path: str, level_dict_list: List[dict] = None, add_of
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, perm: List[str] = [], output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -998,7 +1002,7 @@ def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, p
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1018,7 +1022,7 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def recover_permission_pdf(doc_path: str, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1035,7 +1039,7 @@ def recover_permission_pdf(doc_path: str, output_path: str = None):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def compress_pdf(doc_path: str, output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1048,7 +1052,7 @@ def compress_pdf(doc_path: str, output_path: str = None):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def resize_pdf_by_dim(doc_path: str, width: float, height: float, unit: str = "pt", page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1071,7 +1075,7 @@ def resize_pdf_by_dim(doc_path: str, width: float, height: float, unit: str = "p
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1093,7 +1097,7 @@ def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", ou
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1231,7 +1235,7 @@ def create_image_wartmark(
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
         return False
 
-@batch_process
+@batch_process()
 def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", layer: str = "bottom", output_path: str = None, **args):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1260,7 +1264,7 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all", layer: str = "bottom", output_path: str = None, **args):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1288,7 +1292,7 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all", layer: str = "bottom", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1309,7 +1313,7 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1346,7 +1350,7 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1377,7 +1381,7 @@ def detect_watermark_index_helper(doc_path: str, wm_page_number: int, outpath: s
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
     
-@batch_process
+@batch_process()
 def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1505,7 +1509,7 @@ def create_header_and_footer_mask(
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def insert_header_and_footer(
         doc_path   : str,
         content_list    : List[str],
@@ -1544,7 +1548,7 @@ def insert_header_and_footer(
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def insert_page_number(
         doc_path   : str,
         format     : str,
@@ -1641,7 +1645,7 @@ def insert_page_number(
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_list: List[str] = ['header', 'footer'], unit: str = "cm", page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
@@ -1680,7 +1684,7 @@ def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_li
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def remove_page_number(doc_path: str, margin_bbox: List[float], pos: str = "footer", unit: str = "cm", page_range: str = "all", output_path: str = None):
     try:
         remove_header_and_footer(doc_path=doc_path, margin_bbox=margin_bbox, remove_list=[pos], unit=unit, page_range=page_range, output_path=output_path)
@@ -1689,7 +1693,7 @@ def remove_page_number(doc_path: str, margin_bbox: List[float], pos: str = "foot
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def add_doc_background_by_color(
         doc_path   : str,
         color      : str = "#FFFFFF",
@@ -1736,7 +1740,7 @@ def add_doc_background_by_color(
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def add_doc_background_by_image(
         doc_path   : str,
         img_path   : str,
@@ -1785,7 +1789,7 @@ def add_doc_background_by_image(
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def mask_pdf_by_rectangle(
         doc_path   : str,
         bbox_list  : List[List[float]],
@@ -1836,7 +1840,7 @@ def mask_pdf_by_rectangle(
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def mask_pdf_by_rectangle_annot(
         doc_path   : str,
         annot_page : int = 0,
@@ -1964,24 +1968,23 @@ def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, ou
         else:
             if output_path is None:
                 p = Path(path_list[0])
-                output_dir = p.parent / f"{p.stem}(等)-pdf"
-                output_dir.mkdir(exist_ok=True, parents=True)
+                output_dir = p.parent
             else:
                 output_dir = Path(output_path)
                 output_dir.mkdir(exist_ok=True, parents=True)
             for path in path_list:
-                with open(path, 'r') as f:
-                    img = fitz.open(path)
-                    pdfbytes = img.convert_to_pdf()
-                    pdf = fitz.open('pdf', pdfbytes) 
-                    pdf.save(str(output_dir / f"{Path(path).stem}.pdf"), garbage=3, deflate=True)
+                img = fitz.open(path)
+                pdfbytes = img.convert_to_pdf()
+                pdf = fitz.open('pdf', pdfbytes) 
+                savepath = str(output_dir / f"{Path(path).stem}.pdf")
+                pdf.save(savepath, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def convert_png2pdf(input_path: Union[str, List[str]], is_merge: bool = True, output_path: str = None):
-    convert_svg2pdf(input_path, is_merge, output_path)
+    convert_svg2pdf(input_path=input_path, is_merge=is_merge, output_path=output_path)
 
 def convert_anydoc2pdf(input_path: str, output_path: str = None):
     """
@@ -1996,7 +1999,7 @@ def convert_anydoc2pdf(input_path: str, output_path: str = None):
         pdf.set_toc(toc)  # simply set it for output
         meta = doc.metadata  # read and set metadata
         if not meta["producer"]:
-            meta["producer"] = "PyMuPDF v" + fitz.VersionBind
+            meta["producer"] = "PyMuPDF" + fitz.VersionBind
 
         if not meta["creator"]:
             meta["creator"] = "PyMuPDF PDF converter"
@@ -2272,7 +2275,7 @@ def make_dual_layer_pdf(input_path: str, page_range: str = 'all', lang: str = 'c
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-@batch_process
+@batch_process()
 def make_dual_layer_pdf_from_image(doc_path: str, lang: str = 'chi_sim',  output_path: str = None):
     try:
         tesseract_path = None
@@ -2716,9 +2719,17 @@ def main():
                 convert_to_image_pdf(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
         elif args.target_type == "pdf":
             if args.source_type == "png":
-                convert_png2pdf(input_path=args.input_path, is_merge=args.is_merge,output_path=args.output)
+                if "*" in args.input_path:
+                    path_list = glob.glob(args.input_path)
+                else:
+                    path_list = [args.input_path]
+                convert_png2pdf(input_path=path_list, is_merge=args.is_merge, output_path=args.output)
             elif args.source_type == "svg":
-                convert_svg2pdf(input_path=args.input_path, is_merge=args.is_merge,output_path=args.output)
+                if "*" in args.input_path:
+                    path_list = glob.glob(args.input_path)
+                else:
+                    path_list = [args.input_path]
+                convert_svg2pdf(input_path=path_list, is_merge=args.is_merge, output_path=args.output)
             elif args.source_type == "mobi":
                 convert_anydoc2pdf(input_path=args.input_path, output_path=args.output)
             elif args.source_type == "epub":

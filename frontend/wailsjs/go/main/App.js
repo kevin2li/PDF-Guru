@@ -170,6 +170,10 @@ export function OCRPDFBookmark(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['OCRPDFBookmark'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function OpenUrl(arg1) {
+  return window['go']['main']['App']['OpenUrl'](arg1);
+}
+
 export function PDFConversion(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
   return window['go']['main']['App']['PDFConversion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
@@ -204,6 +208,10 @@ export function RotatePDF(arg1, arg2, arg3, arg4) {
 
 export function SaveConfig(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function SaveFile() {
+  return window['go']['main']['App']['SaveFile']();
 }
 
 export function ScalePDFByDim(arg1, arg2, arg3, arg4, arg5, arg6) {

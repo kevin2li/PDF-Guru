@@ -21,8 +21,8 @@
                     </a-row>
                 </div>
             </a-form-item>
-            <a-form-item name="tesseract_path" label="tesseract路径"
-                :validateStatus="validateStatus.tesseract_path" :help="validateHelp.tesseract_path">
+            <a-form-item name="tesseract_path" label="tesseract路径" :validateStatus="validateStatus.tesseract_path"
+                :help="validateHelp.tesseract_path">
                 <div>
                     <a-row>
                         <a-col :span="22">
@@ -81,26 +81,37 @@
             </a-form-item>
         </a-form>
         <div>
-            <a-space direction="vertical">
-                <div style="margin-top: 20px;">
-                    项目地址：<a href="https://github.com/kevin2li/PDF-Guru"
-                        target="_blank">https://github.com/kevin2li/PDF-Guru</a>
-                </div>
-                <div>
-                    作者：<a href="https://github.com/kevin2li" target="_blank">Kevin2li</a>
-                </div>
-                <div>
-                    B站：<a href="https://space.bilibili.com/369356107"
-                        target="_blank">https://space.bilibili.com/369356107</a>
-                </div>
-            </a-space>
+            <a-form :label-col="{ span: 2 }" :wrapper-col="{ offset: 0, span: 18 }" style="margin-top: 20px;">
+                <a-form-item label="Github地址">
+                    <a-button type="link" @click="OpenUrl('https://github.com/kevin2li/PDF-Guru')">
+                        <github-outlined />
+                        https://github.com/kevin2li/PDF-Guru
+                    </a-button>
+                </a-form-item>
+                <a-form-item label="作者" style="margin-top: -20px;">
+                    <a-button type="link" @click="OpenUrl('https://github.com/kevin2li')">
+                        <user-outlined />
+                        Kevin2li
+                    </a-button>
+                </a-form-item>
+                <a-form-item label="Gitee地址" style="margin-top: -20px;">
+                    <a-button type="link" @click="OpenUrl('https://gitee.com/Kevin234/PDF-Guru')">
+                        https://gitee.com/Kevin234/PDF-Guru
+                    </a-button>
+                </a-form-item>
+                <a-form-item label="B站" style="margin-top: -20px;">
+                    <a-button type="link" @click="OpenUrl('https://space.bilibili.com/369356107')">
+                        https://space.bilibili.com/369356107
+                    </a-button>
+                </a-form-item>
+            </a-form>
         </div>
         <a-divider></a-divider>
-        <a-space>
+        <!-- <a-space>
             <a-button @click="selectFile" type="primary">测试选择文件</a-button>
             <a-button @click="selectMultipleFiles" type="primary">测试选择多文件</a-button>
             <a-button @click="selectDir" type="primary">测试选择目录</a-button>
-        </a-space>
+        </a-space> -->
         <!-- <b>相关资源下载：</b>
         <div style="margin-top: 1vh;">
             <a-space direction="vertical">
@@ -119,16 +130,20 @@ import {
     SaveConfig,
     LoadConfig,
     SelectFile,
+    SaveFile,
     SelectDir,
-    SelectMultipleFiles
+    SelectMultipleFiles,
+    OpenUrl,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import { EllipsisOutlined } from '@ant-design/icons-vue';
+import { EllipsisOutlined, GithubOutlined, UserOutlined } from '@ant-design/icons-vue';
 import type { PreferencesState } from "../data";
 export default defineComponent({
     components: {
-        EllipsisOutlined
+        EllipsisOutlined,
+        GithubOutlined,
+        UserOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -265,6 +280,17 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+        const saveFile = async (field: string) => {
+            await SaveFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
         const selectMultipleFiles = async () => {
             await SelectMultipleFiles().then((res: any) => {
                 console.log({ res });
@@ -291,8 +317,10 @@ export default defineComponent({
             onFinish,
             onFinishFailed,
             selectFile,
+            saveFile,
             selectMultipleFiles,
-            selectDir
+            selectDir,
+            OpenUrl,
         };
     }
 })
