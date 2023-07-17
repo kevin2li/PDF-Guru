@@ -3,25 +3,77 @@
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="python_path" label="python路径" hasFeedback :validateStatus="validateStatus.python_path"
+            <a-form-item name="python_path" label="python路径" :validateStatus="validateStatus.python_path"
                 :help="validateHelp.python_path">
-                <a-input v-model:value="formState.python_path" placeholder="填写python路径" :disabled="!formState.allow_modify"
-                    allow-clear></a-input>
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.python_path" placeholder="填写python路径"
+                                :disabled="!formState.allow_modify" allow-clear></a-input>
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('python_path')"
+                                    v-if="formState.allow_modify"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
-            <a-form-item name="tesseract_path" label="tesseract路径" hasFeedback
+            <a-form-item name="tesseract_path" label="tesseract路径"
                 :validateStatus="validateStatus.tesseract_path" :help="validateHelp.tesseract_path">
-                <a-input v-model:value="formState.tesseract_path" placeholder="填写tesseract路径"
-                    :disabled="!formState.allow_modify" allow-clear></a-input>
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.tesseract_path" placeholder="填写tesseract路径"
+                                :disabled="!formState.allow_modify" allow-clear></a-input>
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('tesseract_path')"
+                                    v-if="formState.allow_modify"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
-            <a-form-item name="hashcat_path" label="hashcat路径" hasFeedback :validateStatus="validateStatus.hashcat_path"
+            <a-form-item name="hashcat_path" label="hashcat路径" :validateStatus="validateStatus.hashcat_path"
                 :help="validateHelp.hashcat_path">
-                <a-input v-model:value="formState.hashcat_path" placeholder="填写hashcat路径"
-                    :disabled="!formState.allow_modify" allow-clear></a-input>
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.hashcat_path" placeholder="填写hashcat路径"
+                                :disabled="!formState.allow_modify" allow-clear></a-input>
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('hashcat_path')"
+                                    v-if="formState.allow_modify"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
-            <a-form-item name="pandoc_path" label="pandoc路径" hasFeedback :validateStatus="validateStatus.pandoc_path"
+            <a-form-item name="pandoc_path" label="pandoc路径" :validateStatus="validateStatus.pandoc_path"
                 :help="validateHelp.pandoc_path">
-                <a-input v-model:value="formState.pandoc_path" placeholder="填写pandoc路径" :disabled="!formState.allow_modify"
-                    allow-clear></a-input>
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.pandoc_path" placeholder="填写pandoc路径"
+                                :disabled="!formState.allow_modify" allow-clear></a-input>
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('pandoc_path')"
+                                    v-if="formState.allow_modify"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" :loading="confirmLoading">{{ button_text }}
@@ -44,6 +96,11 @@
             </a-space>
         </div>
         <a-divider></a-divider>
+        <a-space>
+            <a-button @click="selectFile" type="primary">测试选择文件</a-button>
+            <a-button @click="selectMultipleFiles" type="primary">测试选择多文件</a-button>
+            <a-button @click="selectDir" type="primary">测试选择目录</a-button>
+        </a-space>
         <!-- <b>相关资源下载：</b>
         <div style="margin-top: 1vh;">
             <a-space direction="vertical">
@@ -57,12 +114,21 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref, onMounted } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, SaveConfig, LoadConfig } from '../../../wailsjs/go/main/App';
+import {
+    CheckFileExists,
+    SaveConfig,
+    LoadConfig,
+    SelectFile,
+    SelectDir,
+    SelectMultipleFiles
+} from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
+import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { PreferencesState } from "../data";
 export default defineComponent({
     components: {
+        EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -188,7 +254,46 @@ export default defineComponent({
         onMounted(async () => {
             await loadConfig();
         });
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, button_text, resetFields, onFinish, onFinishFailed };
+        const selectFile = async (field: string) => {
+            await SelectFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        const selectMultipleFiles = async () => {
+            await SelectMultipleFiles().then((res: any) => {
+                console.log({ res });
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        const selectDir = async () => {
+            await SelectDir().then((res: any) => {
+                console.log({ res });
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        return {
+            formState,
+            rules,
+            formRef,
+            validateStatus,
+            validateHelp,
+            confirmLoading,
+            button_text,
+            resetFields,
+            onFinish,
+            onFinishFailed,
+            selectFile,
+            selectMultipleFiles,
+            selectDir
+        };
     }
 })
 </script>

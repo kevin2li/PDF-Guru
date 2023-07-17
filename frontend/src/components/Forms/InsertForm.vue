@@ -87,9 +87,21 @@
                 <a-form-item label="插入页数">
                     <a-input-number v-model:value="formState.count" :min="1" />
                 </a-form-item>
-                <a-form-item name="src_path" label="输入" hasFeedback :validateStatus="validateStatus.src_path"
+                <a-form-item name="src_path" label="输入" :validateStatus="validateStatus.src_path"
                     :help="validateHelp.src_path">
-                    <a-input v-model:value="formState.src_path" placeholder="输入文件路径" allow-clear />
+                    <div>
+                        <a-row>
+                            <a-col :span="22">
+                                <a-input v-model:value="formState.src_path" placeholder="输入文件路径" allow-clear />
+                            </a-col>
+                            <a-col :span="1" style="margin-left: 1vw;">
+                                <a-tooltip>
+                                    <template #title>选择文件</template>
+                                    <a-button @click="selectFile('src_path')"><ellipsis-outlined /></a-button>
+                                </a-tooltip>
+                            </a-col>
+                        </a-row>
+                    </div>
                 </a-form-item>
             </div>
             <div v-if="formState.op === 'insert' && formState.insert_type === 'other'">
@@ -106,13 +118,37 @@
                 <a-form-item name="src_pos" label="页码" v-if="formState.src_pos_type.endsWith('custom')">
                     <a-input-number v-model:value="formState.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
                 </a-form-item>
-                <a-form-item label="源PDF路径" name="src_path" hasFeedback :validateStatus="validateStatus.src_path"
+                <a-form-item label="源PDF路径" name="src_path" :validateStatus="validateStatus.src_path"
                     :help="validateHelp.src_path">
-                    <a-input v-model:value="formState.src_path" placeholder="被插入的PDF路径" allow-clear></a-input>
+                    <div>
+                        <a-row>
+                            <a-col :span="22">
+                                <a-input v-model:value="formState.src_path" placeholder="被插入的PDF路径" allow-clear></a-input>
+                            </a-col>
+                            <a-col :span="1" style="margin-left: 1vw;">
+                                <a-tooltip>
+                                    <template #title>选择文件</template>
+                                    <a-button @click="selectFile('src_path')"><ellipsis-outlined /></a-button>
+                                </a-tooltip>
+                            </a-col>
+                        </a-row>
+                    </div>
                 </a-form-item>
                 <a-form-item label="目标PDF路径" name="dst_path" hasFeedback :validateStatus="validateStatus.dst_path"
                     :help="validateHelp.dst_path">
-                    <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
+                    <div>
+                        <a-row>
+                            <a-col :span="22">
+                                <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
+                            </a-col>
+                            <a-col :span="1" style="margin-left: 1vw;">
+                                <a-tooltip>
+                                    <template #title>选择文件</template>
+                                    <a-button @click="selectFile('dst_path')"><ellipsis-outlined /></a-button>
+                                </a-tooltip>
+                            </a-col>
+                        </a-row>
+                    </div>
                 </a-form-item>
                 <a-form-item name="dst_range" hasFeedback :validateStatus="validateStatus.dst_range"
                     :help="validateHelp.dst_range" label="页码范围">
@@ -120,17 +156,41 @@
                 </a-form-item>
             </div>
             <div v-if="formState.op == 'replace'">
-                <a-form-item label="源PDF路径" name="src_path" hasFeedback :validateStatus="validateStatus.src_path"
+                <a-form-item label="源PDF路径" name="src_path" :validateStatus="validateStatus.src_path"
                     :help="validateHelp.src_path">
-                    <a-input v-model:value="formState.src_path" placeholder="被插入的PDF路径" allow-clear></a-input>
+                    <div>
+                        <a-row>
+                            <a-col :span="22">
+                                <a-input v-model:value="formState.src_path" placeholder="被插入的PDF路径" allow-clear></a-input>
+                            </a-col>
+                            <a-col :span="1" style="margin-left: 1vw;">
+                                <a-tooltip>
+                                    <template #title>选择文件</template>
+                                    <a-button @click="selectFile('src_path')"><ellipsis-outlined /></a-button>
+                                </a-tooltip>
+                            </a-col>
+                        </a-row>
+                    </div>
                 </a-form-item>
                 <a-form-item name="src_range" hasFeedback :validateStatus="validateStatus.src_range"
                     :help="validateHelp.src_range" label="页码范围">
                     <a-input v-model:value="formState.src_range" placeholder="被替换的页码范围(留空表示全部), e.g. 1-10" />
                 </a-form-item>
-                <a-form-item label="目标PDF路径" name="dst_path" hasFeedback :validateStatus="validateStatus.dst_path"
+                <a-form-item label="目标PDF路径" name="dst_path" :validateStatus="validateStatus.dst_path"
                     :help="validateHelp.dst_path">
-                    <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
+                    <div>
+                        <a-row>
+                            <a-col :span="22">
+                                <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
+                            </a-col>
+                            <a-col :span="1" style="margin-left: 1vw;">
+                                <a-tooltip>
+                                    <template #title>选择文件</template>
+                                    <a-button @click="selectFile('dst_path')"><ellipsis-outlined /></a-button>
+                                </a-tooltip>
+                            </a-col>
+                        </a-row>
+                    </div>
                 </a-form-item>
                 <a-form-item name="dst_range" hasFeedback :validateStatus="validateStatus.dst_range"
                     :help="validateHelp.dst_range" label="页码范围">
@@ -138,7 +198,19 @@
                 </a-form-item>
             </div>
             <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('output')"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" :loading="confirmLoading">确认</a-button>
@@ -150,13 +222,22 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, InsertPDF, InsertBlankPDF, ReplacePDF } from '../../../wailsjs/go/main/App';
+import {
+    CheckFileExists,
+    CheckRangeFormat,
+    InsertPDF,
+    InsertBlankPDF,
+    ReplacePDF,
+    SelectFile
+} from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
+import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { InsertState } from "../data";
 import { handleOps } from "../data";
 export default defineComponent({
     components: {
+        EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -258,10 +339,10 @@ export default defineComponent({
             });
         };
         const rules: Record<string, Rule[]> = {
-            src_path: [{ required: true, validator: validateFileExists, trigger: 'change' }],
-            dst_path: [{ required: true, validator: validateFileExists, trigger: 'change' }],
-            src_range: [{ required: true, validator: validateRange, trigger: 'change' }],
-            dst_range: [{ validator: validateRange, trigger: 'change' }],
+            src_path: [{ required: true, validator: validateFileExists, trigger: ['change', 'blur'] }],
+            dst_path: [{ required: true, validator: validateFileExists, trigger: ['change', 'blur'] }],
+            src_range: [{ required: true, validator: validateRange, trigger: ['change', 'blur'] }],
+            dst_range: [{ validator: validateRange, trigger: ['change', 'blur'] }],
         };
         // 重置表单
         const resetFields = () => {
@@ -320,7 +401,19 @@ export default defineComponent({
                 await submit();
             }
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
+
+        const selectFile = async (field: string) => {
+            await SelectFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        return { selectFile, formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
     }
 })
 </script>

@@ -110,6 +110,12 @@ export function ScalePDFByPaperSize(arg1:string,arg2:string,arg3:string,arg4:str
 
 export function ScalePDFByScale(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
 
+export function SelectDir():Promise<string>;
+
+export function SelectFile():Promise<string>;
+
+export function SelectMultipleFiles():Promise<Array<string>>;
+
 export function SplitPDFByBookmark(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function SplitPDFByChunk(arg1:string,arg2:number,arg3:string):Promise<void>;

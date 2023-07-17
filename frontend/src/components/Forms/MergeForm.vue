@@ -34,7 +34,19 @@
             </a-form-item>
 
             <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('output')"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" :loading="confirmLoading">确认</a-button>
@@ -46,16 +58,23 @@
 <script lang="ts">
 import { defineComponent, reactive, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, MergePDF } from '../../../wailsjs/go/main/App';
+import {
+    SelectFile,
+    SelectMultipleFiles,
+    CheckFileExists,
+    CheckRangeFormat,
+    MergePDF
+} from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { MinusCircleOutlined, PlusOutlined, EllipsisOutlined } from '@ant-design/icons-vue';
 import type { MergeState } from "../data";
 import { handleOps } from "../data";
 export default defineComponent({
     components: {
         MinusCircleOutlined,
         PlusOutlined,
+        EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -141,12 +160,22 @@ export default defineComponent({
             page: [{ validator: validateRange, trigger: 'change' }],
         };
         // 合并PDF
-        const addPath = () => {
-            formState.input_path_list.push("");
-            // @ts-ignore
-            validateStatus.input_path_list.push("");
-            // @ts-ignore
-            validateHelp.input_path_list.push("");
+        const addPath = async () => {
+            await SelectMultipleFiles().then((res: any) => {
+                console.log({ res });
+                if (res) {
+                    formState.input_path_list.push(...res);
+                }
+                formRef.value?.validateFields("input_path_list");
+                for (let i = 0; i < res.length; i++) {
+                    // @ts-ignore
+                    validateStatus.input_path_list.push("");
+                    // @ts-ignore
+                    validateHelp.input_path_list.push("");
+                }
+            }).catch((err: any) => {
+                console.log({ err });
+            });
         }
         const removePath = (item: string) => {
             const index = formState.input_path_list.indexOf(item);
@@ -185,7 +214,40 @@ export default defineComponent({
                 await submit();
             }
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, validateFileExists, confirmLoading, addPath, removePath, resetFields, onFinish, onFinishFailed };
+        const selectFile = async (field: string) => {
+            await SelectFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        const selectMultipleFiles = async () => {
+            await SelectMultipleFiles().then((res: any) => {
+                console.log({ res });
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        return {
+            selectFile,
+            selectMultipleFiles,
+            formState,
+            rules,
+            formRef,
+            validateStatus,
+            validateHelp,
+            validateFileExists,
+            confirmLoading,
+            addPath,
+            removePath,
+            resetFields,
+            onFinish,
+            onFinishFailed
+        };
     }
 })
 </script>

@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -17,13 +18,24 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+// go:embed all:thirdparty/ocr.py
+// go:embed all:thirdparty/convert.py
+// go:embed all:thirdparty/dist/pdf.exe
+// var thirdpartyAsset embed.FS
+
 var (
 	log    *logrus.Logger
 	logger *logrus.Entry
 	logdir string
+	tmpDir string
 )
 
 func main() {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("Error:", err)
+		}
+	}()
 	// init logger
 	log = logrus.New()
 	if runtime.GOOS == "windows" {
@@ -57,14 +69,39 @@ func main() {
 	})
 	logger.Info("starting pdf-guru")
 
+	// init tmp directory
+	// tmpDir = filepath.Join(os.TempDir(), "pdf-guru")
+	// logger.Info("tmpDir: ", tmpDir)
+	// err = os.MkdirAll(tmpDir, 0755)
+	// if err != nil {
+	// 	err = errors.Wrap(err, "failed to create tmp directory")
+	// 	logger.Fatal(err)
+	// }
+
+	// filenames := []string{"ocr.py", "convert.py", "pdf.exe"}
+	// for _, filename := range filenames {
+	// 	content, err := thirdpartyAsset.ReadFile("thirdparty/" + filename)
+	// 	if err != nil {
+	// 		err = errors.Wrap(err, "failed to read "+filename)
+	// 		logger.Fatal(err)
+	// 	}
+	// 	err = os.WriteFile(filepath.Join(tmpDir, filename), content, 0755)
+	// 	if err != nil {
+	// 		err = errors.Wrap(err, "failed to write "+filename)
+	// 		logger.Fatal(err)
+	// 	}
+	// 	defer os.Remove(filepath.Join(tmpDir, filename))
+	// }
+
 	// Create an instance of the app structure
 	app := NewApp()
 
 	// Create application with options
 	err = wails.Run(&options.App{
-		Title:  "PDF Guru",
-		Width:  1280,
-		Height: 880,
+		Title:    "PDF Guru",
+		Width:    1280,
+		Height:   880,
+		MinWidth: 400,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -77,7 +114,7 @@ func main() {
 
 	if err != nil {
 		err = errors.Wrap(err, "run wails app failed")
-		println("Error:", err.Error())
+		fmt.Println("Error:", err.Error())
 	}
 
 	logger.Info("exiting pdf-guru")
