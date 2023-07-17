@@ -218,6 +218,18 @@ export function ScalePDFByScale(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['ScalePDFByScale'](arg1, arg2, arg3, arg4);
 }
 
+export function SelectDir() {
+  return window['go']['main']['App']['SelectDir']();
+}
+
+export function SelectFile() {
+  return window['go']['main']['App']['SelectFile']();
+}
+
+export function SelectMultipleFiles() {
+  return window['go']['main']['App']['SelectMultipleFiles']();
+}
+
 export function SplitPDFByBookmark(arg1, arg2, arg3) {
   return window['go']['main']['App']['SplitPDFByBookmark'](arg1, arg2, arg3);
 }

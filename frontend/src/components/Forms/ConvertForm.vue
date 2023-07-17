@@ -75,12 +75,36 @@
                 label="页码范围" v-if="formState.type.startsWith('pdf')">
                 <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-3,9-10" allow-clear />
             </a-form-item>
-            <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
+            <a-form-item name="input" label="输入"  :validateStatus="validateStatus.input"
                 :help="validateHelp.input">
-                <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('input')"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
             <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('output')"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" :loading="confirmLoading">确认</a-button>
@@ -93,6 +117,7 @@
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
+    SelectFile,
     CheckFileExists,
     CheckRangeFormat,
     ConvertPDF2Docx,
@@ -103,11 +128,13 @@ import {
     PDFConversion,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
+import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { ConvertState } from "../data";
 import { handleOps } from "../data";
 export default defineComponent({
     components: {
+        EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -327,7 +354,29 @@ export default defineComponent({
                 await submit();
             }
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
+        const selectFile = async (field: string) => {
+            await SelectFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        return {
+            selectFile,
+            formState,
+            rules,
+            formRef,
+            validateStatus,
+            validateHelp,
+            confirmLoading,
+            resetFields,
+            onFinish,
+            onFinishFailed
+        };
     }
 })
 </script>

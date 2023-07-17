@@ -346,7 +346,7 @@ def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None)
         writer: fitz.Document = fitz.open()
         for i in roi_indices:
             writer.insert_pdf(doc, from_page=i, to_page=i)
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -383,7 +383,7 @@ def insert_blank_pdf(doc_path: str, pos: int, pos_type: str, count: int, orienta
             writer.new_page(-1, width=fmt.width, height=fmt.height)
         if pos-1 < doc.page_count:
             writer.insert_pdf(doc, from_page=pos-1, to_page=-1)
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -421,7 +421,7 @@ def insert_pdf(doc_path1: str, doc_path2: str, insert_pos: int, pos_type: str, p
             writer.insert_pdf(doc2, from_page=i, to_page=i)
         if insert_pos-1 < n1:
             writer.insert_pdf(doc1, from_page=insert_pos-1, to_page=n1-1)
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path1==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -453,7 +453,7 @@ def replace_pdf(doc_path1: str, doc_path2: str, src_range: str = "all", dst_rang
             for i in dst_indices:
                 writer.insert_pdf(doc2, from_page=i, to_page=i)
             writer.insert_pdf(doc1, from_page=b, to_page=n1-1)
-            writer.save(output_path, garbage=3, deflate=True)
+            writer.save(output_path, garbage=3, deflate=True, incremental=doc_path1==output_path)
         elif len(parts) == 1:
             a = int(parts[0]) if parts[0] != "N" else n1
             if a-2 >= 0:
@@ -462,7 +462,7 @@ def replace_pdf(doc_path1: str, doc_path2: str, src_range: str = "all", dst_rang
                 writer.insert_pdf(doc2, from_page=i, to_page=i)
             if a < n1:
                 writer.insert_pdf(doc1, from_page=a, to_page=n1-1)
-            writer.save(output_path, garbage=3, deflate=True)
+            writer.save(output_path, garbage=3, deflate=True, incremental=doc_path1==output_path)
         else:
             logger.error("页码格式错误")
             dump_json(cmd_output_path, {"status": "error", "message": "页码格式错误!"})
@@ -545,7 +545,7 @@ def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: 
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-旋转.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -572,7 +572,7 @@ def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str =
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -599,7 +599,7 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -624,7 +624,7 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "al
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-网格分割.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -659,7 +659,7 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-自定义分割.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -693,7 +693,7 @@ def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4"
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-网格组合.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -868,7 +868,7 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
         doc.set_toc(toc)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加书签目录.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -889,7 +889,7 @@ def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", start_
         doc.set_toc(toc)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -991,6 +991,7 @@ def encrypt_pdf(doc_path: str, user_password: str, owner_password: str = None, p
             permissions=perm_value, # set permissions
             garbage=3,
             deflate=True,
+            incremental=doc_path==output_path
         )
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
@@ -1011,7 +1012,7 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
             return
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-解密.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1028,7 +1029,7 @@ def recover_permission_pdf(doc_path: str, output_path: str = None):
         doc.select(range(doc.page_count))
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-权限恢复.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1041,7 +1042,7 @@ def compress_pdf(doc_path: str, output_path: str = None):
         p = Path(doc_path)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-压缩.pdf")
-        doc.save(output_path, garbage=4, deflate=True, clean=True)
+        doc.save(output_path, garbage=4, deflate=True, incremental=doc_path==output_path, clean=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1064,7 +1065,7 @@ def resize_pdf_by_dim(doc_path: str, width: float, height: float, unit: str = "p
         p = Path(doc_path)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1086,7 +1087,7 @@ def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", ou
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1112,7 +1113,7 @@ def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1250,7 +1251,7 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
                 page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         wm_doc.close()
         doc.close()
         os.remove(tmp_wm_path)
@@ -1278,7 +1279,7 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
             page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         wm_doc.close()
         doc.close()
         os.remove(tmp_wm_path)
@@ -1300,7 +1301,7 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
         if output_path is None:
             p = Path(doc_path)
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         wm_doc.close()
         doc.close()
         dump_json(cmd_output_path, {"status": "success", "message": ""})
@@ -1401,7 +1402,7 @@ def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: st
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-        writer.save(output_path, garbage=3, deflate=True)
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1534,7 +1535,7 @@ def insert_header_and_footer(
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加页眉页脚.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         doc.close()
         hf_doc.close()
         os.remove(hf_output_path)
@@ -1631,7 +1632,7 @@ def insert_page_number(
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-加页码.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         hf_doc.close()
         doc.close()
         os.remove(hf_output_path)
@@ -1670,7 +1671,7 @@ def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_li
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-去页眉页脚.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         doc.close()
         mask_doc.close()
         os.remove(mask_doc_path)
@@ -1726,7 +1727,7 @@ def add_doc_background_by_color(
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加背景.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         doc.close()
         bg_doc.close()
         os.remove(bg_output_path)
@@ -1775,7 +1776,7 @@ def add_doc_background_by_image(
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加背景.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         doc.close()
         bg_doc.close()
         os.remove(bg_output_path)
@@ -1826,7 +1827,7 @@ def mask_pdf_by_rectangle(
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加遮罩.pdf")
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         doc.close()
         mask_doc.close()
         os.remove(mask_doc_path)
@@ -1857,7 +1858,7 @@ def mask_pdf_by_rectangle_annot(
         if rect_list:
             p = Path(doc_path)
             clean_doc_path = str(p.parent / "tmp_clean.pdf")
-            doc.save(clean_doc_path, garbage=3, deflate=True)
+            doc.save(clean_doc_path, garbage=3, deflate=True, incremental=doc_path==output_path)
             if output_path is None:
                 output_path = str(p.parent / f"{p.stem}-批注遮罩版.pdf")
             mask_pdf_by_rectangle(doc_path=clean_doc_path, bbox_list=rect_list, color=color, opacity=opacity, angle=angle, page_range=page_range, output_path=output_path)
@@ -2207,7 +2208,7 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
             output_path = str(p.parent / f"{p.stem}-生成目录版.pdf")
         
         doc.set_toc(toc)
-        doc.save(output_path, garbage=3, deflate=True)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         p = Path(doc_path)

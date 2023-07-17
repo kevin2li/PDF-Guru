@@ -57,12 +57,36 @@
             <a-form-item name="dict_path" label="字典库">
                 <a-input v-model:value="formState.dict_path" placeholder="输入字典库文件路径(留空则使用内置字典库)" allow-clear />
             </a-form-item>
-            <a-form-item name="input" label="输入" hasFeedback :validateStatus="validateStatus.input"
+            <a-form-item name="input" label="输入"  :validateStatus="validateStatus.input"
                 :help="validateHelp.input">
-                <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.input" placeholder="输入文件路径" allow-clear />
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('input')"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
             <a-form-item name="output" label="输出">
-                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                <div>
+                    <a-row>
+                        <a-col :span="22">
+                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                        </a-col>
+                        <a-col :span="1" style="margin-left: 1vw;">
+                            <a-tooltip>
+                                <template #title>选择文件</template>
+                                <a-button @click="selectFile('output')"><ellipsis-outlined /></a-button>
+                            </a-tooltip>
+                        </a-col>
+                    </a-row>
+                </div>
             </a-form-item>
             <a-form-item :wrapperCol="{ offset: 4 }" style="margin-bottom: 10px;">
                 <a-button type="primary" html-type="submit" :loading="confirmLoading">确认</a-button>
@@ -77,13 +101,15 @@
 <script lang="ts">
 import { defineComponent, reactive, watch, ref } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { CheckFileExists, CheckRangeFormat, RotatePDF } from '../../../wailsjs/go/main/App';
+import { CheckFileExists, CheckRangeFormat, SelectFile } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
+import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { CrackState } from "../data";
 import { handleOps } from "../data";
 export default defineComponent({
     components: {
+        EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -189,7 +215,29 @@ export default defineComponent({
                 await submit();
             }
         }
-        return { formState, rules, formRef, validateStatus, validateHelp, confirmLoading, resetFields, onFinish, onFinishFailed };
+        const selectFile = async (field: string) => {
+            await SelectFile().then((res: string) => {
+                console.log({ res });
+                if (res) {
+                    Object.assign(formState, { [field]: res });
+                }
+                formRef.value?.validateFields(field);
+            }).catch((err: any) => {
+                console.log({ err });
+            });
+        }
+        return {
+            selectFile,
+            formState,
+            rules,
+            formRef,
+            validateStatus,
+            validateHelp,
+            confirmLoading,
+            resetFields,
+            onFinish,
+            onFinishFailed
+        };
     }
 })
 </script>

@@ -18,6 +18,7 @@ import (
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"github.com/pkg/errors"
+	wails_runtime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -48,6 +49,36 @@ type MyConfig struct {
 type CmdOutput struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
+}
+
+func (a *App) SelectFile() string {
+	d, err := wails_runtime.OpenFileDialog(a.ctx, wails_runtime.OpenDialogOptions{})
+	if err != nil {
+		logger.Errorln(err)
+		return ""
+	}
+	logger.Debugf("%v\n", d)
+	return d
+}
+
+func (a *App) SelectMultipleFiles() []string {
+	d, err := wails_runtime.OpenMultipleFilesDialog(a.ctx, wails_runtime.OpenDialogOptions{})
+	if err != nil {
+		logger.Errorln(err)
+		return nil
+	}
+	logger.Debugf("%v\n", d)
+	return d
+}
+
+func (a *App) SelectDir() string {
+	d, err := wails_runtime.OpenDirectoryDialog(a.ctx, wails_runtime.OpenDialogOptions{})
+	if err != nil {
+		logger.Errorln(err)
+		return ""
+	}
+	logger.Debugf("%v\n", d)
+	return d
 }
 
 func (a *App) SaveConfig(pdfPath string, pythonPath string, tesseractPath string, pandocPath string, hashcatPath string) error {
@@ -161,6 +192,11 @@ func CheckCmdError(cmd *exec.Cmd) error {
 }
 
 func GetCmdStatusAndMessage(cmd *exec.Cmd) error {
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Fatalln(err)
+		}
+	}()
 	if runtime.GOOS == "windows" {
 		cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	}
@@ -825,10 +861,10 @@ func (a *App) OCR(inFile string, outFile string, pages string, lang string, doub
 		logger.Errorln(err)
 		return err
 	}
+	// path := filepath.Join(tmpDir, "ocr.py")
 	path, err := os.Executable()
 	if err != nil {
-		err = errors.Wrap(err, "")
-		logger.Errorln("Error:", err)
+		logger.Errorln(err)
 		return err
 	}
 	path = filepath.Join(filepath.Dir(path), "ocr.py")
@@ -856,10 +892,10 @@ func (a *App) OCRPDFBookmark(inFile string, outFile string, pages string, lang s
 		logger.Errorln(err)
 		return err
 	}
+	// path := filepath.Join(tmpDir, "ocr.py")
 	path, err := os.Executable()
 	if err != nil {
-		err = errors.Wrap(err, "")
-		logger.Errorln("Error:", err)
+		logger.Errorln(err)
 		return err
 	}
 	path = filepath.Join(filepath.Dir(path), "ocr.py")
