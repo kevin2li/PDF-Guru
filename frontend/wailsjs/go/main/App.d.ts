@@ -24,23 +24,7 @@ export function CombinePDFByGrid(arg1:string,arg2:string,arg3:number,arg4:number
 
 export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
-export function ConvertDocx2Md(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertHtml2Md(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertMd2Docx(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertMd2Html(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertMd2PDF(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertMd2RevealJs(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertMd2Tex(arg1:string,arg2:string):Promise<void>;
-
 export function ConvertPDF2Docx(arg1:string,arg2:string):Promise<void>;
-
-export function ConvertTex2Md(arg1:string,arg2:string):Promise<void>;
 
 export function CropPDFByBBOX(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
 
@@ -66,6 +50,8 @@ export function ExtractImageFromPDF(arg1:string,arg2:string,arg3:string):Promise
 
 export function ExtractTextFromPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function GetClipboard():Promise<string>;
+
 export function InsertBlankPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:string,arg7:number):Promise<void>;
 
 export function InsertPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:string):Promise<void>;
@@ -88,7 +74,9 @@ export function OCRPDFBookmark(arg1:string,arg2:string,arg3:string,arg4:string,a
 
 export function OpenUrl(arg1:string):Promise<void>;
 
-export function PDFConversion(arg1:string,arg2:string,arg3:number,arg4:boolean,arg5:string,arg6:string,arg7:string,arg8:string):Promise<void>;
+export function PDFConversion(arg1:Array<string>,arg2:string,arg3:number,arg4:boolean,arg5:string,arg6:string,arg7:string,arg8:string,arg9:string):Promise<void>;
+
+export function PandocConvert(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RemovePDFHeaderAndFooter(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<string>,arg5:string,arg6:string):Promise<void>;
 
@@ -119,6 +107,8 @@ export function SelectDir():Promise<string>;
 export function SelectFile():Promise<string>;
 
 export function SelectMultipleFiles():Promise<Array<string>>;
+
+export function SetClipboard(arg1:string):Promise<void>;
 
 export function SplitPDFByBookmark(arg1:string,arg2:string,arg3:string):Promise<void>;
 

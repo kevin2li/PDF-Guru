@@ -1876,28 +1876,40 @@ def mask_pdf_by_rectangle_annot(
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-
-def convert_to_image_pdf(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
+def convert_to_image_pdf(doc_path: Union[str, List[str]], dpi: int = 300, page_range: str = "all", output_path: str = None):
     try:
-        doc: fitz.Document = fitz.open(doc_path)
-        writer: fitz.Document = fitz.open()
-        roi_indices = parse_range(page_range, doc.page_count)
-        toc = doc.get_toc(simple=True)
-        logger.debug(toc)
-        for page_index in range(doc.page_count):
-            page = doc[page_index]
-            new_page = writer.new_page(width=page.rect.width, height=page.rect.height)
-            if page_index in roi_indices:
-                pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-                pix.set_dpi(dpi, dpi)
-                new_page.insert_image(new_page.rect, pixmap=pix)
+        path_list = []
+        if isinstance(doc_path, str):
+            if "*" in doc_path:
+                path_list = glob.glob(doc_path)
             else:
-                writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
-        if output_path is None:
-            p = Path(doc_path)
-            output_path = str(p.parent / f"{p.stem}-图片型.pdf")
-        writer.set_toc(toc)
-        writer.ez_save(output_path)
+                path_list = [doc_path]
+        elif isinstance(doc_path, list):
+            for p in doc_path:
+                if "*" in p:
+                    path_list.extend(glob.glob(p))
+                else:
+                    path_list.append(p)
+        for path in path_list:
+            doc: fitz.Document = fitz.open(path)
+            writer: fitz.Document = fitz.open()
+            roi_indices = parse_range(page_range, doc.page_count)
+            toc = doc.get_toc(simple=True)
+            logger.debug(toc)
+            for page_index in range(doc.page_count):
+                page = doc[page_index]
+                new_page = writer.new_page(width=page.rect.width, height=page.rect.height)
+                if page_index in roi_indices:
+                    pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+                    pix.set_dpi(dpi, dpi)
+                    new_page.insert_image(new_page.rect, pixmap=pix)
+                else:
+                    writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
+            if output_path is None:
+                p = Path(path)
+                output_path = str(p.parent / f"{p.stem}-图片型.pdf")
+            writer.set_toc(toc)
+            writer.ez_save(output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1905,55 +1917,123 @@ def convert_to_image_pdf(doc_path: str, dpi: int = 300, page_range: str = "all",
 
 def convert_pdf2png(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
     try:
-        doc: fitz.Document = fitz.open(doc_path)
-        roi_indices = parse_range(page_range, doc.page_count)
-        if output_path is None:
-            p = Path(doc_path)
-            output_dir = p.parent / f"{p.stem}-png"
-            output_dir.mkdir(exist_ok=True, parents=True)
-        else:
-            output_dir = Path(output_path)
-            output_dir.mkdir(exist_ok=True, parents=True)
-        for i in roi_indices:
-            page = doc[i]
-            pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
-            pix.set_dpi(dpi, dpi)
-            pix.save(str(output_dir / f"page-{i+1}.png"))
-        dump_json(cmd_output_path, {"status": "success", "message": ""})
+        path_list = []
+        if isinstance(doc_path, str):
+            if "*" in doc_path:
+                path_list = glob.glob(doc_path)
+            else:
+                path_list = [doc_path]
+        elif isinstance(doc_path, list):
+            for p in doc_path:
+                if "*" in p:
+                    path_list.extend(glob.glob(p))
+                else:
+                    path_list.append(p)
+        for path in path_list:
+            doc: fitz.Document = fitz.open(path)
+            roi_indices = parse_range(page_range, doc.page_count)
+            p = Path(path)
+            if output_path is None:
+                output_dir = p.parent / f"{p.stem}-png"
+                output_dir.mkdir(exist_ok=True, parents=True)
+            else:
+                output_dir = Path(output_path)
+                output_dir.mkdir(exist_ok=True, parents=True)
+            for i in roi_indices:
+                page = doc[i]
+                pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
+                pix.set_dpi(dpi, dpi)
+                pix.save(str(output_dir / f"{p.stem}-page-{i+1}.png"))
+            dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def convert_pdf2svg(doc_path: str, dpi: int = 300, page_range: str = "all", output_path: str = None):
     try:
-        doc: fitz.Document = fitz.open(doc_path)
-        roi_indices = parse_range(page_range, doc.page_count)
-        if output_path is None:
-            p = Path(doc_path)
-            output_dir = p.parent / f"{p.stem}-svg"
-            output_dir.mkdir(exist_ok=True, parents=True)
-        else:
-            output_dir = Path(output_path)
-            output_dir.mkdir(exist_ok=True, parents=True)
-        for i in roi_indices:
-            page = doc[i]
-            out = page.get_svg_image(matrix=fitz.Matrix(dpi/72, dpi/72))
-            with open(str(output_dir / f"page-{i+1}.svg"), "w") as f:
-                f.write(out)
-        dump_json(cmd_output_path, {"status": "success", "message": ""})
+        path_list = []
+        if isinstance(doc_path, str):
+            if "*" in doc_path:
+                path_list = glob.glob(doc_path)
+            else:
+                path_list = [doc_path]
+        elif isinstance(doc_path, list):
+            for p in doc_path:
+                if "*" in p:
+                    path_list.extend(glob.glob(p))
+                else:
+                    path_list.append(p)
+        for path in path_list:
+            doc: fitz.Document = fitz.open(path)
+            roi_indices = parse_range(page_range, doc.page_count)
+            p = Path(path)
+            if output_path is None:
+                output_dir = p.parent / f"{p.stem}-svg"
+                output_dir.mkdir(exist_ok=True, parents=True)
+            else:
+                output_dir = Path(output_path)
+                output_dir.mkdir(exist_ok=True, parents=True)
+            for i in roi_indices:
+                page = doc[i]
+                out = page.get_svg_image(matrix=fitz.Matrix(dpi/72, dpi/72))
+                with open(str(output_dir / f"{p.stem}-page-{i+1}.svg"), "w") as f:
+                    f.write(out)
+            dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, output_path: str = None):
+def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, sort_method: str = 'name', sort_direction: str = 'asc', output_path: str = None):
     try:
+        path_list = []
         if isinstance(input_path, str):
-            path_list = [input_path]
-        else:
-            path_list = input_path
+            if "*" in input_path:
+                path_list = glob.glob(input_path)
+            else:
+                path_list = [input_path]
+        elif isinstance(input_path, list):
+            for p in input_path:
+                if "*" in p:
+                    path_list.extend(glob.glob(p))
+                else:
+                    path_list.append(p)
+
         if is_merge:
+            if output_path is None:
+                p = Path(path_list[0])
+                output_path = str(p.parent / f"{p.stem}(等)-合并.pdf")
             writer: fitz.Document = fitz.open()
-            for path in path_list:
+            new_path_list = path_list
+            if sort_method == "custom":
+                if sort_direction == "asc":
+                    pass
+                else:
+                    new_path_list = new_path_list[::-1]
+            elif sort_method == "name":
+                if sort_direction == "asc":
+                    new_path_list.sort()
+                else:
+                    new_path_list.sort(reverse=True)
+            elif sort_method == "name_digit":
+                new_path_list = sorted(new_path_list, key=lambda x: int(re.search(r"\d+$", Path(x).stem).group()))
+                if sort_direction == "asc":
+                    pass
+                else:
+                    new_path_list = new_path_list[::-1]
+            # create time
+            elif sort_method == "ctime":
+                if sort_direction == "asc":
+                    new_path_list.sort(key=lambda x: Path(x).stat().st_ctime)
+                else:
+                    new_path_list.sort(key=lambda x: Path(x).stat().st_ctime, reverse=True)
+            # modify time
+            elif sort_method == "mtime":
+                if sort_direction == "asc":
+                    new_path_list.sort(key=lambda x: Path(x).stat().st_mtime)
+                else:
+                    new_path_list.sort(key=lambda x: Path(x).stat().st_mtime, reverse=True)
+
+            for path in new_path_list:
                 with open(path, 'r') as f:
                     img = fitz.open(path)
                     pdfbytes = img.convert_to_pdf()
@@ -1961,9 +2041,7 @@ def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, ou
                     rect = img[0].rect
                     page = writer.new_page(width=rect.width, height=rect.height)
                     page.show_pdf_page(rect, pdf, 0)
-            if output_path is None:
-                p = Path(path_list[0])
-                output_path = str(p.parent / f"{p.stem}(等)-合并.pdf")
+
             writer.save(output_path, garbage=3, deflate=True)
         else:
             if output_path is None:
@@ -1983,49 +2061,62 @@ def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, ou
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-def convert_png2pdf(input_path: Union[str, List[str]], is_merge: bool = True, output_path: str = None):
-    convert_svg2pdf(input_path=input_path, is_merge=is_merge, output_path=output_path)
+def convert_png2pdf(**kwargs):
+    convert_svg2pdf(**kwargs)
 
 def convert_anydoc2pdf(input_path: str, output_path: str = None):
     """
     supported document types: PDF, XPS, EPUB, MOBI, FB2, CBZ, SVG
     """
     try:
-        doc = fitz.open(input_path)
-        b = doc.convert_to_pdf()  # convert to pdf
-        pdf = fitz.open("pdf", b)  # open as pdf
+        path_list = []
+        if isinstance(input_path, str):
+            if "*" in input_path:
+                path_list = glob.glob(input_path)
+            else:
+                path_list = [input_path]
+        elif isinstance(input_path, list):
+            for p in input_path:
+                if "*" in p:
+                    path_list.extend(glob.glob(p))
+                else:
+                    path_list.append(p)
+        for path in path_list:
+            doc = fitz.open(path)
+            b = doc.convert_to_pdf()  # convert to pdf
+            pdf = fitz.open("pdf", b)  # open as pdf
 
-        toc= doc.get_toc()  # table of contents of input
-        pdf.set_toc(toc)  # simply set it for output
-        meta = doc.metadata  # read and set metadata
-        if not meta["producer"]:
-            meta["producer"] = "PyMuPDF" + fitz.VersionBind
+            toc= doc.get_toc()  # table of contents of input
+            pdf.set_toc(toc)  # simply set it for output
+            meta = doc.metadata  # read and set metadata
+            if not meta["producer"]:
+                meta["producer"] = "PyMuPDF" + fitz.VersionBind
 
-        if not meta["creator"]:
-            meta["creator"] = "PyMuPDF PDF converter"
-        meta["modDate"] = fitz.get_pdf_now()
-        meta["creationDate"] = meta["modDate"]
-        pdf.set_metadata(meta)
+            if not meta["creator"]:
+                meta["creator"] = "PyMuPDF PDF converter"
+            meta["modDate"] = fitz.get_pdf_now()
+            meta["creationDate"] = meta["modDate"]
+            pdf.set_metadata(meta)
 
-        # now process the links
-        link_cnti = 0
-        link_skip = 0
-        for pinput in doc:  # iterate through input pages
-            links = pinput.get_links()  # get list of links
-            link_cnti += len(links)  # count how many
-            pout = pdf[pinput.number]  # read corresp. output page
-            for l in links:  # iterate though the links
-                if l["kind"] == fitz.LINK_NAMED:  # we do not handle named links
-                    logger.info("named link page", pinput.number, l)
-                    link_skip += 1  # count them
-                    continue
-                pout.insert_link(l)  # simply output the others
+            # now process the links
+            link_cnti = 0
+            link_skip = 0
+            for pinput in doc:  # iterate through input pages
+                links = pinput.get_links()  # get list of links
+                link_cnti += len(links)  # count how many
+                pout = pdf[pinput.number]  # read corresp. output page
+                for l in links:  # iterate though the links
+                    if l["kind"] == fitz.LINK_NAMED:  # we do not handle named links
+                        logger.info("named link page", pinput.number, l)
+                        link_skip += 1  # count them
+                        continue
+                    pout.insert_link(l)  # simply output the others
 
-        # save the conversion result
-        if output_path is None:
-            p = Path(input_path)
-            output_path = str(p.parent / f"{p.stem}.pdf")
-        pdf.save(output_path, garbage=4, deflate=True)
+            # save the conversion result
+            if output_path is None:
+                p = Path(path)
+                output_path = str(p.parent / f"{p.stem}.pdf")
+            pdf.save(output_path, garbage=4, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -2547,12 +2638,14 @@ def main():
     # 转换子命令
     convert_parser = sub_parsers.add_parser("convert", help="转换", description="转换pdf文件")
     convert_parser.set_defaults(which='convert')
-    convert_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    convert_parser.add_argument("input_path", type=str, nargs="+", help="输入文件列表")
     convert_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
     convert_parser.add_argument("--source-type", type=str, default="pdf", help="源类型")
     convert_parser.add_argument("--target-type", type=str, default="png", help="目标类型")
     convert_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
     convert_parser.add_argument("--is_merge", action="store_true", help="是否合并")
+    convert_parser.add_argument("--sort-method", type=str, choices=['custom', 'name', 'name_digit', 'ctime', 'mtime'], default="default", help="排序方式")
+    convert_parser.add_argument("--sort-direction", type=str, choices=['asc', 'desc'], default="asc", help="排序方向")
     convert_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     # 遮罩子命令
@@ -2719,17 +2812,9 @@ def main():
                 convert_to_image_pdf(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
         elif args.target_type == "pdf":
             if args.source_type == "png":
-                if "*" in args.input_path:
-                    path_list = glob.glob(args.input_path)
-                else:
-                    path_list = [args.input_path]
-                convert_png2pdf(input_path=path_list, is_merge=args.is_merge, output_path=args.output)
+                convert_png2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, output_path=args.output)
             elif args.source_type == "svg":
-                if "*" in args.input_path:
-                    path_list = glob.glob(args.input_path)
-                else:
-                    path_list = [args.input_path]
-                convert_svg2pdf(input_path=path_list, is_merge=args.is_merge, output_path=args.output)
+                convert_svg2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, output_path=args.output)
             elif args.source_type == "mobi":
                 convert_anydoc2pdf(input_path=args.input_path, output_path=args.output)
             elif args.source_type == "epub":

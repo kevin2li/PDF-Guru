@@ -7,6 +7,8 @@
     <a href="./LICENSE"><img src="https://img.shields.io/badge/license-AGPL%203-dfd.svg"></a>
     <a href="https://github.com/kevin2li/PDF-Guru/releases"><img src="https://img.shields.io/github/v/release/kevin2li/PDF-Guru?color=ffa"></a>
     <a href=""><img src="https://img.shields.io/badge/python-3.10+-aff.svg"></a>
+    <a href=""><img src="https://img.shields.io/badge/go-1.20.5+-blue.svg"></a>
+    <a href=""><img src="https://img.shields.io/badge/node-16.18+-cyan.svg"></a>
     <a href=""><img src="https://img.shields.io/badge/os-win%2C%20mac%2C%20linux-pink.svg"></a>
 </p
 

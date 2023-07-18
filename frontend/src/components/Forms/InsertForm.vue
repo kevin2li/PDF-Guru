@@ -201,7 +201,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="formState.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
