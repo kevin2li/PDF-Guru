@@ -145,7 +145,7 @@
                             <a-row>
                                 <a-col :span="22">
                                     <a-input v-model:value="formState.input"
-                                        placeholder="含有使用矩形注释标注标题层级的输入文件路径, 支持使用*匹配多个文件" allow-clear />
+                                        placeholder="含有使用矩形注释标注标题层级的输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
                                 </a-col>
                                 <a-col :span="1" style="margin-left: 1vw;">
                                     <a-tooltip>
@@ -163,7 +163,8 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件" allow-clear />
+                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -325,6 +326,12 @@ export default defineComponent({
                 validateHelp[_rule.field] = err;
                 return Promise.reject("文件不存在");
             });
+            const legal_suffix = [".pdf"];
+            if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
+                validateStatus["input"] = 'error';
+                validateHelp["input"] = "仅支持pdf格式的文件";
+                return Promise.reject();
+            }
         };
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';

@@ -46,40 +46,8 @@ export function CompressPDF(arg1, arg2) {
   return window['go']['main']['App']['CompressPDF'](arg1, arg2);
 }
 
-export function ConvertDocx2Md(arg1, arg2) {
-  return window['go']['main']['App']['ConvertDocx2Md'](arg1, arg2);
-}
-
-export function ConvertHtml2Md(arg1, arg2) {
-  return window['go']['main']['App']['ConvertHtml2Md'](arg1, arg2);
-}
-
-export function ConvertMd2Docx(arg1, arg2) {
-  return window['go']['main']['App']['ConvertMd2Docx'](arg1, arg2);
-}
-
-export function ConvertMd2Html(arg1, arg2) {
-  return window['go']['main']['App']['ConvertMd2Html'](arg1, arg2);
-}
-
-export function ConvertMd2PDF(arg1, arg2) {
-  return window['go']['main']['App']['ConvertMd2PDF'](arg1, arg2);
-}
-
-export function ConvertMd2RevealJs(arg1, arg2) {
-  return window['go']['main']['App']['ConvertMd2RevealJs'](arg1, arg2);
-}
-
-export function ConvertMd2Tex(arg1, arg2) {
-  return window['go']['main']['App']['ConvertMd2Tex'](arg1, arg2);
-}
-
 export function ConvertPDF2Docx(arg1, arg2) {
   return window['go']['main']['App']['ConvertPDF2Docx'](arg1, arg2);
-}
-
-export function ConvertTex2Md(arg1, arg2) {
-  return window['go']['main']['App']['ConvertTex2Md'](arg1, arg2);
 }
 
 export function CropPDFByBBOX(arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -130,6 +98,10 @@ export function ExtractTextFromPDF(arg1, arg2, arg3) {
   return window['go']['main']['App']['ExtractTextFromPDF'](arg1, arg2, arg3);
 }
 
+export function GetClipboard() {
+  return window['go']['main']['App']['GetClipboard']();
+}
+
 export function InsertBlankPDF(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['InsertBlankPDF'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -174,8 +146,12 @@ export function OpenUrl(arg1) {
   return window['go']['main']['App']['OpenUrl'](arg1);
 }
 
-export function PDFConversion(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
-  return window['go']['main']['App']['PDFConversion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+export function PDFConversion(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
+  return window['go']['main']['App']['PDFConversion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+}
+
+export function PandocConvert(arg1, arg2, arg3) {
+  return window['go']['main']['App']['PandocConvert'](arg1, arg2, arg3);
 }
 
 export function RemovePDFHeaderAndFooter(arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -236,6 +212,10 @@ export function SelectFile() {
 
 export function SelectMultipleFiles() {
   return window['go']['main']['App']['SelectMultipleFiles']();
+}
+
+export function SetClipboard(arg1) {
+  return window['go']['main']['App']['SetClipboard'](arg1);
 }
 
 export function SplitPDFByBookmark(arg1, arg2, arg3) {

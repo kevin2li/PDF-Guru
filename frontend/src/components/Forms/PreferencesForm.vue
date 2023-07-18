@@ -107,7 +107,9 @@
             </a-form>
         </div>
         <a-divider></a-divider>
-        <!-- <a-space>
+        <div>
+        </div>
+        <!-- <a-space>  
             <a-button @click="selectFile" type="primary">测试选择文件</a-button>
             <a-button @click="selectMultipleFiles" type="primary">测试选择多文件</a-button>
             <a-button @click="selectDir" type="primary">测试选择目录</a-button>
@@ -134,6 +136,7 @@ import {
     SelectDir,
     SelectMultipleFiles,
     OpenUrl,
+    GetClipboard,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -265,9 +268,29 @@ export default defineComponent({
                 await submit();
             }
         }
+        const handleMouseButtonDown = async (e: any) => {
+            console.log({ e });
+            if (e.button === 2) {
+                // 右键
+                console.log("中键");
+                await GetClipboard().then((res: any) => {
+                    console.log({ res });
+                    // if (res) {
+                    //     Object.assign(formState, { [e.target.name]: res });
+                    // }
+                    // formRef.value?.validateFields(e.target.name);
+                }).catch((err: any) => {
+                    console.log({ err });
+                });
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }
 
         onMounted(async () => {
             await loadConfig();
+            window.addEventListener("mousedown", handleMouseButtonDown);
         });
         const selectFile = async (field: string) => {
             await SelectFile().then((res: string) => {

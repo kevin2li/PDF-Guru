@@ -121,6 +121,9 @@ interface ConvertState {
     type: string;
     dpi: number;
     is_merge: boolean;
+    sort_method: string;
+    sort_direction: string;
+    input_list: string[];
 }
 interface CompressState {
     input: string;
