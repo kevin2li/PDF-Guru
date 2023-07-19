@@ -16,6 +16,15 @@ export const useCrackState = defineStore("CrackState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+                hash_type: '',
+                charset: '',
+                attack_mode: '3',
+                crack_type: 'PDF',
+                dict_path: '',
+            })
         },
     }
 })

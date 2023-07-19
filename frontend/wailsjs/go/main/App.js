@@ -18,6 +18,10 @@ export function AddPDFPageNumber(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8,
   return window['go']['main']['App']['AddPDFPageNumber'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
 }
 
+export function ChangePasswordPDF(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['ChangePasswordPDF'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
 export function CheckFileExists(arg1) {
   return window['go']['main']['App']['CheckFileExists'](arg1);
 }
@@ -216,6 +220,10 @@ export function SelectMultipleFiles() {
 
 export function SetClipboard(arg1) {
   return window['go']['main']['App']['SetClipboard'](arg1);
+}
+
+export function SignImage(arg1, arg2) {
+  return window['go']['main']['App']['SignImage'](arg1, arg2);
 }
 
 export function SplitPDFByBookmark(arg1, arg2, arg3) {

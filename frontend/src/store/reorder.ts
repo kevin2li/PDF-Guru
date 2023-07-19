@@ -12,6 +12,11 @@ export const useReorderState = defineStore("ReorderState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+                page: "",
+            })
         },
     }
 })

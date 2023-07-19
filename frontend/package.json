@@ -10,8 +10,12 @@
   },
   "dependencies": {
     "ant-design-vue": "^3.2.20",
+    "lightvue": "^1.5.1",
     "pinia": "^2.1.4",
-    "vue": "^3.2.37"
+    "tinycolor2": "^1.6.0",
+    "v-perfect-signature": "^1.2.1",
+    "vue": "^3.2.37",
+    "vue3-colorpicker": "^2.1.6"
   },
   "devDependencies": {
     "@babel/types": "^7.18.10",

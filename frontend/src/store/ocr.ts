@@ -15,6 +15,14 @@ export const useOcrState = defineStore("OcrState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+                page: "",
+                lang: "ch",
+                double_column: false,
+                engine: "paddleocr",
+            })
         },
     }
 })

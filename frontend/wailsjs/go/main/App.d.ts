@@ -10,6 +10,8 @@ export function AddPDFHeaderAndFooter(arg1:string,arg2:string,arg3:string,arg4:s
 
 export function AddPDFPageNumber(arg1:string,arg2:string,arg3:string,arg4:number,arg5:string,arg6:Array<number>,arg7:string,arg8:string,arg9:string,arg10:number,arg11:string,arg12:number,arg13:string):Promise<void>;
 
+export function ChangePasswordPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string):Promise<void>;
+
 export function CheckFileExists(arg1:string):Promise<void>;
 
 export function CheckOS():Promise<string>;
@@ -109,6 +111,8 @@ export function SelectFile():Promise<string>;
 export function SelectMultipleFiles():Promise<Array<string>>;
 
 export function SetClipboard(arg1:string):Promise<void>;
+
+export function SignImage(arg1:string,arg2:string):Promise<void>;
 
 export function SplitPDFByBookmark(arg1:string,arg2:string,arg3:string):Promise<void>;
 

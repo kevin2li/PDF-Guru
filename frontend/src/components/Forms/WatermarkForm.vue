@@ -22,29 +22,41 @@
                         <a-textarea v-model:value="store.text" placeholder="e.g. 内部资料" allow-clear />
                     </a-form-item>
                     <a-form-item name="watermark_font_size" label="字体属性" hasFeedback>
-                        <a-space size="large">
-                            <a-select v-model:value="store.font_family" style="width: 200px" :options="font_options">
-                            </a-select>
-                            <a-tooltip>
-                                <template #title>字号</template>
-                                <a-input-number v-model:value="store.font_size" :min="1">
-                                    <template #prefix>
-                                        <font-size-outlined />
-                                    </template>
-                                </a-input-number>
-                            </a-tooltip>
-                            <a-tooltip>
-                                <template #title>字体颜色</template>
-                                <a-input v-model:value="store.font_color" placeholder="16进制字体颜色"
-                                    :defaultValue="store.font_color" allow-clear>
-                                    <template #prefix>
-                                        <font-colors-outlined />
-                                    </template>
-                                </a-input>
-                            </a-tooltip>
-                            <a
-                                :style="{ background: store.font_color, border: '1px solid black', marginLeft: '-15px' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
-                        </a-space>
+                        <div>
+                            <a-row :gutter="10">
+                                <a-col>
+                                    <a-select v-model:value="store.font_family" style="width: 200px"
+                                        :options="font_options">
+                                    </a-select>
+                                </a-col>
+                                <a-col>
+                                    <a-tooltip>
+                                        <template #title>字号</template>
+                                        <a-input-number v-model:value="store.font_size" :min="1">
+                                            <template #prefix>
+                                                <font-size-outlined />
+                                            </template>
+                                        </a-input-number>
+                                    </a-tooltip>
+                                </a-col>
+                                <a-col>
+                                    <a-space>
+                                        <a-tooltip>
+                                            <template #title>字体颜色</template>
+                                            <a-input v-model:value="store.font_color" placeholder="16进制字体颜色"
+                                                :defaultValue="store.font_color" allow-clear>
+                                                <template #prefix>
+                                                    <font-colors-outlined />
+                                                </template>
+                                            </a-input>
+                                        </a-tooltip>
+                                        <color-picker v-model:pureColor="pureColor" v-model:gradientColor="gradientColor"
+                                            shape="square" use-type="pure" format="hex6"
+                                            @pureColorChange="handleColorChange" />
+                                    </a-space>
+                                </a-col>
+                            </a-row>
+                        </div>
                     </a-form-item>
                     <a-form-item name="watermark_font_opacity" label="水印属性">
                         <a-space size="large">
@@ -76,8 +88,20 @@
                     </a-form-item>
                 </div>
                 <div v-if="store.type === 'image'">
-                    <a-form-item name="wm_path" hasFeedback label="水印图片路径">
-                        <a-input v-model:value="store.wm_path" placeholder="水印图片路径" allow-clear />
+                    <a-form-item name="wm_path" label="水印图片路径">
+                        <div>
+                            <a-row>
+                                <a-col :span="22">
+                                    <a-input v-model:value="store.wm_path" placeholder="水印图片路径" allow-clear />
+                                </a-col>
+                                <a-col :span="1" style="margin-left: 1vw;">
+                                    <a-tooltip>
+                                        <template #title>选择文件</template>
+                                        <a-button @click="selectFile('wm_path')"><ellipsis-outlined /></a-button>
+                                    </a-tooltip>
+                                </a-col>
+                            </a-row>
+                        </div>
                     </a-form-item>
                     <a-form-item name="watermark_font_opacity" label="水印属性">
                         <a-space size="large">
@@ -141,8 +165,20 @@
                     </a-form-item>
                 </div>
                 <div v-if="store.type === 'pdf'">
-                    <a-form-item name="wm_path" hasFeedback label="水印PDF路径">
-                        <a-input v-model:value="store.wm_path" placeholder="水印PDF路径" allow-clear />
+                    <a-form-item name="wm_path" label="水印PDF路径">
+                        <div>
+                            <a-row>
+                                <a-col :span="22">
+                                    <a-input v-model:value="store.wm_path" placeholder="水印PDF路径" allow-clear />
+                                </a-col>
+                                <a-col :span="1" style="margin-left: 1vw;">
+                                    <a-tooltip>
+                                        <template #title>选择文件</template>
+                                        <a-button @click="selectFile('wm_path')"><ellipsis-outlined /></a-button>
+                                    </a-tooltip>
+                                </a-col>
+                            </a-row>
+                        </div>
                     </a-form-item>
                 </div>
                 <a-form-item label="层级">
@@ -237,8 +273,8 @@
                         </a-form-item>
                     </div>
                     <a-form-item label="遮罩属性">
-                        <a-row>
-                            <a-col :span="6">
+                        <a-row :gutter="10">
+                            <a-col>
                                 <a-space>
                                     <a-input v-model:value="store.mask_color" placeholder="16进制字体颜色"
                                         :defaultValue="store.mask_color" allow-clear>
@@ -246,19 +282,22 @@
                                             颜色
                                         </template>
                                     </a-input>
-                                    <a
-                                        :style="{ background: store.mask_color, border: '1px solid black' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
+                                    <color-picker v-model:pureColor="maskPureColor" v-model:gradientColor="gradientColor"
+                                        shape="square" use-type="pure" format="hex6"
+                                        @pureColorChange="handleMaskColorChange" />
                                 </a-space>
                             </a-col>
-                            <a-col :span="6" style="margin-left: 1.5vw;">
+                            <a-col style="margin-left: 1.5vw;">
                                 <a-input-number v-model:value="store.mask_opacity" :min="0" :max="1" :step="0.01">
                                     <template #addonBefore>
                                         不透明度
                                     </template>
                                 </a-input-number>
                             </a-col>
-                            <a-col :span="6">
-                                <a-slider v-model:value="store.mask_opacity" :min="0" :max="1" :step="0.01" />
+                            <a-col>
+                                <div style="width: 100px;">
+                                    <a-slider v-model:value="store.mask_opacity" :min="0" :max="1" :step="0.01" />
+                                </div>
                             </a-col>
                         </a-row>
                     </a-form-item>
@@ -307,7 +346,7 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, onMounted, ref } from 'vue';
+import { defineComponent, reactive, onMounted, ref, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
     SelectFile,
@@ -330,23 +369,20 @@ import { FontSizeOutlined, FontColorsOutlined, EllipsisOutlined } from '@ant-des
 import type { SelectProps } from 'ant-design-vue';
 import { handleOps, windows_fonts_options, mac_fonts_options } from "../data";
 import { useWatermarkState } from '../../store/watermark';
-
+import { ColorPicker } from "vue3-colorpicker";
+import "vue3-colorpicker/style.css";
+// @ts-ignore
+import { ColorInputWithoutInstance } from "tinycolor2";
 export default defineComponent({
     components: {
         FontSizeOutlined,
         FontColorsOutlined,
-        EllipsisOutlined
+        EllipsisOutlined,
+        ColorPicker,
     },
     setup() {
         const formRef = ref<FormInstance>();
         const store = useWatermarkState();
-        const color_picker_state = reactive({
-            showcolorpicker: false,
-            color: "#59c7f9",
-            suckerCanvas: null,
-            suckerArea: [],
-            isSucking: false,
-        });
 
         const validateStatus = reactive({
             input: "",
@@ -457,7 +493,8 @@ export default defineComponent({
         };
         // 重置表单
         const resetFields = () => {
-            formRef.value?.resetFields();
+            formRef.value?.clearValidate();
+            store.resetState();
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
@@ -595,11 +632,26 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+
+        const pureColor = ref<ColorInputWithoutInstance>(store.font_color);
+        const gradientColor = ref("linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 100%)");
+        const maskPureColor = ref<ColorInputWithoutInstance>(store.mask_color);
+        const handleColorChange = (color: ColorInputWithoutInstance) => {
+            console.log({ color });
+            store.font_color = color;
+        }
+        const handleMaskColorChange = (color: ColorInputWithoutInstance) => {
+            console.log({ color });
+            store.mask_color = color;
+        }
+        watch(() => store.font_color, (newVal, oldVal) => {
+            console.log({ newVal, oldVal });
+            pureColor.value = newVal;
+        });
         return {
             selectFile,
             saveFile,
             store,
-            color_picker_state,
             rules,
             formRef,
             validateStatus,
@@ -609,6 +661,11 @@ export default defineComponent({
             onFinish,
             onFinishFailed,
             font_options,
+            pureColor,
+            gradientColor,
+            maskPureColor,
+            handleColorChange,
+            handleMaskColorChange
         };
     }
 })

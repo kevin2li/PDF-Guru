@@ -5,6 +5,7 @@ import glob
 import json
 import math
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -13,12 +14,12 @@ from pathlib import Path
 from typing import List, Tuple, Union
 
 import fitz
+import numpy as np
 from loguru import logger
 from PIL import Image
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
-import platform
 
 if platform.system() == "Windows":
     logdir = Path(os.environ['USERPROFILE']) / ".pdf_guru"
@@ -1017,6 +1018,36 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-解密.pdf")
         doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+def change_password_pdf(doc_path: str, upw: str = None, new_upw: str = None, opw: str = None, new_opw: str = None, output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        p = Path(doc_path)
+        if output_path is None:
+            output_path = str(p.parent / f"{p.stem}-修改密码.pdf")
+        if upw is not None and new_upw is not None and opw is not None and new_opw is not None:
+            if doc.isEncrypted:
+                doc.authenticate(opw)
+                perms = doc.permissions
+                doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, owner_pw=new_opw, user_pw=new_upw, permissions=perms, garbage=3, deflate=True, incremental=doc_path==output_path)
+            else:
+                dump_json(cmd_output_path, {"status": "error", "message": "文件没有加密!"})
+                return
+        elif upw is not None and new_upw is not None:
+            if doc.isEncrypted:
+                doc.authenticate(upw)
+                perms = doc.permissions
+                doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, user_pw=new_upw, permissions=perms, garbage=3, deflate=True, incremental=doc_path==output_path)
+            else:
+                dump_json(cmd_output_path, {"status": "error", "message": "文件没有加密!"})
+                return
+        elif opw is not None and new_opw is not None:
+            perms = doc.permissions
+            doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, owner_pw=new_opw, permissions=perms, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -2403,6 +2434,37 @@ def extract_encrypt_pdf_hash(doc_path: str):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
+
+def sign_img(img_path: str, offset: int = 5, output_path: str = None):
+    try:
+        img = Image.open(img_path)
+        img = img.convert("RGBA")
+        w, h = img.size
+        img_array = np.array(img)
+        points = []
+        threshold = 100
+        for j in range(w):
+            for i in range(h):
+                if img_array[i][j][0]>threshold and img_array[i][j][1]>threshold and img_array[i][j][2]>threshold:
+                    img_array[i][j][3] = 0
+                else:
+                    img_array[i][j][0],img_array[i][j][1],img_array[i][j][2] = 0,0,0
+                    points.append((i,j))
+        points = np.array(points).reshape((-1, 2))
+        min_value = np.min(points,axis=0)
+        x1,y1 = min_value[0]-offset,min_value[1]-offset
+        max_value = np.max(points,axis=0)
+        x2,y2 = max_value[0]+offset,max_value[1]+offset
+        sign_area = img_array[x1:x2,y1:y2]
+        sign_img = Image.fromarray(sign_area)
+        if output_path is None:
+            output_path = Path(img_path).parent / f"{Path(img_path).stem}-签名.png"
+        sign_img.save(output_path)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
@@ -2462,6 +2524,13 @@ def main():
     rotate_parser.add_argument("--angle", type=int, default=90, help="旋转角度")
     rotate_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
+    # 重排子命令
+    reorder_parser = sub_parsers.add_parser("reorder", help="重排", description="重排pdf文件")
+    reorder_parser.set_defaults(which='reorder')
+    reorder_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    reorder_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    reorder_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
     # 加密子命令
     encrypt_parser = sub_parsers.add_parser("encrypt", help="加密", description="加密pdf文件")
     encrypt_parser.add_argument("input_path", type=str, help="pdf文件路径")
@@ -2471,13 +2540,6 @@ def main():
     encrypt_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     encrypt_parser.set_defaults(which='encrypt')
     
-    # 重排子命令
-    reorder_parser = sub_parsers.add_parser("reorder", help="重排", description="重排pdf文件")
-    reorder_parser.set_defaults(which='reorder')
-    reorder_parser.add_argument("input_path", type=str, help="pdf文件路径")
-    reorder_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
-    reorder_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
-
     # 解密子命令
     decrypt_parser = sub_parsers.add_parser("decrypt", help="解密", description="解密pdf文件")
     decrypt_parser.add_argument("input_path", type=str, help="pdf文件路径")
@@ -2485,6 +2547,16 @@ def main():
     decrypt_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
     decrypt_parser.set_defaults(which='decrypt')
     
+    # 修改密码子命令
+    change_password_parser = sub_parsers.add_parser("change_password", help="修改密码", description="修改pdf文件密码")
+    change_password_parser.set_defaults(which="change_password")
+    change_password_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    change_password_parser.add_argument("--old_user_password", type=str, help="旧用户密码")
+    change_password_parser.add_argument("--user_password", type=str, help="新用户密码")
+    change_password_parser.add_argument("--old_owner_password", type=str, help="旧所有者密码")
+    change_password_parser.add_argument("--owner_password", type=str, help="新所有者密码")
+    change_password_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
     # 书签子命令
     bookmark_parser = sub_parsers.add_parser("bookmark", help="书签", description="添加、提取、转换书签")
     bookmark_sub_parsers = bookmark_parser.add_subparsers()
@@ -2725,6 +2797,14 @@ def main():
     dual_parser.add_argument("--lang", type=str, default="ch", help="识别语言") # ['chi_sim', 'eng']
     dual_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
+
+    # 签名子命令
+    sign_parser = sub_parsers.add_parser("sign", help="签名", description="生成电子签名")
+    sign_parser.set_defaults(which="sign")
+    sign_parser.add_argument("input_path", type=str, help="输入图片路径")
+    sign_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
+    # 参数解析
     args = parser.parse_args()
     logger.debug(args)
     if args.which == "merge":
@@ -2756,6 +2836,8 @@ def main():
             decrypt_pdf(doc_path=args.input_path, password=args.password, output_path=args.output)
         else:
             recover_permission_pdf(doc_path=args.input_path, output_path=args.output)
+    elif args.which == "change_password":
+        change_password_pdf(doc_path=args.input_path, upw=args.old_user_password, new_upw=args.user_password, opw=args.old_owner_password, new_opw=args.owner_password, output_path=args.output)
     elif args.which == "compress":
         compress_pdf(doc_path=args.input_path, output_path=args.output)
     elif args.which == "resize":
@@ -2863,6 +2945,8 @@ def main():
             make_dual_layer_pdf_from_image(doc_path=args.input_path, lang=args.lang, output_path=args.output)
         else:
             raise ValueError("不支持的文件类型!")
+    elif args.which == "sign":
+        sign_img(img_path=args.input_path, output_path=args.output)
 
 if __name__ == "__main__":
     main()

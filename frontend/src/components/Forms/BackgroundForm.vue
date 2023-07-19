@@ -9,38 +9,73 @@
                     <a-radio value="image">图片</a-radio>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item name="color" label="颜色" v-if="store.op === 'color'" hasFeedback
-                :validateStatus="validateStatus.color" :help="validateHelp.color">
-                <a-input v-model:value="store.color" style="width:300px" placeholder="颜色16进制码, e.g. #FF0000" allow-clear />
-                <a
-                    :style="{ background: store.color, border: '1px solid black', marginLeft: '20px' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
-            </a-form-item>
-            <a-form-item name="image_path" label="图片" v-if="store.op === 'image'" hasFeedback
-                :validateStatus="validateStatus.image_path" :help="validateHelp.image_path">
-                <a-input v-model:value="store.image_path" placeholder="图片路径" allow-clear />
-            </a-form-item>
-            <a-form-item name="watermark_font_opacity" label="外观">
-                <a-space size="large">
-                    <a-input-number v-model:value="store.opacity" :min="0" :max="1" :step="0.01" style="width: 200px;">
-                        <template #addonBefore>
-                            不透明度
-                        </template>
-                    </a-input-number>
-                    <div style="width: 100px;">
-                        <a-slider v-model:value="store.opacity" :min="0" :max="1" :step="0.01" />
+            <div v-if="store.op === 'color'">
+                <a-form-item name="color" label="颜色" :validateStatus="validateStatus.color" :help="validateHelp.color">
+                    <a-space>
+                        <a-input v-model:value="store.color" style="width:300px" placeholder="颜色16进制码, e.g. #FF0000"
+                            allow-clear />
+                        <color-picker v-model:pureColor="pureColor" v-model:gradientColor="gradientColor" shape="square"
+                            use-type="pure" format="hex6" @pureColorChange="handleColorChange" />
+                    </a-space>
+                </a-form-item>
+                <a-form-item name="watermark_font_opacity" label="外观">
+                    <a-space size="large">
+                        <a-input-number v-model:value="store.opacity" :min="0" :max="1" :step="0.01" style="width: 200px;">
+                            <template #addonBefore>
+                                不透明度
+                            </template>
+                        </a-input-number>
+                        <div style="width: 100px;">
+                            <a-slider v-model:value="store.opacity" :min="0" :max="1" :step="0.01" />
+                        </div>
+                        <a-input-number v-model:value="store.degree" :min="0" :max="360">
+                            <template #addonBefore>
+                                旋转角度
+                            </template>
+                        </a-input-number>
+                    </a-space>
+                </a-form-item>
+            </div>
+            <div v-if="store.op === 'image'">
+                <a-form-item name="image_path" label="图片" :validateStatus="validateStatus.image_path"
+                    :help="validateHelp.image_path">
+                    <div>
+                        <a-row>
+                            <a-col :span="22">
+                                <a-input v-model:value="store.image_path" placeholder="图片路径" allow-clear />
+                            </a-col>
+                            <a-col :span="1" style="margin-left: 1vw;">
+                                <a-tooltip>
+                                    <template #title>选择文件</template>
+                                    <a-button @click="selectFile('image_path')"><ellipsis-outlined /></a-button>
+                                </a-tooltip>
+                            </a-col>
+                        </a-row>
                     </div>
-                    <a-input-number v-model:value="store.degree" :min="0" :max="360">
-                        <template #addonBefore>
-                            旋转角度
-                        </template>
-                    </a-input-number>
-                    <a-input-number v-model:value="store.scale" :min="0">
-                        <template #addonBefore>
-                            缩放比例
-                        </template>
-                    </a-input-number>
-                </a-space>
-            </a-form-item>
+                </a-form-item>
+                <a-form-item name="watermark_font_opacity" label="外观">
+                    <a-space size="large">
+                        <a-input-number v-model:value="store.opacity" :min="0" :max="1" :step="0.01" style="width: 200px;">
+                            <template #addonBefore>
+                                不透明度
+                            </template>
+                        </a-input-number>
+                        <div style="width: 100px;">
+                            <a-slider v-model:value="store.opacity" :min="0" :max="1" :step="0.01" />
+                        </div>
+                        <a-input-number v-model:value="store.degree" :min="0" :max="360">
+                            <template #addonBefore>
+                                旋转角度
+                            </template>
+                        </a-input-number>
+                        <a-input-number v-model:value="store.scale" :min="0">
+                            <template #addonBefore>
+                                缩放比例
+                            </template>
+                        </a-input-number>
+                    </a-space>
+                </a-form-item>
+            </div>
             <a-form-item label="位置">
                 <a-space size="large">
                     <a-input-number v-model:value="store.x_offset">
@@ -111,13 +146,17 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
-import type { BackgroundState } from "../data";
 import { handleOps } from "../data";
 import { useBackgroundState } from '../../store/background';
+import { ColorPicker } from "vue3-colorpicker";
+import "vue3-colorpicker/style.css";
+// @ts-ignore
+import { ColorInputWithoutInstance } from "tinycolor2";
 
 export default defineComponent({
     components: {
-        EllipsisOutlined
+        EllipsisOutlined,
+        ColorPicker
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -243,7 +282,8 @@ export default defineComponent({
         };
         // 重置表单
         const resetFields = () => {
-            formRef.value?.resetFields();
+            formRef.value?.clearValidate();
+            store.resetState();
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
@@ -319,6 +359,18 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+        const pureColor = ref<ColorInputWithoutInstance>(store.color);
+        const gradientColor = ref("linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 100%)");
+
+        const handleColorChange = (color: ColorInputWithoutInstance) => {
+            console.log({ color });
+            store.color = color;
+        }
+
+        watch(() => store.color, (newVal, oldVal) => {
+            console.log({ newVal, oldVal });
+            pureColor.value = newVal;
+        });
         return {
             selectFile,
             saveFile,
@@ -330,7 +382,10 @@ export default defineComponent({
             confirmLoading,
             resetFields,
             onFinish,
-            onFinishFailed
+            onFinishFailed,
+            pureColor,
+            gradientColor,
+            handleColorChange,
         };
     }
 })
