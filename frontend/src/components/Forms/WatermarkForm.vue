@@ -1,33 +1,33 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="watermark_op" label="操作">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
+            <a-form-item name="op" label="操作">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="add">添加水印</a-radio-button>
                     <a-radio-button value="remove">去除水印</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.op === 'add'">
+            <div v-if="store.op === 'add'">
                 <a-form-item name="type" label="水印类型">
-                    <a-radio-group v-model:value="formState.type">
+                    <a-radio-group v-model:value="store.type">
                         <a-radio value="text">文本</a-radio>
                         <a-radio value="image">图片</a-radio>
                         <a-radio value="pdf">PDF</a-radio>
                     </a-radio-group>
                 </a-form-item>
-                <div v-if="formState.type === 'text'">
+                <div v-if="store.type === 'text'">
                     <a-form-item name="text" label="水印文本">
-                        <a-textarea v-model:value="formState.text" placeholder="e.g. 内部资料" allow-clear />
+                        <a-textarea v-model:value="store.text" placeholder="e.g. 内部资料" allow-clear />
                     </a-form-item>
                     <a-form-item name="watermark_font_size" label="字体属性" hasFeedback>
                         <a-space size="large">
-                            <a-select v-model:value="formState.font_family" style="width: 200px" :options="font_options">
+                            <a-select v-model:value="store.font_family" style="width: 200px" :options="font_options">
                             </a-select>
                             <a-tooltip>
                                 <template #title>字号</template>
-                                <a-input-number v-model:value="formState.font_size" :min="1">
+                                <a-input-number v-model:value="store.font_size" :min="1">
                                     <template #prefix>
                                         <font-size-outlined />
                                     </template>
@@ -35,25 +35,25 @@
                             </a-tooltip>
                             <a-tooltip>
                                 <template #title>字体颜色</template>
-                                <a-input v-model:value="formState.font_color" placeholder="16进制字体颜色"
-                                    :defaultValue="formState.font_color" allow-clear>
+                                <a-input v-model:value="store.font_color" placeholder="16进制字体颜色"
+                                    :defaultValue="store.font_color" allow-clear>
                                     <template #prefix>
                                         <font-colors-outlined />
                                     </template>
                                 </a-input>
                             </a-tooltip>
                             <a
-                                :style="{ background: formState.font_color, border: '1px solid black', marginLeft: '-15px' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
+                                :style="{ background: store.font_color, border: '1px solid black', marginLeft: '-15px' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
                         </a-space>
                     </a-form-item>
                     <a-form-item name="watermark_font_opacity" label="水印属性">
                         <a-space size="large">
-                            <a-input-number v-model:value="formState.font_opacity" :min="0" :max="1" :step="0.01">
+                            <a-input-number v-model:value="store.font_opacity" :min="0" :max="1" :step="0.01">
                                 <template #addonBefore>
                                     不透明度
                                 </template>
                             </a-input-number>
-                            <a-input-number v-model:value="formState.rotate" :min="0" :max="360">
+                            <a-input-number v-model:value="store.rotate" :min="0" :max="360">
                                 <template #addonBefore>
                                     旋转角度
                                 </template>
@@ -62,12 +62,12 @@
                     </a-form-item>
                     <a-form-item label="位置">
                         <a-space size="large">
-                            <a-input-number v-model:value="formState.x_offset">
+                            <a-input-number v-model:value="store.x_offset">
                                 <template #addonBefore>
                                     水平偏移量
                                 </template>
                             </a-input-number>
-                            <a-input-number v-model:value="formState.y_offset">
+                            <a-input-number v-model:value="store.y_offset">
                                 <template #addonBefore>
                                     垂直偏移量
                                 </template>
@@ -75,18 +75,18 @@
                         </a-space>
                     </a-form-item>
                 </div>
-                <div v-if="formState.type === 'image'">
+                <div v-if="store.type === 'image'">
                     <a-form-item name="wm_path" hasFeedback label="水印图片路径">
-                        <a-input v-model:value="formState.wm_path" placeholder="水印图片路径" allow-clear />
+                        <a-input v-model:value="store.wm_path" placeholder="水印图片路径" allow-clear />
                     </a-form-item>
                     <a-form-item name="watermark_font_opacity" label="水印属性">
                         <a-space size="large">
-                            <a-input-number v-model:value="formState.font_opacity" :min="0" :max="1" :step="0.01">
+                            <a-input-number v-model:value="store.font_opacity" :min="0" :max="1" :step="0.01">
                                 <template #addonBefore>
                                     不透明度
                                 </template>
                             </a-input-number>
-                            <a-input-number v-model:value="formState.rotate" :min="0" :max="360">
+                            <a-input-number v-model:value="store.rotate" :min="0" :max="360">
                                 <template #addonBefore>
                                     旋转角度
                                 </template>
@@ -95,17 +95,17 @@
                     </a-form-item>
                     <a-form-item label="位置和大小">
                         <a-space size="large">
-                            <a-input-number v-model:value="formState.x_offset">
+                            <a-input-number v-model:value="store.x_offset">
                                 <template #addonBefore>
                                     水平偏移量
                                 </template>
                             </a-input-number>
-                            <a-input-number v-model:value="formState.y_offset">
+                            <a-input-number v-model:value="store.y_offset">
                                 <template #addonBefore>
                                     垂直偏移量
                                 </template>
                             </a-input-number>
-                            <a-input-number v-model:value="formState.scale" :min="0">
+                            <a-input-number v-model:value="store.scale" :min="0">
                                 <template #addonBefore>
                                     缩放比例
                                 </template>
@@ -113,26 +113,26 @@
                         </a-space>
                     </a-form-item>
                 </div>
-                <div v-if="formState.type === 'text' || formState.type === 'image'">
+                <div v-if="store.type === 'text' || store.type === 'image'">
                     <a-form-item label="排布">
-                        <a-radio-group v-model:value="formState.multiple_mode">
+                        <a-radio-group v-model:value="store.multiple_mode">
                             <a-radio :value="false">单行</a-radio>
                             <a-radio :value="true">多行</a-radio>
                         </a-radio-group>
                     </a-form-item>
-                    <a-form-item label="多行水印" v-if="formState.multiple_mode">
+                    <a-form-item label="多行水印" v-if="store.multiple_mode">
                         <a-space size="large">
-                            <a-input-number v-model:value="formState.num_lines" :min="1">
+                            <a-input-number v-model:value="store.num_lines" :min="1">
                                 <template #addonBefore>
                                     行数
                                 </template>
                             </a-input-number>
-                            <a-input-number v-model:value="formState.line_spacing" :min="0" :max="100">
+                            <a-input-number v-model:value="store.line_spacing" :min="0" :max="100">
                                 <template #addonBefore>
                                     行间距
                                 </template>
                             </a-input-number>
-                            <a-input-number v-model:value="formState.word_spacing" :min="0" :max="100">
+                            <a-input-number v-model:value="store.word_spacing" :min="0" :max="100">
                                 <template #addonBefore>
                                     相邻水印间距
                                 </template>
@@ -140,65 +140,65 @@
                         </a-space>
                     </a-form-item>
                 </div>
-                <div v-if="formState.type === 'pdf'">
+                <div v-if="store.type === 'pdf'">
                     <a-form-item name="wm_path" hasFeedback label="水印PDF路径">
-                        <a-input v-model:value="formState.wm_path" placeholder="水印PDF路径" allow-clear />
+                        <a-input v-model:value="store.wm_path" placeholder="水印PDF路径" allow-clear />
                     </a-form-item>
                 </div>
                 <a-form-item label="层级">
-                    <a-select v-model:value="formState.layer" style="width: 200px">
+                    <a-select v-model:value="store.layer" style="width: 200px">
                         <a-select-option value="bottom">置于底层</a-select-option>
                         <a-select-option value="top">置于顶层</a-select-option>
                     </a-select>
                 </a-form-item>
                 <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                     label="页码范围">
-                    <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                    <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
                 </a-form-item>
             </div>
-            <div v-if="formState.op === 'remove'">
+            <div v-if="store.op === 'remove'">
                 <a-form-item name="remove_method" label="去水印方法">
-                    <a-radio-group v-model:value="formState.remove_method">
+                    <a-radio-group v-model:value="store.remove_method">
                         <a-radio value="type">类型水印</a-radio>
                         <a-radio value="mask">遮罩水印</a-radio>
                         <a-radio value="index">内容水印</a-radio>
                     </a-radio-group>
                 </a-form-item>
-                <div v-if="formState.remove_method === 'type'">
+                <div v-if="store.remove_method === 'type'">
                     <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                         label="页码范围">
-                        <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                        <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
                     </a-form-item>
                 </div>
-                <div v-if="formState.remove_method === 'index'">
+                <div v-if="store.remove_method === 'index'">
                     <a-form-item name="step" label="步骤">
-                        <a-radio-group v-model:value="formState.step">
+                        <a-radio-group v-model:value="store.step">
                             <a-radio style="display: flex;height:30px;lineHeight:30px;" value="1">步骤一：识别水印索引</a-radio>
                             <a-radio style="display: flex;height:30px;lineHeight:30px;" value="2">步骤二：删除水印</a-radio>
                         </a-radio-group>
                     </a-form-item>
-                    <a-form-item name="wm_index" label="含水印页码" v-if="formState.step === '1'">
-                        <a-input v-model:value="formState.wm_index" placeholder="包含水印的页码，1页即可"></a-input>
+                    <a-form-item name="wm_index" label="含水印页码" v-if="store.step === '1'">
+                        <a-input v-model:value="store.wm_index" placeholder="包含水印的页码，1页即可"></a-input>
                     </a-form-item>
-                    <a-form-item name="wm_index" label="水印索引" v-if="formState.step === '2'"
+                    <a-form-item name="wm_index" label="水印索引" v-if="store.step === '2'"
                         :rules="[{ required: true, message: '请提供水印索引' }]">
-                        <a-input v-model:value="formState.wm_index" placeholder="多个数字用英文逗号隔开,支持负数(表示倒数页) e.g. -1"></a-input>
+                        <a-input v-model:value="store.wm_index" placeholder="多个数字用英文逗号隔开,支持负数(表示倒数页) e.g. -1"></a-input>
                     </a-form-item>
                     <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
-                        label="页码范围" v-if="formState.step === '2'">
-                        <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                        label="页码范围" v-if="store.step === '2'">
+                        <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
                     </a-form-item>
                 </div>
-                <div v-if="formState.remove_method === 'mask'">
+                <div v-if="store.remove_method === 'mask'">
                     <a-form-item name="type" label="遮罩类型">
-                        <a-radio-group v-model:value="formState.mask_type">
+                        <a-radio-group v-model:value="store.mask_type">
                             <a-radio value="rect">手动指定矩形框</a-radio>
                             <a-radio value="annot">根据矩形注释确定</a-radio>
                         </a-radio-group>
                     </a-form-item>
-                    <div v-if="formState.mask_type === 'rect'">
+                    <div v-if="store.mask_type === 'rect'">
                         <a-form-item label="单位">
-                            <a-radio-group v-model:value="formState.unit">
+                            <a-radio-group v-model:value="store.unit">
                                 <a-radio value="pt">像素</a-radio>
                                 <a-radio value="cm">厘米</a-radio>
                                 <a-radio value="mm">毫米</a-radio>
@@ -207,22 +207,22 @@
                         </a-form-item>
                         <a-form-item name="rect" label="矩形框">
                             <a-space size="large">
-                                <a-input-number v-model:value="formState.x_offset">
+                                <a-input-number v-model:value="store.x_offset">
                                     <template #addonBefore>
                                         左上x
                                     </template>
                                 </a-input-number>
-                                <a-input-number v-model:value="formState.y_offset">
+                                <a-input-number v-model:value="store.y_offset">
                                     <template #addonBefore>
                                         左上y
                                     </template>
                                 </a-input-number>
-                                <a-input-number v-model:value="formState.width">
+                                <a-input-number v-model:value="store.width">
                                     <template #addonBefore>
                                         宽度
                                     </template>
                                 </a-input-number>
-                                <a-input-number v-model:value="formState.height">
+                                <a-input-number v-model:value="store.height">
                                     <template #addonBefore>
                                         高度
                                     </template>
@@ -231,40 +231,40 @@
                         </a-form-item>
 
                     </div>
-                    <div v-if="formState.mask_type === 'annot'">
+                    <div v-if="store.mask_type === 'annot'">
                         <a-form-item name="annot_page" label="矩形注释页码">
-                            <a-input-number v-model:value="formState.annot_page" :min="1"></a-input-number>
+                            <a-input-number v-model:value="store.annot_page" :min="1"></a-input-number>
                         </a-form-item>
                     </div>
                     <a-form-item label="遮罩属性">
                         <a-row>
                             <a-col :span="6">
                                 <a-space>
-                                    <a-input v-model:value="formState.mask_color" placeholder="16进制字体颜色"
-                                        :defaultValue="formState.mask_color" allow-clear>
+                                    <a-input v-model:value="store.mask_color" placeholder="16进制字体颜色"
+                                        :defaultValue="store.mask_color" allow-clear>
                                         <template #addonBefore>
                                             颜色
                                         </template>
                                     </a-input>
                                     <a
-                                        :style="{ background: formState.mask_color, border: '1px solid black' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
+                                        :style="{ background: store.mask_color, border: '1px solid black' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
                                 </a-space>
                             </a-col>
                             <a-col :span="6" style="margin-left: 1.5vw;">
-                                <a-input-number v-model:value="formState.mask_opacity" :min="0" :max="1" :step="0.01">
+                                <a-input-number v-model:value="store.mask_opacity" :min="0" :max="1" :step="0.01">
                                     <template #addonBefore>
                                         不透明度
                                     </template>
                                 </a-input-number>
                             </a-col>
                             <a-col :span="6">
-                                <a-slider v-model:value="formState.mask_opacity" :min="0" :max="1" :step="0.01" />
+                                <a-slider v-model:value="store.mask_opacity" :min="0" :max="1" :step="0.01" />
                             </a-col>
                         </a-row>
                     </a-form-item>
                     <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                         label="页码范围">
-                        <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                        <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
                     </a-form-item>
                 </div>
             </div>
@@ -272,7 +272,8 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -287,7 +288,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -327,8 +328,9 @@ import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { FontSizeOutlined, FontColorsOutlined, EllipsisOutlined } from '@ant-design/icons-vue';
 import type { SelectProps } from 'ant-design-vue';
-import type { WatermarkState } from "../data";
 import { handleOps, windows_fonts_options, mac_fonts_options } from "../data";
+import { useWatermarkState } from '../../store/watermark';
+
 export default defineComponent({
     components: {
         FontSizeOutlined,
@@ -337,40 +339,7 @@ export default defineComponent({
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<WatermarkState>({
-            input: "",
-            output: "",
-            page: "",
-            op: "add",
-            type: "text",
-            text: "",
-            font_family: "msyh.ttc",
-            font_size: 50,
-            font_color: "#000000",
-            font_opacity: 0.3,
-            rotate: 45,
-            num_lines: 1,
-            multiple_mode: false,
-            x_offset: 0,
-            y_offset: 0,
-            word_spacing: 1,
-            line_spacing: 1,
-            remove_method: "type",
-            step: "1",
-            wm_index: "",
-            lines: 0,
-            wm_path: "",
-            scale: 1,
-            mask_type: 'annot',
-            unit: 'pt',
-            width: 0,
-            height: 0,
-            annot_page: 1,
-            mask_color: '#FFFFFF',
-            mask_opacity: 1,
-            layer: "bottom",
-        });
-
+        const store = useWatermarkState();
         const color_picker_state = reactive({
             showcolorpicker: false,
             color: "#59c7f9",
@@ -398,7 +367,7 @@ export default defineComponent({
                     font_options.value = windows_fonts_options;
                 } else if (res === "darwin") {
                     font_options.value = mac_fonts_options;
-                    formState.font_family = 'STHeiti Light.ttc';
+                    store.font_family = 'STHeiti Light.ttc';
                 }
             }).catch((err: any) => {
                 console.log({ err });
@@ -494,90 +463,90 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case "add": {
-                    switch (formState.type) {
+                    switch (store.type) {
                         case "text": {
                             await handleOps(WatermarkPDFByText, [
-                                formState.input,
-                                formState.output,
-                                formState.text,
-                                formState.font_family,
-                                formState.font_size,
-                                formState.font_color,
-                                formState.rotate,
-                                formState.font_opacity,
-                                formState.num_lines,
-                                formState.word_spacing,
-                                formState.line_spacing,
-                                formState.x_offset,
-                                formState.y_offset,
-                                formState.multiple_mode,
-                                formState.layer,
-                                formState.page
+                                store.input,
+                                store.output,
+                                store.text,
+                                store.font_family,
+                                store.font_size,
+                                store.font_color,
+                                store.rotate,
+                                store.font_opacity,
+                                store.num_lines,
+                                store.word_spacing,
+                                store.line_spacing,
+                                store.x_offset,
+                                store.y_offset,
+                                store.multiple_mode,
+                                store.layer,
+                                store.page
                             ]);
                             break;
                         }
                         case "image": {
                             await handleOps(WatermarkPDFByImage, [
-                                formState.input,
-                                formState.output,
-                                formState.wm_path,
-                                formState.rotate,
-                                formState.font_opacity,
-                                formState.scale,
-                                formState.num_lines,
-                                formState.line_spacing,
-                                formState.word_spacing,
-                                formState.x_offset,
-                                formState.y_offset,
-                                formState.multiple_mode,
-                                formState.layer,
-                                formState.page
+                                store.input,
+                                store.output,
+                                store.wm_path,
+                                store.rotate,
+                                store.font_opacity,
+                                store.scale,
+                                store.num_lines,
+                                store.line_spacing,
+                                store.word_spacing,
+                                store.x_offset,
+                                store.y_offset,
+                                store.multiple_mode,
+                                store.layer,
+                                store.page
                             ]);
                             break;
                         }
                         case "pdf": {
                             await handleOps(WatermarkPDFByPDF, [
-                                formState.input,
-                                formState.output,
-                                formState.wm_path,
-                                formState.layer,
-                                formState.page]);
+                                store.input,
+                                store.output,
+                                store.wm_path,
+                                store.layer,
+                                store.page]);
                             break;
                         }
                     }
                     break;
                 }
                 case "remove": {
-                    switch (formState.remove_method) {
+                    switch (store.remove_method) {
                         case "type": {
-                            await handleOps(RemoveWatermarkByType, [formState.input, formState.output, formState.page]);
+                            await handleOps(RemoveWatermarkByType, [store.input, store.output, store.page]);
                             break;
                         }
                         case "index": {
-                            switch (formState.step) {
+                            switch (store.step) {
                                 case "1": {
-                                    let wm_index = formState.wm_index.split(",").map((item) => parseInt(item.trim()));
-                                    await handleOps(DetectWatermarkByIndex, [formState.input, formState.output, wm_index[0] - 1]);
+                                    let wm_index = store.wm_index.split(",").map((item) => parseInt(item.trim()));
+                                    await handleOps(DetectWatermarkByIndex, [store.input, store.output, wm_index[0] - 1]);
                                     break;
                                 }
                                 case "2": {
-                                    let wm_index = formState.wm_index.split(",").map((item) => parseInt(item.trim()) - 1);
-                                    await handleOps(RemoveWatermarkByIndex, [formState.input, formState.output, wm_index, formState.page]);
+                                    let wm_index = store.wm_index.split(",").map((item) => parseInt(item.trim()) - 1);
+                                    await handleOps(RemoveWatermarkByIndex, [store.input, store.output, wm_index, store.page]);
                                     break;
                                 }
                             }
                             break;
                         }
                         case "mask": {
-                            switch (formState.mask_type) {
+                            switch (store.mask_type) {
                                 case "rect": {
-                                    await handleOps(MaskPDFByRect, [formState.input, formState.output, [formState.x_offset, formState.y_offset, formState.x_offset + formState.width, formState.y_offset + formState.height], formState.unit, formState.mask_color, formState.mask_opacity, 0, formState.page]);
+                                    await handleOps(MaskPDFByRect, [store.input, store.output, [store.x_offset, store.y_offset, store.x_offset + store.width, store.y_offset + store.height], store.unit, store.mask_color, store.mask_opacity, 0, store.page]);
                                     break;
                                 }
                                 case "annot": {
-                                    await handleOps(MaskPDFByAnnot, [formState.input, formState.output, formState.annot_page - 1, formState.mask_color, formState.mask_opacity, 0, formState.page]);
+                                    await handleOps(MaskPDFByAnnot, [store.input, store.output, store.annot_page - 1, store.mask_color, store.mask_opacity, 0, store.page]);
                                     break;
                                 }
                             }
@@ -608,7 +577,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -619,7 +588,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -629,7 +598,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             color_picker_state,
             rules,
             formRef,

@@ -298,6 +298,7 @@ interface CrackState {
 
 
 const menuRecord: Record<string, string> = {
+    "index": "首页",
     "merge": "PDF合并",
     "split": "PDF拆分",
     "delete": "PDF删除",
@@ -324,6 +325,7 @@ const menuRecord: Record<string, string> = {
 };
 
 const menuDesc: Record<string, string> = {
+    "index": "功能列表",
     "merge": "将多个PDF文件合并为一个PDF文件,路径支持使用通配符'*'",
     "split": "将原始PDF文件按照给定的块大小进行分割",
     "cut": "将原始页面分割成多个页面,或将多个页面组合为一个页面",

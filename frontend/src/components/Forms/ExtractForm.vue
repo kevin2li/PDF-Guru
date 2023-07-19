@@ -1,10 +1,10 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
             <a-form-item name="op" label="提取类型">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="page">页面</a-radio-button>
                     <a-radio-button value="bookmark">书签</a-radio-button>
                     <a-radio-button value="text">文本</a-radio-button>
@@ -12,17 +12,18 @@
                     <a-radio-button value="table" disabled>表格</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.op !== 'bookmark'">
+            <div v-if="store.op !== 'bookmark'">
                 <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                     label="页码范围">
-                    <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                    <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
                 </a-form-item>
             </div>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -37,7 +38,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -73,18 +74,15 @@ import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { ExtractState } from "../data";
 import { handleOps } from "../data";
+import { useExtractState } from '../../store/extract';
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<ExtractState>({
-            input: "",
-            output: "",
-            page: "",
-            op: "page",
-        });
+        const store = useExtractState();
 
         const validateStatus = reactive({
             input: "",
@@ -161,25 +159,25 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case "page": {
-                    let output = formState.output.trim();
+                    let output = store.output.trim();
                     if (output === '') {
-                        output = formState.input.replace(/\.pdf$/, "_提取.pdf");
+                        output = store.input.replace(/\.pdf$/, "_提取.pdf");
                     }
-                    await handleOps(ReorderPDF, [formState.input.trim(), output, formState.page]);
+                    await handleOps(ReorderPDF, [store.input.trim(), output, store.page]);
                     break;
                 }
                 case "bookmark": {
-                    await handleOps(ExtractBookmark, [formState.input, formState.output, "txt"]);
+                    await handleOps(ExtractBookmark, [store.input, store.output, "txt"]);
                     break;
                 }
                 case "text": {
-                    await handleOps(ExtractTextFromPDF, [formState.input.trim(), formState.output.trim(), formState.page]);
+                    await handleOps(ExtractTextFromPDF, [store.input.trim(), store.output.trim(), store.page]);
                     break;
                 }
                 case "image": {
-                    await handleOps(ExtractImageFromPDF, [formState.input.trim(), formState.output.trim(), formState.page]);
+                    await handleOps(ExtractImageFromPDF, [store.input.trim(), store.output.trim(), store.page]);
                     break;
                 }
                 case "table": {
@@ -208,7 +206,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -219,7 +217,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -229,7 +227,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

@@ -1,55 +1,55 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="bookmark_op" label="操作">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
+            <a-form-item name="op" label="操作">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="extract">提取书签</a-radio-button>
                     <a-radio-button value="write">写入书签</a-radio-button>
                     <a-radio-button value="transform">转换书签</a-radio-button>
                     <a-radio-button value="recognize">识别书签</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.op == 'extract'">
+            <div v-if="store.op == 'extract'">
                 <a-form-item name="bookmark.extract_format" label="导出格式">
-                    <a-select v-model:value="formState.extract_format" style="width: 200px">
+                    <a-select v-model:value="store.extract_format" style="width: 200px">
                         <a-select-option value="txt">txt</a-select-option>
                         <a-select-option value="json">json</a-select-option>
                     </a-select>
                 </a-form-item>
             </div>
-            <div v-if="formState.op == 'write'">
+            <div v-if="store.op == 'write'">
                 <a-form-item name="bookmark.write_type" label="类型">
-                    <a-radio-group v-model:value="formState.write_type">
+                    <a-radio-group v-model:value="store.write_type">
                         <a-radio value="file">书签文件导入</a-radio>
                         <a-radio value="page">页码书签</a-radio>
                     </a-radio-group>
                 </a-form-item>
                 <a-form-item name="bookmark_file" label="书签文件" hasFeedback :validateStatus="validateStatus.bookmark_file"
-                    :help="validateHelp.bookmark_file" v-if="formState.write_type == 'file'">
-                    <a-input v-model:value="formState.bookmark_file" placeholder="书签文件路径" allow-clear />
+                    :help="validateHelp.bookmark_file" v-if="store.write_type == 'file'">
+                    <a-input v-model:value="store.bookmark_file" placeholder="书签文件路径" allow-clear />
                 </a-form-item>
-                <a-form-item name="write_offset" label="页码偏移量" v-if="formState.write_type == 'file'">
-                    <a-input-number v-model:value="formState.write_offset" />
+                <a-form-item name="write_offset" label="页码偏移量" v-if="store.write_type == 'file'">
+                    <a-input-number v-model:value="store.write_offset" />
                 </a-form-item>
                 <a-form-item name="page" label="页码范围" hasFeedback :validateStatus="validateStatus.page"
                     :help="validateHelp.page">
-                    <a-input v-model:value="formState.page" placeholder="e.g. 3-N (留空表示全部页面)" allow-clear />
+                    <a-input v-model:value="store.page" placeholder="e.g. 3-N (留空表示全部页面)" allow-clear />
                 </a-form-item>
-                <a-form-item name="write_gap" label="间隔页数" v-if="formState.write_type == 'page'">
-                    <a-input-number v-model:value="formState.write_gap" />
+                <a-form-item name="write_gap" label="间隔页数" v-if="store.write_type == 'page'">
+                    <a-input-number v-model:value="store.write_gap" />
                 </a-form-item>
-                <a-form-item name="start_number" label="起始编号" v-if="formState.write_type == 'page'">
-                    <a-input-number v-model:value="formState.start_number" />
+                <a-form-item name="start_number" label="起始编号" v-if="store.write_type == 'page'">
+                    <a-input-number v-model:value="store.start_number" />
                 </a-form-item>
-                <a-form-item name="bookmark.write_format" label="命名格式" v-if="formState.write_type == 'page'">
-                    <a-input v-model:value="formState.write_format" placeholder="e.g. 第%p页(%p表示页码)" allow-clear />
+                <a-form-item name="bookmark.write_format" label="命名格式" v-if="store.write_type == 'page'">
+                    <a-input v-model:value="store.write_format" placeholder="e.g. 第%p页(%p表示页码)" allow-clear />
                 </a-form-item>
             </div>
-            <div v-if="formState.op == 'transform'">
+            <div v-if="store.op == 'transform'">
                 <a-form-item name="transform_offset" label="页码偏移量">
-                    <a-input-number v-model:value="formState.transform_offset" />
+                    <a-input-number v-model:value="store.transform_offset" />
                 </a-form-item>
                 <div>
                     <a-form-item :label="index === 0 ? '缩进层级设置' : ' '" :colon="index === 0 ? true : false"
@@ -97,10 +97,10 @@
                     </a-form-item>
                 </div>
                 <a-form-item label="默认层级">
-                    <a-input-number v-model:value="formState.default_level" :min="1"></a-input-number>
+                    <a-input-number v-model:value="store.default_level" :min="1"></a-input-number>
                 </a-form-item>
                 <a-form-item label="删除标题层级">
-                    <a-select v-model:value="formState.delete_level_below" style="width: 200px">
+                    <a-select v-model:value="store.delete_level_below" style="width: 200px">
                         <a-select-option :value="0">无</a-select-option>
                         <a-select-option :value="2">二级标题及以下</a-select-option>
                         <a-select-option :value="3">三级标题及以下</a-select-option>
@@ -110,41 +110,41 @@
                     </a-select>
                 </a-form-item>
                 <a-form-item label="删除空行">
-                    <a-switch v-model:checked="formState.remove_blank_lines" />
+                    <a-switch v-model:checked="store.remove_blank_lines" />
                 </a-form-item>
             </div>
-            <div v-if="formState.op == 'recognize'">
+            <div v-if="store.op == 'recognize'">
                 <a-form-item name="bookmark.recognize_type" label="类型">
-                    <a-radio-group v-model:value="formState.recognize_type">
+                    <a-radio-group v-model:value="store.recognize_type">
                         <a-radio value="font">基于字体属性</a-radio>
                         <a-radio value="ocr">基于OCR <a-tag color="blue">python</a-tag></a-radio>
                     </a-radio-group>
                 </a-form-item>
-                <div v-if="formState.recognize_type == 'ocr'">
+                <div v-if="store.recognize_type == 'ocr'">
                     <a-form-item name="bookmark.ocr_lang" label="语言">
-                        <a-select v-model:value="formState.ocr_lang" style="width: 200px">
+                        <a-select v-model:value="store.ocr_lang" style="width: 200px">
                             <a-select-option value="ch">简体中文</a-select-option>
                             <a-select-option value="en">英文 </a-select-option>
                         </a-select>
                     </a-form-item>
                     <a-form-item name="bookmark.ocr_double_column" label="双栏">
-                        <a-switch v-model:checked="formState.ocr_double_column" />
+                        <a-switch v-model:checked="store.ocr_double_column" />
                     </a-form-item>
                     <a-form-item name="page" label="目录页码范围" hasFeedback :validateStatus="validateStatus.page"
                         :help="validateHelp.page">
-                        <a-input v-model:value="formState.page" placeholder="e.g. 1-10,11-15,16-19" allow-clear />
+                        <a-input v-model:value="store.page" placeholder="e.g. 1-10,11-15,16-19" allow-clear />
                     </a-form-item>
                 </div>
-                <div v-if="formState.recognize_type == 'font'">
+                <div v-if="store.recognize_type == 'font'">
                     <a-form-item name="page" label="检索页码范围" hasFeedback :validateStatus="validateStatus.page"
                         :help="validateHelp.page">
-                        <a-input v-model:value="formState.page" placeholder="e.g. 3-N" allow-clear />
+                        <a-input v-model:value="store.page" placeholder="e.g. 3-N" allow-clear />
                     </a-form-item>
                     <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                         <div>
                             <a-row>
                                 <a-col :span="22">
-                                    <a-input v-model:value="formState.input"
+                                    <a-input v-model:value="store.input"
                                         placeholder="含有使用矩形注释标注标题层级的输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
                                 </a-col>
                                 <a-col :span="1" style="margin-left: 1vw;">
@@ -159,11 +159,11 @@
                 </div>
             </div>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input"
-                v-if="!(formState.op === 'recognize' && formState.recognize_type === 'font')">
+                v-if="!(store.op === 'recognize' && store.recognize_type === 'font')">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
                                 allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
@@ -179,7 +179,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -195,7 +195,7 @@
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
-        <!-- <div v-if="formState.op === 'recognize' && formState.recognize_type === 'font'" style="margin-top: 1vh;width: 85%;">
+        <!-- <div v-if="store.op === 'recognize' && store.recognize_type === 'font'" style="margin-top: 1vh;width: 85%;">
             <a-alert message="请确保输入文件中含有标注了标题层级的矩形注释" type="info" show-icon />
         </div> -->
     </div>
@@ -219,8 +219,8 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { MinusCircleOutlined, PlusOutlined, EllipsisOutlined } from '@ant-design/icons-vue';
-import type { BookmarkState } from "../data";
 import { handleOps } from "../data";
+import { useBookmarkState } from '../../store/bookmark';
 
 interface IndentItem {
     prefix: string | undefined;
@@ -236,28 +236,7 @@ export default defineComponent({
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<BookmarkState>({
-            input: "",
-            output: "",
-            page: "",
-            op: "extract",
-            bookmark_file: "",
-            write_type: "file",
-            write_format: "",
-            write_offset: 0,
-            write_gap: 1,
-            extract_format: "txt",
-            transform_offset: 0,
-            transform_indent: false,
-            transform_dots: false,
-            ocr_lang: "ch",
-            ocr_double_column: false,
-            delete_level_below: 0,
-            default_level: 1,
-            remove_blank_lines: true,
-            recognize_type: "font",
-            start_number: 1,
-        });
+        const store = useBookmarkState();
 
         const indentItems = reactive<{ items: IndentItem[] }>({
             items: [],
@@ -373,19 +352,19 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case "extract": {
-                    await handleOps(ExtractBookmark, [formState.input, formState.output, formState.extract_format]);
+                    await handleOps(ExtractBookmark, [store.input, store.output, store.extract_format]);
                     break;
                 }
                 case "write": {
-                    switch (formState.write_type) {
+                    switch (store.write_type) {
                         case "file": {
-                            await handleOps(WriteBookmarkByFile, [formState.input, formState.output, formState.bookmark_file, formState.write_offset]);
+                            await handleOps(WriteBookmarkByFile, [store.input, store.output, store.bookmark_file, store.write_offset]);
                             break;
                         }
                         case "page": {
-                            await handleOps(WriteBookmarkByGap, [formState.input, formState.output, formState.write_gap, formState.write_format, formState.start_number, formState.page]);
+                            await handleOps(WriteBookmarkByGap, [store.input, store.output, store.write_gap, store.write_format, store.start_number, store.page]);
                             break;
                         }
                     }
@@ -400,17 +379,17 @@ export default defineComponent({
                         res.push(`{"prefix":"${items[i].prefix}","level":"${items[i].level}", "type":"${items[i].type}"}`);
                     }
                     console.log(res);
-                    await handleOps(TransformBookmark, [formState.input, formState.output, formState.transform_offset, res, formState.delete_level_below, formState.default_level, formState.remove_blank_lines]);
+                    await handleOps(TransformBookmark, [store.input, store.output, store.transform_offset, res, store.delete_level_below, store.default_level, store.remove_blank_lines]);
                     break;
                 }
                 case "recognize": {
-                    switch (formState.recognize_type) {
+                    switch (store.recognize_type) {
                         case "font": {
-                            await handleOps(DetectBookmarkByFont, [formState.input, formState.output, formState.page]);
+                            await handleOps(DetectBookmarkByFont, [store.input, store.output, store.page]);
                             break;
                         }
                         case "ocr": {
-                            await handleOps(OCRPDFBookmark, [formState.input, formState.output, formState.page, formState.ocr_lang, formState.ocr_double_column]);
+                            await handleOps(OCRPDFBookmark, [store.input, store.output, store.page, store.ocr_lang, store.ocr_double_column]);
                             break;
                         }
                     }
@@ -439,7 +418,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -450,7 +429,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -460,7 +439,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

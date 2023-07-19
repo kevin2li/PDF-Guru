@@ -1,23 +1,23 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
             @finish="onFinish" @finishFailed="onFinishFailed">
             <a-form-item name="op" label="操作">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="ratio">按比例缩放</a-radio-button>
                     <a-radio-button value="common">缩放到指定大小</a-radio-button>
                     <a-radio-button value="custom">自定义长宽</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.op === 'ratio'">
+            <div v-if="store.op === 'ratio'">
                 <a-form-item name="ratio" label="缩放比例">
-                    <a-input-number v-model:value="formState.ratio" :min="0"></a-input-number>
+                    <a-input-number v-model:value="store.ratio" :min="0"></a-input-number>
                 </a-form-item>
             </div>
-            <div v-if="formState.op === 'common'">
+            <div v-if="store.op === 'common'">
                 <a-form-item name="paper_size" label="纸张大小">
-                    <a-select v-model:value="formState.paper_size" style="width: 200px">
+                    <a-select v-model:value="store.paper_size" style="width: 200px">
                         <a-select-option value="a0">A0</a-select-option>
                         <a-select-option value="a1">A1</a-select-option>
                         <a-select-option value="a2">A2</a-select-option>
@@ -65,15 +65,15 @@
                     </a-select>
                 </a-form-item>
             </div>
-            <div v-if="formState.op === 'custom'">
+            <div v-if="store.op === 'custom'">
                 <a-form-item name="width" label="宽度">
-                    <a-input-number v-model:value="formState.width" :min="0"></a-input-number>
+                    <a-input-number v-model:value="store.width" :min="0"></a-input-number>
                 </a-form-item>
                 <a-form-item name="height" label="高度">
-                    <a-input-number v-model:value="formState.height" :min="0"></a-input-number>
+                    <a-input-number v-model:value="store.height" :min="0"></a-input-number>
                 </a-form-item>
                 <a-form-item label="单位">
-                    <a-radio-group v-model:value="formState.unit">
+                    <a-radio-group v-model:value="store.unit">
                         <a-radio value="pt">像素</a-radio>
                         <a-radio value="cm">厘米</a-radio>
                         <a-radio value="mm">毫米</a-radio>
@@ -83,13 +83,13 @@
             </div>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -104,7 +104,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -139,23 +139,15 @@ import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { ScaleState } from "../data";
 import { handleOps } from "../data";
+import {useScaleState} from "../../store/scale";
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<ScaleState>({
-            input: "",
-            output: "",
-            page: "",
-            op: "ratio",
-            ratio: 0,
-            paper_size: "A4",
-            width: 0,
-            height: 0,
-            unit: "pt"
-        });
+        const store = useScaleState();
 
         const validateStatus = reactive({
             input: "",
@@ -232,12 +224,12 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            if (formState.op === "ratio") {
-                await handleOps(ScalePDFByScale, [formState.input, formState.output, formState.ratio, formState.page]);
-            } else if (formState.op === "common") {
-                await handleOps(ScalePDFByPaperSize, [formState.input, formState.output, formState.paper_size, formState.page]);
-            } else if (formState.op === "custom") {
-                await handleOps(ScalePDFByDim, [formState.input, formState.output, formState.width, formState.height, formState.unit, formState.page]);
+            if (store.op === "ratio") {
+                await handleOps(ScalePDFByScale, [store.input, store.output, store.ratio, store.page]);
+            } else if (store.op === "common") {
+                await handleOps(ScalePDFByPaperSize, [store.input, store.output, store.paper_size, store.page]);
+            } else if (store.op === "custom") {
+                await handleOps(ScalePDFByDim, [store.input, store.output, store.width, store.height, store.unit, store.page]);
             }
             confirmLoading.value = false;
         }
@@ -260,7 +252,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -271,7 +263,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -281,7 +273,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

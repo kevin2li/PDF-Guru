@@ -100,7 +100,7 @@ func main() {
 	err = wails.Run(&options.App{
 		Title:     "PDF Guru",
 		Width:     1280,
-		Height:    880,
+		Height:    900,
 		MinWidth:  1000,
 		MinHeight: 600,
 		AssetServer: &assetserver.Options{

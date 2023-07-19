@@ -1,10 +1,10 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="convert_type" label="转换类型">
-                <a-select v-model:value="formState.type" style="width: 300px">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
+            <a-form-item name="type" label="转换类型">
+                <a-select v-model:value="store.type" style="width: 300px">
                     <a-select-opt-group label="PDF转其他">
                         <a-select-option value="pdf2png">pdf转png</a-select-option>
                         <a-select-option value="pdf2svg">pdf转svg</a-select-option>
@@ -66,19 +66,19 @@
                     </a-select-opt-group>
                 </a-select>
             </a-form-item>
-            <div v-if="formState.type === 'pdf2png' || formState.type === 'pdf2svg'">
-                <a-form-item name="dpi" label="分辨率" v-if="formState.type === 'pdf2png'">
-                    <a-input-number v-model:value="formState.dpi" style="width: 200px" min="1" max="1000" />
+            <div v-if="store.type === 'pdf2png' || store.type === 'pdf2svg'">
+                <a-form-item name="dpi" label="分辨率" v-if="store.type === 'pdf2png'">
+                    <a-input-number v-model:value="store.dpi" style="width: 200px" min="1" max="1000" />
                 </a-form-item>
                 <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
-                    label="页码范围" v-if="formState.type.startsWith('pdf')">
-                    <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-3,9-10" allow-clear />
+                    label="页码范围" v-if="store.type.startsWith('pdf')">
+                    <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-3,9-10" allow-clear />
                 </a-form-item>
                 <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
-                    <div v-if="formState.sort_method !== 'custom'">
+                    <div v-if="store.sort_method !== 'custom'">
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
                                     allow-clear />
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
@@ -94,7 +94,7 @@
                     <div>
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                                <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
                                 <a-tooltip>
@@ -106,13 +106,13 @@
                     </div>
                 </a-form-item>
             </div>
-            <div v-else-if="formState.type === 'png2pdf' || formState.type === 'svg2pdf'">
+            <div v-else-if="store.type === 'png2pdf' || store.type === 'svg2pdf'">
                 <a-form-item name="is_merge" label="是否合并">
-                    <a-checkbox v-model:checked="formState.is_merge"></a-checkbox>
+                    <a-checkbox v-model:checked="store.is_merge"></a-checkbox>
                 </a-form-item>
-                <div v-if="formState.is_merge">
+                <div v-if="store.is_merge">
                     <a-form-item name="sort_method" label="排序方式">
-                        <a-radio-group v-model:value="formState.sort_method">
+                        <a-radio-group v-model:value="store.sort_method">
                             <a-radio value="name">文件名(字母)</a-radio>
                             <a-radio value="name_digit">文件名(编号)</a-radio>
                             <a-radio value="ctime">创建时间</a-radio>
@@ -120,9 +120,9 @@
                             <a-radio value="custom">自定义</a-radio>
                         </a-radio-group>
                     </a-form-item>
-                    <div v-if="formState.sort_method !== 'custom'">
+                    <div v-if="store.sort_method !== 'custom'">
                         <a-form-item name="sort_direction" label="排序方向">
-                            <a-radio-group v-model:value="formState.sort_direction">
+                            <a-radio-group v-model:value="store.sort_direction">
                                 <a-radio value="asc">升序</a-radio>
                                 <a-radio value="desc">降序</a-radio>
                             </a-radio-group>
@@ -132,7 +132,7 @@
                             <div>
                                 <a-row>
                                     <a-col :span="22">
-                                        <a-input v-model:value="formState.input"
+                                        <a-input v-model:value="store.input"
                                             placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
                                     </a-col>
                                     <a-col :span="1" style="margin-left: 1vw;">
@@ -147,13 +147,13 @@
                     </div>
                     <div v-else>
                         <a-form-item :label="index === 0 ? '输入路径列表' : ' '" :colon="index === 0 ? true : false"
-                            v-for="(item, index) in formState.input_list" :key="index">
-                            <a-input v-model:value="formState.input_list[index]" style="width: 90%;" allow-clear
+                            v-for="(item, index) in store.input_list" :key="index">
+                            <a-input v-model:value="store.input_list[index]" style="width: 90%;" allow-clear
                                 placeholder="输入文件路径" />
                             <MinusCircleOutlined @click="removePath(item)" style="margin-left: 1vw;" />
                         </a-form-item>
-                        <a-form-item name="span" :label="formState.input_list.length === 0 ? '输入路径列表' : ' '"
-                            :colon="formState.input_list.length === 0 ? true : false">
+                        <a-form-item name="span" :label="store.input_list.length === 0 ? '输入路径列表' : ' '"
+                            :colon="store.input_list.length === 0 ? true : false">
                             <a-button type="dashed" block @click="addPath">
                                 <PlusOutlined />
                                 添加路径
@@ -164,8 +164,7 @@
                         <div>
                             <a-row>
                                 <a-col :span="22">
-                                    <a-input v-model:value="formState.output" placeholder="输出路径(留空则保存到输入文件同级目录)"
-                                        allow-clear />
+                                    <a-input v-model:value="store.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                                 </a-col>
                                 <a-col :span="1" style="margin-left: 1vw;">
                                     <a-tooltip>
@@ -182,8 +181,8 @@
                         <div>
                             <a-row>
                                 <a-col :span="22">
-                                    <a-input v-model:value="formState.input"
-                                        placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                                    <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                        allow-clear />
                                 </a-col>
                                 <a-col :span="1" style="margin-left: 1vw;">
                                     <a-tooltip>
@@ -198,8 +197,7 @@
                         <div>
                             <a-row>
                                 <a-col :span="22">
-                                    <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)"
-                                        allow-clear />
+                                    <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                                 </a-col>
                                 <a-col :span="1" style="margin-left: 1vw;">
                                     <a-tooltip>
@@ -214,14 +212,14 @@
             </div>
             <div v-else>
                 <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
-                    label="页码范围" v-if="formState.type.startsWith('pdf')">
-                    <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-3,9-10" allow-clear />
+                    label="页码范围" v-if="store.type.startsWith('pdf')">
+                    <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-3,9-10" allow-clear />
                 </a-form-item>
                 <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                     <div>
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件" allow-clear />
+                                <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件" allow-clear />
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
                                 <a-tooltip>
@@ -236,7 +234,7 @@
                     <div>
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                                <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
                                 <a-tooltip>
@@ -276,8 +274,9 @@ import {
     PlusOutlined,
 } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import type { ConvertState } from "../data";
 import { handleOps } from "../data";
+import { useConvertState } from '../../store/convert';
+
 export default defineComponent({
     components: {
         EllipsisOutlined,
@@ -286,18 +285,7 @@ export default defineComponent({
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<ConvertState>({
-            input: "",
-            output: "",
-            page: "",
-            type: "pdf2png",
-            dpi: 300,
-            is_merge: false,
-            sort_method: 'name',
-            sort_direction: 'asc',
-            input_list: []
-        });
-
+        const store = useConvertState();
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -366,117 +354,117 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.type) {
+            switch (store.type) {
                 case "pdf2png": {
                     await handleOps(PDFConversion, [
-                        [formState.input],
-                        formState.output,
-                        formState.dpi,
+                        [store.input],
+                        store.output,
+                        store.dpi,
                         false,
-                        formState.sort_method,
-                        formState.sort_direction,
+                        store.sort_method,
+                        store.sort_direction,
                         "pdf",
                         "png",
-                        formState.page,
+                        store.page,
                     ])
                     break;
                 }
                 case "pdf2svg": {
                     await handleOps(PDFConversion, [
-                        [formState.input],
-                        formState.output,
-                        formState.dpi,
+                        [store.input],
+                        store.output,
+                        store.dpi,
                         false,
-                        formState.sort_method,
-                        formState.sort_direction,
+                        store.sort_method,
+                        store.sort_direction,
                         "pdf",
                         "svg",
-                        formState.page,
+                        store.page,
                     ])
                     break;
                 }
                 case "pdf2docx": {
                     await handleOps(ConvertPDF2Docx, [
-                        [formState.input],
-                        formState.output,
+                        [store.input],
+                        store.output,
                     ])
                     break;
                 }
                 case "pdf2image-pdf": {
                     await handleOps(PDFConversion, [
-                        [formState.input],
-                        formState.output,
-                        formState.dpi,
+                        [store.input],
+                        store.output,
+                        store.dpi,
                         false,
-                        formState.sort_method,
-                        formState.sort_direction,
+                        store.sort_method,
+                        store.sort_direction,
                         "pdf",
                         "image-pdf",
-                        formState.page,
+                        store.page,
                     ])
                     break;
                 }
                 case "png2pdf": {
-                    let input = [formState.input];
-                    if (formState.is_merge && formState.sort_method === "custom") {
-                        input = formState.input_list;
+                    let input = [store.input];
+                    if (store.is_merge && store.sort_method === "custom") {
+                        input = store.input_list;
                     }
                     await handleOps(PDFConversion, [
                         input,
-                        formState.output,
-                        formState.dpi,
-                        formState.is_merge,
-                        formState.sort_method,
-                        formState.sort_direction,
+                        store.output,
+                        store.dpi,
+                        store.is_merge,
+                        store.sort_method,
+                        store.sort_direction,
                         "png",
                         "pdf",
-                        formState.page,
+                        store.page,
                     ])
                     break;
                 }
                 case "svg2pdf": {
-                    let input = [formState.input];
-                    if (formState.is_merge && formState.sort_method === "custom") {
-                        input = formState.input_list;
+                    let input = [store.input];
+                    if (store.is_merge && store.sort_method === "custom") {
+                        input = store.input_list;
                     }
                     await handleOps(PDFConversion, [
                         input,
-                        formState.output,
-                        formState.dpi,
-                        formState.is_merge,
-                        formState.sort_method,
-                        formState.sort_direction,
+                        store.output,
+                        store.dpi,
+                        store.is_merge,
+                        store.sort_method,
+                        store.sort_direction,
                         "svg",
                         "pdf",
-                        formState.page,
+                        store.page,
                     ])
                     break;
                 }
                 case "epub2pdf-python": {
                     await handleOps(PDFConversion, [
-                        [formState.input],
-                        formState.output,
-                        formState.dpi,
+                        [store.input],
+                        store.output,
+                        store.dpi,
                         false,
-                        formState.sort_method,
-                        formState.sort_direction,
+                        store.sort_method,
+                        store.sort_direction,
                         "epub",
                         "pdf",
-                        formState.page,
+                        store.page,
                     ])
                     break;
                 }
                 case "mobi2pdf-python": {
                     await handleOps(PDFConversion, [
-                        [formState.input],
-                        formState.output,
-                        formState.dpi,
+                        [store.input],
+                        store.output,
+                        store.dpi,
                         false,
-                        formState.sort_method,
-                        formState.sort_direction,
+                        store.sort_method,
+                        store.sort_direction,
                         "mobi",
                         "pdf",
-                        formState.page,
+                        store.page,
                     ])
                     break;
                 }
@@ -484,32 +472,32 @@ export default defineComponent({
                 // pandoc
                 case "md2docx": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".docx"
                     ])
                     break;
                 }
                 case "docx2md": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".md"
                     ])
                     break;
                 }
                 case "md2tex": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".tex"
                     ])
                     break;
                 }
                 case "tex2md": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".md"
                     ])
                     break;
@@ -517,56 +505,56 @@ export default defineComponent({
 
                 case "md2html": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".html"
                     ])
                     break;
                 }
                 case "md2js": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".html"
                     ])
                     break;
                 }
                 case "html2md": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".md"
                     ])
                     break;
                 }
                 case "tex2pdf": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".pdf"
                     ])
                     break;
                 }
                 case "docx2html": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".html"
                     ])
                     break;
                 }
                 case "md2pdf": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".pdf"
                     ])
                     break;
                 }
                 case "epub2pdf": {
                     await handleOps(PandocConvert, [
-                        formState.input,
-                        formState.output,
+                        store.input,
+                        store.output,
                         ".pdf"
                     ])
                     break;
@@ -593,7 +581,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -604,7 +592,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -615,7 +603,7 @@ export default defineComponent({
             await SelectDir().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -627,7 +615,7 @@ export default defineComponent({
             await SelectMultipleFiles().then((res: any) => {
                 console.log({ res });
                 if (res) {
-                    formState.input_list.push(...res);
+                    store.input_list.push(...res);
                 }
                 formRef.value?.validateFields("input_list");
             }).catch((err: any) => {
@@ -635,16 +623,16 @@ export default defineComponent({
             });
         }
         const removePath = (item: string) => {
-            const index = formState.input_list.indexOf(item);
+            const index = store.input_list.indexOf(item);
             if (index != -1) {
-                formState.input_list.splice(index, 1);
+                store.input_list.splice(index, 1);
             }
         }
         return {
             selectFile,
             saveFile,
             saveDir,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

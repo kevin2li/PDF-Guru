@@ -1,59 +1,59 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="encrypt_op" label="操作" style="margin-bottom: 1.8vh;">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
+            <a-form-item name="op" label="操作" style="margin-bottom: 1.8vh;">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="encrypt">添加密码</a-radio-button>
                     <a-radio-button value="decrypt">移除密码</a-radio-button>
                     <a-radio-button value="recover">权限恢复</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.op == 'encrypt'">
+            <div v-if="store.op == 'encrypt'">
                 <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;">
-                    <a-form-item name="is_set_upw" label="设置打开密码" :disabled="!formState.is_set_upw">
-                        <a-checkbox v-model:checked="formState.is_set_upw"></a-checkbox>
+                    <a-form-item name="is_set_upw" label="设置打开密码" :disabled="!store.is_set_upw">
+                        <a-checkbox v-model:checked="store.is_set_upw"></a-checkbox>
                     </a-form-item>
-                    <a-form-item :name="formState.is_set_upw ? 'upw' : 'upw-none'" label="设置密码" hasFeedback
+                    <a-form-item :name="store.is_set_upw ? 'upw' : 'upw-none'" label="设置密码" hasFeedback
                         :validateStatus="validateStatus.encrypt_upw">
-                        <a-input-password v-model:value="formState.upw" placeholder="不少于6位" allow-clear
-                            :disabled="!formState.is_set_upw" />
+                        <a-input-password v-model:value="store.upw" placeholder="不少于6位" allow-clear
+                            :disabled="!store.is_set_upw" />
                     </a-form-item>
-                    <a-form-item :name="formState.is_set_upw ? 'upw_confirm' : 'upw_confirm-none'" label="确认密码" hasFeedback
+                    <a-form-item :name="store.is_set_upw ? 'upw_confirm' : 'upw_confirm-none'" label="确认密码" hasFeedback
                         :validateStatus="validateStatus.encrypt_upw_confirm">
-                        <a-input-password v-model:value="formState.upw_confirm" placeholder="再次输入密码" allow-clear
-                            :disabled="!formState.is_set_upw" />
+                        <a-input-password v-model:value="store.upw_confirm" placeholder="再次输入密码" allow-clear
+                            :disabled="!store.is_set_upw" />
                     </a-form-item>
                 </div>
                 <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;">
                     <a-form-item name="is_set_opw" label="设置权限密码">
-                        <a-checkbox v-model:checked="formState.is_set_opw"></a-checkbox>
+                        <a-checkbox v-model:checked="store.is_set_opw"></a-checkbox>
                     </a-form-item>
-                    <a-form-item :name="formState.is_set_opw ? 'opw' : 'opw-none'" label="设置密码" hasFeedback
+                    <a-form-item :name="store.is_set_opw ? 'opw' : 'opw-none'" label="设置密码" hasFeedback
                         :validateStatus="validateStatus.encrypt_opw">
-                        <a-input-password v-model:value="formState.opw" placeholder="不少于6位" allow-clear
-                            :disabled="!formState.is_set_opw" />
+                        <a-input-password v-model:value="store.opw" placeholder="不少于6位" allow-clear
+                            :disabled="!store.is_set_opw" />
                     </a-form-item>
-                    <a-form-item :name="formState.is_set_opw ? 'opw_confirm' : 'opw_confirm-none'" label="确认密码" hasFeedback
+                    <a-form-item :name="store.is_set_opw ? 'opw_confirm' : 'opw_confirm-none'" label="确认密码" hasFeedback
                         :validateStatus="validateStatus.encrypt_opw_confirm">
-                        <a-input-password v-model:value="formState.opw_confirm" allow-clear placeholder="再次输入密码"
-                            :disabled="!formState.is_set_opw" />
+                        <a-input-password v-model:value="store.opw_confirm" allow-clear placeholder="再次输入密码"
+                            :disabled="!store.is_set_opw" />
                     </a-form-item>
-                    <a-form-item :name="formState.is_set_opw ? 'perm' : 'perm-none'" label="保护功能">
-                        <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate"
-                            :disabled="!formState.is_set_opw" @change="onCheckAllChange">全选</a-checkbox>
+                    <a-form-item :name="store.is_set_opw ? 'perm' : 'perm-none'" label="保护功能">
+                        <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate" :disabled="!store.is_set_opw"
+                            @change="onCheckAllChange">全选</a-checkbox>
                         <a-divider type="vertical" />
-                        <a-checkbox-group v-model:value="formState.perm" :options="encrypt_perm_options"
-                            :disabled="!formState.is_set_opw" />
+                        <a-checkbox-group v-model:value="store.perm" :options="encrypt_perm_options"
+                            :disabled="!store.is_set_opw" />
                     </a-form-item>
                 </div>
             </div>
-            <div v-if="formState.op == 'decrypt'">
+            <div v-if="store.op == 'decrypt'">
                 <a-form-item name="upw" label="密码" :rules="[{
                     required: true, message: '请填写密码'
                 }]">
-                    <a-input-password v-model:value="formState.upw" placeholder="解密密码" allow-clear />
+                    <a-input-password v-model:value="store.upw" placeholder="解密密码" allow-clear />
                 </a-form-item>
             </div>
 
@@ -61,7 +61,8 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -76,7 +77,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -107,26 +108,16 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import type { EncryptState } from "../data";
 import { handleOps } from "../data";
+import { useEncryptState } from '../../store/encrypt';
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<EncryptState>({
-            input: "",
-            output: "",
-            op: "encrypt",
-            upw: "",
-            opw: "",
-            perm: [],
-            is_set_upw: false,
-            is_set_opw: false,
-            upw_confirm: "",
-            opw_confirm: "",
-        });
+        const store = useEncryptState();
 
         const validateStatus = reactive({
             input: "",
@@ -206,7 +197,7 @@ export default defineComponent({
             if (value === '') {
                 validateStatus.encrypt_upw_confirm = 'error';
                 return Promise.reject('请再次输入密码');
-            } else if (value !== formState.upw) {
+            } else if (value !== store.upw) {
                 validateStatus.encrypt_upw_confirm = 'error';
                 return Promise.reject("两次密码输入不一致");
             } else {
@@ -219,7 +210,7 @@ export default defineComponent({
             if (value === '') {
                 validateStatus.encrypt_opw_confirm = 'error';
                 return Promise.reject('请再次输入密码');
-            } else if (value !== formState.opw) {
+            } else if (value !== store.opw) {
                 validateStatus.encrypt_opw_confirm = 'error';
                 return Promise.reject("两次密码输入不一致");
             } else {
@@ -243,13 +234,13 @@ export default defineComponent({
             "复制", "注释", "打印", "表单", "插入/删除页面"
         ];
         const onCheckAllChange = (e: any) => {
-            Object.assign(formState, {
+            Object.assign(store, {
                 perm: e.target.checked ? encrypt_perm_options : [],
             });
             indeterminate.value = false;
         };
         watch(
-            () => formState.perm,
+            () => store.perm,
             (val: any) => {
                 indeterminate.value = !!val.length && val.length < encrypt_perm_options.length;
                 checkAll.value = val.length === encrypt_perm_options.length;
@@ -262,34 +253,34 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         async function submit() {
-            if (formState.op === 'encrypt' && !formState.is_set_opw && !formState.is_set_upw) {
+            if (store.op === 'encrypt' && !store.is_set_opw && !store.is_set_upw) {
                 message.error("请至少设置一种密码");
                 return;
             }
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case "encrypt": {
                     let upw = "", opw = "", perm: string[] = [];
-                    if (formState.is_set_upw) {
-                        upw = formState.upw;
+                    if (store.is_set_upw) {
+                        upw = store.upw;
                         perm = ["打开"];
                     }
-                    if (formState.is_set_opw) {
-                        opw = formState.opw;
-                        perm = formState.perm;
+                    if (store.is_set_opw) {
+                        opw = store.opw;
+                        perm = store.perm;
                         if (!perm.includes("打开")) {
                             perm.push("打开");
                         }
                     }
-                    await handleOps(EncryptPDF, [formState.input, formState.output, upw, opw, perm]);
+                    await handleOps(EncryptPDF, [store.input, store.output, upw, opw, perm]);
                     break;
                 }
                 case "decrypt": {
-                    await handleOps(DecryptPDF, [formState.input, formState.output, formState.upw]);
+                    await handleOps(DecryptPDF, [store.input, store.output, store.upw]);
                     break;
                 }
                 case "recover": {
-                    await handleOps(DecryptPDF, [formState.input, formState.output, ""]);
+                    await handleOps(DecryptPDF, [store.input, store.output, ""]);
                     break;
                 }
             }
@@ -314,7 +305,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -325,7 +316,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -335,7 +326,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

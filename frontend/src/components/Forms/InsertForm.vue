@@ -1,23 +1,23 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="insert_op" label="操作">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
+            <a-form-item name="op" label="操作">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="insert">插入</a-radio-button>
                     <a-radio-button value="replace">替换</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item label="类型" v-if="formState.op === 'insert'">
-                <a-radio-group v-model:value="formState.insert_type">
+            <a-form-item label="类型" v-if="store.op === 'insert'">
+                <a-radio-group v-model:value="store.insert_type">
                     <a-radio value="blank">插入空白页</a-radio>
                     <a-radio value="other">插入其他文件</a-radio>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.op === 'insert' && formState.insert_type === 'blank'">
+            <div v-if="store.op === 'insert' && store.insert_type === 'blank'">
                 <a-form-item label="插入位置">
-                    <a-select v-model:value="formState.src_pos_type" style="width: 200px">
+                    <a-select v-model:value="store.src_pos_type" style="width: 200px">
                         <a-select-option value="before_first">第一页之前</a-select-option>
                         <a-select-option value="after_first">第一页之后</a-select-option>
                         <a-select-option value="before_last">最后一页之前</a-select-option>
@@ -26,11 +26,11 @@
                         <a-select-option value="after_custom">指定页码之后</a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item name="src_pos" label="页码" v-if="formState.src_pos_type.endsWith('custom')">
-                    <a-input-number v-model:value="formState.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
+                <a-form-item name="src_pos" label="页码" v-if="store.src_pos_type.endsWith('custom')">
+                    <a-input-number v-model:value="store.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
                 </a-form-item>
                 <a-form-item name="paper_size" label="纸张大小">
-                    <a-select v-model:value="formState.paper_size" style="width: 200px">
+                    <a-select v-model:value="store.paper_size" style="width: 200px">
                         <a-select-option value="same">与文档相同</a-select-option>
                         <a-select-option value="a0">A0</a-select-option>
                         <a-select-option value="a1">A1</a-select-option>
@@ -79,20 +79,20 @@
                     </a-select>
                 </a-form-item>
                 <a-form-item label="纸张方向">
-                    <a-radio-group v-model:value="formState.orientation">
+                    <a-radio-group v-model:value="store.orientation">
                         <a-radio value="portrait">纵向</a-radio>
                         <a-radio value="landscape">横向</a-radio>
                     </a-radio-group>
                 </a-form-item>
                 <a-form-item label="插入页数">
-                    <a-input-number v-model:value="formState.count" :min="1" />
+                    <a-input-number v-model:value="store.count" :min="1" />
                 </a-form-item>
                 <a-form-item name="src_path" label="输入" :validateStatus="validateStatus.src_path"
                     :help="validateHelp.src_path">
                     <div>
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.src_path" placeholder="输入文件路径" allow-clear />
+                                <a-input v-model:value="store.src_path" placeholder="输入文件路径" allow-clear />
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
                                 <a-tooltip>
@@ -104,9 +104,9 @@
                     </div>
                 </a-form-item>
             </div>
-            <div v-if="formState.op === 'insert' && formState.insert_type === 'other'">
+            <div v-if="store.op === 'insert' && store.insert_type === 'other'">
                 <a-form-item label="插入位置">
-                    <a-select v-model:value="formState.src_pos_type" style="width: 200px">
+                    <a-select v-model:value="store.src_pos_type" style="width: 200px">
                         <a-select-option value="before_first">第一页之前</a-select-option>
                         <a-select-option value="after_first">第一页之后</a-select-option>
                         <a-select-option value="before_last">最后一页之前</a-select-option>
@@ -115,15 +115,15 @@
                         <a-select-option value="after_custom">指定页码之后</a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item name="src_pos" label="页码" v-if="formState.src_pos_type.endsWith('custom')">
-                    <a-input-number v-model:value="formState.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
+                <a-form-item name="src_pos" label="页码" v-if="store.src_pos_type.endsWith('custom')">
+                    <a-input-number v-model:value="store.src_pos" placeholder="插入位置, e.g. 10" :min="1" />
                 </a-form-item>
                 <a-form-item label="源PDF路径" name="src_path" :validateStatus="validateStatus.src_path"
                     :help="validateHelp.src_path">
                     <div>
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.src_path" placeholder="被插入的PDF路径" allow-clear></a-input>
+                                <a-input v-model:value="store.src_path" placeholder="被插入的PDF路径" allow-clear></a-input>
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
                                 <a-tooltip>
@@ -139,7 +139,7 @@
                     <div>
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
+                                <a-input v-model:value="store.dst_path" placeholder="插入的PDF路径" allow-clear />
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
                                 <a-tooltip>
@@ -152,16 +152,16 @@
                 </a-form-item>
                 <a-form-item name="dst_range" hasFeedback :validateStatus="validateStatus.dst_range"
                     :help="validateHelp.dst_range" label="页码范围">
-                    <a-input v-model:value="formState.dst_range" placeholder="目标PDF的页码范围(留空表示全部), e.g. 1-10" />
+                    <a-input v-model:value="store.dst_range" placeholder="目标PDF的页码范围(留空表示全部), e.g. 1-10" />
                 </a-form-item>
             </div>
-            <div v-if="formState.op == 'replace'">
+            <div v-if="store.op == 'replace'">
                 <a-form-item label="源PDF路径" name="src_path" :validateStatus="validateStatus.src_path"
                     :help="validateHelp.src_path">
                     <div>
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.src_path" placeholder="被插入的PDF路径" allow-clear></a-input>
+                                <a-input v-model:value="store.src_path" placeholder="被插入的PDF路径" allow-clear></a-input>
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
                                 <a-tooltip>
@@ -174,14 +174,14 @@
                 </a-form-item>
                 <a-form-item name="src_range" hasFeedback :validateStatus="validateStatus.src_range"
                     :help="validateHelp.src_range" label="页码范围">
-                    <a-input v-model:value="formState.src_range" placeholder="被替换的页码范围(留空表示全部), e.g. 1-10" />
+                    <a-input v-model:value="store.src_range" placeholder="被替换的页码范围(留空表示全部), e.g. 1-10" />
                 </a-form-item>
                 <a-form-item label="目标PDF路径" name="dst_path" :validateStatus="validateStatus.dst_path"
                     :help="validateHelp.dst_path">
                     <div>
                         <a-row>
                             <a-col :span="22">
-                                <a-input v-model:value="formState.dst_path" placeholder="插入的PDF路径" allow-clear />
+                                <a-input v-model:value="store.dst_path" placeholder="插入的PDF路径" allow-clear />
                             </a-col>
                             <a-col :span="1" style="margin-left: 1vw;">
                                 <a-tooltip>
@@ -194,14 +194,14 @@
                 </a-form-item>
                 <a-form-item name="dst_range" hasFeedback :validateStatus="validateStatus.dst_range"
                     :help="validateHelp.dst_range" label="页码范围">
-                    <a-input v-model:value="formState.dst_range" placeholder="目标PDF的页码范围(留空表示全部), e.g. 1-10" />
+                    <a-input v-model:value="store.dst_range" placeholder="目标PDF的页码范围(留空表示全部), e.g. 1-10" />
                 </a-form-item>
             </div>
             <a-form-item name="output" label="输出">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -236,29 +236,15 @@ import type { Rule } from 'ant-design-vue/es/form';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { InsertState } from "../data";
 import { handleOps } from "../data";
+import { useInsertState } from "../../store/insert";
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<InsertState>({
-            input: "",
-            output: "",
-            page: "",
-            op: "insert",
-            insert_type: "blank",
-            paper_size: "a4",
-            orientation: "portrait",
-            count: 1,
-            src_pos_type: "before_first",
-            src_pos: 1,
-            src_path: "",
-            dst_path: "",
-            src_range: "",
-            dst_range: ""
-        });
-
+        const store = useInsertState();
         const validateStatus = reactive({
             src_path: "",
             dst_path: "",
@@ -348,39 +334,40 @@ export default defineComponent({
         // 重置表单
         const resetFields = () => {
             formRef.value?.resetFields();
+            store.resetState();
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case "insert": {
-                    if (formState.insert_type === "blank") {
+                    if (store.insert_type === "blank") {
                         await handleOps(InsertBlankPDF, [
-                            formState.src_path,
-                            formState.dst_path,
-                            formState.src_pos,
-                            formState.src_pos_type,
-                            formState.paper_size,
-                            formState.orientation,
-                            formState.count,
-                            formState.output
+                            store.src_path,
+                            store.dst_path,
+                            store.src_pos,
+                            store.src_pos_type,
+                            store.paper_size,
+                            store.orientation,
+                            store.count,
+                            store.output
                         ]);
                     } else {
                         await handleOps(InsertPDF, [
-                            formState.src_path,
-                            formState.dst_path,
-                            formState.src_pos,
-                            formState.dst_range,
-                            formState.src_pos_type,
-                            formState.output
+                            store.src_path,
+                            store.dst_path,
+                            store.src_pos,
+                            store.dst_range,
+                            store.src_pos_type,
+                            store.output
                         ]);
                     }
                     confirmLoading.value = false;
                     break;
                 }
                 case "replace": {
-                    await handleOps(ReplacePDF, [formState.src_path, formState.dst_path, formState.src_range, formState.dst_range, formState.output]);
+                    await handleOps(ReplacePDF, [store.src_path, store.dst_path, store.src_range, store.dst_range, store.output]);
                     confirmLoading.value = false;
                     break;
                 }
@@ -407,7 +394,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -418,7 +405,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -428,7 +415,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

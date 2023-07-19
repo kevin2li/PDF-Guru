@@ -23,7 +23,10 @@
   - [License](#license)
   - [Acknowledgments](#acknowledgments)
 
+> 国内用户可访问：https://gitee.com/Kevin234/PDF-Guru
+
 ## 项目介绍
+
 [PDF Guru](https://github.com/kevin2li/PDF-Guru)是一个通用型PDF文件处理工具，包含PDF合并、拆分、旋转、水印、加密、转换等20多项常用功能，完全开源，个人免费使用，界面简洁，简单易用。
 
 
@@ -42,21 +45,21 @@
 3. 跨平台：支持在Windows、Mac、Linux设备上使用
 4. 开源免费
 5. 界面简洁，使用简单
-6. 体积小巧，绿色免安装，随用随开
+6. 体积小巧(<30M)，绿色免安装，随用随开
 7. 插件化：根据需要选择是否安装额外组件，减小安装包体积
 
 ## 应用截图
 - MacOS
 
-![](https://minio.kevin2li.top/image-bed/blog/20230715190552.png)
+![](https://minio.kevin2li.top/image-bed/blog/20230719151223.png)
 
 - Windows
 
-![](https://minio.kevin2li.top/image-bed/blog/20230715190650.png)
+![](https://minio.kevin2li.top/image-bed/blog/20230719150543.png)
 
 - Linux
 
-![](https://minio.kevin2li.top/image-bed/blog/20230715190732.png)
+![](https://minio.kevin2li.top/image-bed/blog/20230719151619.png)
 
 ## 上手指南
 ### 安装

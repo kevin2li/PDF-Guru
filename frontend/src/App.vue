@@ -4,6 +4,6 @@
 </template>
 
 <script lang="ts" setup>
-import Main from './components/Main.vue'
+import Main from './Main.vue'
 </script>
 

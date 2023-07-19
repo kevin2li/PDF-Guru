@@ -1,41 +1,40 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
             <a-form-item name="op" label="背景填充">
-                <a-radio-group v-model:value="formState.op">
+                <a-radio-group v-model:value="store.op">
                     <a-radio value="color">颜色</a-radio>
                     <a-radio value="image">图片</a-radio>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item name="color" label="颜色" v-if="formState.op === 'color'" hasFeedback
+            <a-form-item name="color" label="颜色" v-if="store.op === 'color'" hasFeedback
                 :validateStatus="validateStatus.color" :help="validateHelp.color">
-                <a-input v-model:value="formState.color" style="width:300px" placeholder="颜色16进制码, e.g. #FF0000"
-                    allow-clear />
+                <a-input v-model:value="store.color" style="width:300px" placeholder="颜色16进制码, e.g. #FF0000" allow-clear />
                 <a
-                    :style="{ background: formState.color, border: '1px solid black', marginLeft: '20px' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
+                    :style="{ background: store.color, border: '1px solid black', marginLeft: '20px' }">&nbsp;&nbsp;&nbsp;&nbsp;</a>
             </a-form-item>
-            <a-form-item name="image_path" label="图片" v-if="formState.op === 'image'" hasFeedback
+            <a-form-item name="image_path" label="图片" v-if="store.op === 'image'" hasFeedback
                 :validateStatus="validateStatus.image_path" :help="validateHelp.image_path">
-                <a-input v-model:value="formState.image_path" placeholder="图片路径" allow-clear />
+                <a-input v-model:value="store.image_path" placeholder="图片路径" allow-clear />
             </a-form-item>
             <a-form-item name="watermark_font_opacity" label="外观">
                 <a-space size="large">
-                    <a-input-number v-model:value="formState.opacity" :min="0" :max="1" :step="0.01" style="width: 200px;">
+                    <a-input-number v-model:value="store.opacity" :min="0" :max="1" :step="0.01" style="width: 200px;">
                         <template #addonBefore>
                             不透明度
                         </template>
                     </a-input-number>
                     <div style="width: 100px;">
-                        <a-slider v-model:value="formState.opacity" :min="0" :max="1" :step="0.01" />
+                        <a-slider v-model:value="store.opacity" :min="0" :max="1" :step="0.01" />
                     </div>
-                    <a-input-number v-model:value="formState.degree" :min="0" :max="360">
+                    <a-input-number v-model:value="store.degree" :min="0" :max="360">
                         <template #addonBefore>
                             旋转角度
                         </template>
                     </a-input-number>
-                    <a-input-number v-model:value="formState.scale" :min="0">
+                    <a-input-number v-model:value="store.scale" :min="0">
                         <template #addonBefore>
                             缩放比例
                         </template>
@@ -44,12 +43,12 @@
             </a-form-item>
             <a-form-item label="位置">
                 <a-space size="large">
-                    <a-input-number v-model:value="formState.x_offset">
+                    <a-input-number v-model:value="store.x_offset">
                         <template #addonBefore>
                             水平偏移量
                         </template>
                     </a-input-number>
-                    <a-input-number v-model:value="formState.y_offset">
+                    <a-input-number v-model:value="store.y_offset">
                         <template #addonBefore>
                             垂直偏移量
                         </template>
@@ -58,13 +57,14 @@
             </a-form-item>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -79,7 +79,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -113,26 +113,15 @@ import type { Rule } from 'ant-design-vue/es/form';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { BackgroundState } from "../data";
 import { handleOps } from "../data";
+import { useBackgroundState } from '../../store/background';
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<BackgroundState>({
-            input: "",
-            output: "",
-            page: "",
-            degree: 0,
-            op: 'color',
-            color: '#FFFFFF',
-            opacity: 1,
-            scale: 1,
-            x_offset: 0,
-            y_offset: 0,
-            image_path: ''
-        });
-
+        const store = useBackgroundState();
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -260,31 +249,31 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case 'color': {
                     await handleOps(AddPDFBackgroundByColor, [
-                        formState.input,
-                        formState.output,
-                        formState.color,
-                        formState.opacity,
-                        formState.degree,
-                        formState.x_offset,
-                        formState.y_offset,
-                        formState.page,
+                        store.input,
+                        store.output,
+                        store.color,
+                        store.opacity,
+                        store.degree,
+                        store.x_offset,
+                        store.y_offset,
+                        store.page,
                     ]);
                     break;
                 }
                 case 'image': {
                     await handleOps(AddPDFBackgroundByImage, [
-                        formState.input,
-                        formState.image_path,
-                        formState.output,
-                        formState.opacity,
-                        formState.degree,
-                        formState.x_offset,
-                        formState.y_offset,
-                        formState.scale,
-                        formState.page,
+                        store.input,
+                        store.image_path,
+                        store.output,
+                        store.opacity,
+                        store.degree,
+                        store.x_offset,
+                        store.y_offset,
+                        store.scale,
+                        store.page,
                     ]);
                 }
                 default:
@@ -312,7 +301,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -323,7 +312,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -333,7 +322,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

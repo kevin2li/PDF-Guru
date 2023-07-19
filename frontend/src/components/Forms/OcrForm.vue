@@ -1,32 +1,33 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
             <a-form-item label="语言">
-                <a-select v-model:value="formState.lang" style="width: 200px">
+                <a-select v-model:value="store.lang" style="width: 200px">
                     <a-select-option value="ch">中文简体</a-select-option>
                     <a-select-option value="en">英文</a-select-option>
                 </a-select>
             </a-form-item>
             <a-form-item label="是否双栏">
-                <a-checkbox v-model:checked="formState.double_column"></a-checkbox>
+                <a-checkbox v-model:checked="store.double_column"></a-checkbox>
             </a-form-item>
             <a-form-item label="OCR引擎">
-                <a-select v-model:value="formState.engine" style="width: 200px">
+                <a-select v-model:value="store.engine" style="width: 200px">
                     <a-select-option value="paddleocr">PaddleOCR</a-select-option>
                     <a-select-option value="tesseract" disabled>Tesseract OCR</a-select-option>
                 </a-select>
             </a-form-item>
             <a-form-item name="page" label="页码范围" hasFeedback :validateStatus="validateStatus.page"
                 :help="validateHelp.page">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -41,7 +42,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -75,23 +76,16 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
-import type { OcrState } from "../data";
 import { handleOps } from "../data";
+import { useOcrState } from '../../store/ocr';
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<OcrState>({
-            input: "",
-            output: "",
-            page: "",
-            lang: "ch",
-            double_column: false,
-            engine: "paddleocr",
-        });
-
+        const store = useOcrState();
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -167,7 +161,7 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(OCR, [formState.input, formState.output, formState.page, formState.lang, formState.double_column]);
+            await handleOps(OCR, [store.input, store.output, store.page, store.lang, store.double_column]);
             confirmLoading.value = false;
         }
         const onFinish = async () => {
@@ -189,7 +183,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -200,7 +194,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -210,7 +204,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

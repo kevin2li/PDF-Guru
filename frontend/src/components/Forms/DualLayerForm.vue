@@ -1,16 +1,16 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
             <a-form-item label="语言">
-                <a-select v-model:value="formState.lang" style="width: 200px">
+                <a-select v-model:value="store.lang" style="width: 200px">
                     <a-select-option value="chi_sim">中文简体</a-select-option>
                     <a-select-option value="eng">英文</a-select-option>
                 </a-select>
             </a-form-item>
             <a-form-item name="dpi" label="DPI">
-                <a-select v-model:value="formState.dpi" style="width: 200px">
+                <a-select v-model:value="store.dpi" style="width: 200px">
                     <a-select-option value="100">100</a-select-option>
                     <a-select-option value="200">200</a-select-option>
                     <a-select-option value="300">300</a-select-option>
@@ -24,13 +24,14 @@
             </a-form-item>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -45,7 +46,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -81,22 +82,16 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import type { DualLayerState } from "../data";
 import { handleOps } from "../data";
+import { useDualLayerState } from '../../store/dual_layer';
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<DualLayerState>({
-            input: "",
-            output: "",
-            page: "",
-            lang: "chi_sim",
-            dpi: 300,
-        });
-
+        const store = useDualLayerState();
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -172,11 +167,11 @@ export default defineComponent({
         async function submit() {
             confirmLoading.value = true;
             await handleOps(MakeDualLayerPDF, [
-                formState.input,
-                formState.output,
-                formState.dpi,
-                formState.page,
-                formState.lang
+                store.input,
+                store.output,
+                store.dpi,
+                store.page,
+                store.lang
             ]);
             confirmLoading.value = false;
         }
@@ -199,7 +194,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -210,7 +205,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -220,7 +215,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

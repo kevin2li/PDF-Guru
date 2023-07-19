@@ -1,29 +1,29 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
-            <a-form-item name="crop_op" label="操作">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
+            <a-form-item name="op" label="操作">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="split">分割</a-radio-button>
                     <a-radio-button value="combine">组合</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.op == 'split'">
+            <div v-if="store.op == 'split'">
                 <a-form-item label="分割类型">
-                    <a-radio-group v-model:value="formState.split_type">
+                    <a-radio-group v-model:value="store.split_type">
                         <a-radio value="even">均匀分割</a-radio>
                         <a-radio value="custom">自定义分割</a-radio>
                     </a-radio-group>
                 </a-form-item>
-                <a-form-item label="网格形状" v-if="formState.split_type == 'even'">
+                <a-form-item label="网格形状" v-if="store.split_type == 'even'">
                     <a-space size="large">
-                        <a-input-number v-model:value="formState.rows" :min="1">
+                        <a-input-number v-model:value="store.rows" :min="1">
                             <template #addonBefore>
                                 行数
                             </template>
                         </a-input-number>
-                        <a-input-number v-model:value="formState.cols" :min="1">
+                        <a-input-number v-model:value="store.cols" :min="1">
                             <template #addonBefore>
                                 列数
                             </template>
@@ -31,28 +31,24 @@
                     </a-space>
                 </a-form-item>
                 <a-form-item :label="index === 0 ? '水平分割线' : ' '" :colon="index === 0 ? true : false"
-                    v-if="formState.split_type == 'custom'" v-for="(item, index) in formState.split_h_breakpoints"
-                    :key="index">
-                    <a-input-number :min="0" :max="1" :step="0.01" v-model:value="formState.split_h_breakpoints[index]" />
+                    v-if="store.split_type == 'custom'" v-for="(item, index) in store.split_h_breakpoints" :key="index">
+                    <a-input-number :min="0" :max="1" :step="0.01" v-model:value="store.split_h_breakpoints[index]" />
                     <MinusCircleOutlined @click="removeHBreakpoint(item)" style="margin-left: 1vw;" />
                 </a-form-item>
-                <a-form-item name="span" :label="formState.split_h_breakpoints.length === 0 ? '水平分割线' : ' '"
-                    :colon="formState.split_h_breakpoints.length === 0 ? true : false"
-                    v-if="formState.split_type == 'custom'">
+                <a-form-item name="span" :label="store.split_h_breakpoints.length === 0 ? '水平分割线' : ' '"
+                    :colon="store.split_h_breakpoints.length === 0 ? true : false" v-if="store.split_type == 'custom'">
                     <a-button type="dashed" block @click="addHBreakpoint">
                         <PlusOutlined />
                         添加水平分割线
                     </a-button>
                 </a-form-item>
                 <a-form-item :label="index === 0 ? '垂直分割线' : ' '" :colon="index === 0 ? true : false"
-                    v-if="formState.split_type == 'custom'" v-for="(item, index) in  formState.split_v_breakpoints "
-                    :key="index">
-                    <a-input-number :min="0" :max="1" :step="0.01" v-model:value="formState.split_v_breakpoints[index]" />
+                    v-if="store.split_type == 'custom'" v-for="(item, index) in  store.split_v_breakpoints " :key="index">
+                    <a-input-number :min="0" :max="1" :step="0.01" v-model:value="store.split_v_breakpoints[index]" />
                     <MinusCircleOutlined @click=" removeVBreakpoint(item)" style="margin-left: 1vw;" />
                 </a-form-item>
-                <a-form-item name="span" :label="formState.split_v_breakpoints.length === 0 ? '垂直分割线' : ' '"
-                    :colon="formState.split_v_breakpoints.length === 0 ? true : false"
-                    v-if="formState.split_type == 'custom'">
+                <a-form-item name="span" :label="store.split_v_breakpoints.length === 0 ? '垂直分割线' : ' '"
+                    :colon="store.split_v_breakpoints.length === 0 ? true : false" v-if="store.split_type == 'custom'">
                     <a-button type="dashed" block @click="addVBreakpoint">
                         <PlusOutlined />
                         添加垂直分割线
@@ -62,12 +58,12 @@
             <div v-else>
                 <a-form-item label="网格形状">
                     <a-space size="large">
-                        <a-input-number v-model:value="formState.rows" :min="1">
+                        <a-input-number v-model:value="store.rows" :min="1">
                             <template #addonBefore>
                                 行数
                             </template>
                         </a-input-number>
-                        <a-input-number v-model:value="formState.cols" :min="1">
+                        <a-input-number v-model:value="store.cols" :min="1">
                             <template #addonBefore>
                                 列数
                             </template>
@@ -75,7 +71,7 @@
                     </a-space>
                 </a-form-item>
                 <a-form-item name="paper_size" label="纸张大小">
-                    <a-select v-model:value="formState.paper_size" style="width: 200px">
+                    <a-select v-model:value="store.paper_size" style="width: 200px">
                         <a-select-option value="same">与文档相同</a-select-option>
                         <a-select-option value="a0">A0</a-select-option>
                         <a-select-option value="a1">A1</a-select-option>
@@ -124,7 +120,7 @@
                     </a-select>
                 </a-form-item>
                 <a-form-item label="纸张方向">
-                    <a-radio-group v-model:value="formState.orientation">
+                    <a-radio-group v-model:value="store.orientation">
                         <a-radio value="portrait">纵向</a-radio>
                         <a-radio value="landscape">横向</a-radio>
                     </a-radio-group>
@@ -132,13 +128,14 @@
             </div>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -153,7 +150,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -186,8 +183,9 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { MinusCircleOutlined, PlusOutlined, EllipsisOutlined } from '@ant-design/icons-vue';
-import type { CutState } from "../data";
 import { handleOps } from "../data";
+import { useCutState } from "../../store/cut";
+
 export default defineComponent({
     components: {
         MinusCircleOutlined,
@@ -196,20 +194,7 @@ export default defineComponent({
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<CutState>({
-            input: "",
-            output: "",
-            page: "",
-            op: "split",
-            split_h_breakpoints: [],
-            split_v_breakpoints: [],
-            split_type: "even",
-            rows: 1,
-            cols: 1,
-            paper_size: "a4",
-            orientation: "portrait",
-        });
-
+        const store = useCutState();
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -279,21 +264,21 @@ export default defineComponent({
 
         // 分割PDF
         const addHBreakpoint = () => {
-            formState.split_h_breakpoints.push(0);
+            store.split_h_breakpoints.push(0);
         }
         const removeHBreakpoint = (item: number) => {
-            const index = formState.split_h_breakpoints.indexOf(item);
+            const index = store.split_h_breakpoints.indexOf(item);
             if (index != -1) {
-                formState.split_h_breakpoints.splice(index, 1);
+                store.split_h_breakpoints.splice(index, 1);
             }
         }
         const addVBreakpoint = () => {
-            formState.split_v_breakpoints.push(0);
+            store.split_v_breakpoints.push(0);
         }
         const removeVBreakpoint = (item: number) => {
-            const index = formState.split_v_breakpoints.indexOf(item);
+            const index = store.split_v_breakpoints.indexOf(item);
             if (index != -1) {
-                formState.split_v_breakpoints.splice(index, 1);
+                store.split_v_breakpoints.splice(index, 1);
             }
         }
         // 重置表单
@@ -304,17 +289,17 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case "split": {
-                    if (formState.split_type == "even") {
-                        await handleOps(CutPDFByGrid, [formState.input.trim(), formState.output.trim(), formState.rows, formState.cols, formState.page]);
+                    if (store.split_type == "even") {
+                        await handleOps(CutPDFByGrid, [store.input.trim(), store.output.trim(), store.rows, store.cols, store.page]);
                     } else {
-                        await handleOps(CutPDFByBreakpoints, [formState.input.trim(), formState.output.trim(), formState.split_h_breakpoints, formState.split_v_breakpoints, formState.page]);
+                        await handleOps(CutPDFByBreakpoints, [store.input.trim(), store.output.trim(), store.split_h_breakpoints, store.split_v_breakpoints, store.page]);
                     }
                     break;
                 }
                 case "combine": {
-                    await handleOps(CombinePDFByGrid, [formState.input.trim(), formState.output.trim(), formState.rows, formState.cols, formState.page, formState.paper_size, formState.orientation]);
+                    await handleOps(CombinePDFByGrid, [store.input.trim(), store.output.trim(), store.rows, store.cols, store.page, store.paper_size, store.orientation]);
                     break;
                 }
             }
@@ -340,7 +325,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -351,7 +336,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -362,7 +347,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

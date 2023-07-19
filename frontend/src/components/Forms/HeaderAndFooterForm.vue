@@ -1,56 +1,56 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
             <a-form-item name="encrypt_op" label="操作" style="margin-bottom: 1.8vh;">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="add">添加页眉页脚</a-radio-button>
                     <a-radio-button value="remove">删除页眉页脚</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.op === 'add'">
+            <div v-if="store.op === 'add'">
                 <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;">
-                    <a-form-item name="is_set_upw" label="设置页眉" :disabled="!formState.is_set_header">
-                        <a-checkbox v-model:checked="formState.is_set_header"></a-checkbox>
+                    <a-form-item name="is_set_upw" label="设置页眉" :disabled="!store.is_set_header">
+                        <a-checkbox v-model:checked="store.is_set_header"></a-checkbox>
                     </a-form-item>
                     <a-form-item name="header_left ? 'upw' : 'upw-none'" label="左侧">
-                        <a-textarea v-model:value="formState.header_left" placeholder="页眉左侧内容" allow-clear
-                            :disabled="!formState.is_set_header" />
+                        <a-textarea v-model:value="store.header_left" placeholder="页眉左侧内容" allow-clear
+                            :disabled="!store.is_set_header" />
                     </a-form-item>
                     <a-form-item name="header_center ? 'upw' : 'upw-none'" label="中间">
-                        <a-textarea v-model:value="formState.header_center" placeholder="页眉中间内容" allow-clear
-                            :disabled="!formState.is_set_header" />
+                        <a-textarea v-model:value="store.header_center" placeholder="页眉中间内容" allow-clear
+                            :disabled="!store.is_set_header" />
                     </a-form-item>
                     <a-form-item name="header_right ? 'upw' : 'upw-none'" label="右侧">
-                        <a-textarea v-model:value="formState.header_right" placeholder="页眉右侧内容" allow-clear
-                            :disabled="!formState.is_set_header" />
+                        <a-textarea v-model:value="store.header_right" placeholder="页眉右侧内容" allow-clear
+                            :disabled="!store.is_set_header" />
                     </a-form-item>
                 </div>
                 <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vw 1vw;">
-                    <a-form-item name="is_set_upw" label="设置页脚" :disabled="!formState.is_set_footer">
-                        <a-checkbox v-model:checked="formState.is_set_footer"></a-checkbox>
+                    <a-form-item name="is_set_upw" label="设置页脚" :disabled="!store.is_set_footer">
+                        <a-checkbox v-model:checked="store.is_set_footer"></a-checkbox>
                     </a-form-item>
                     <a-form-item name="footer_left ? 'upw' : 'upw-none'" label="左侧">
-                        <a-textarea v-model:value="formState.footer_left" placeholder="页脚左侧内容" allow-clear
-                            :disabled="!formState.is_set_footer" />
+                        <a-textarea v-model:value="store.footer_left" placeholder="页脚左侧内容" allow-clear
+                            :disabled="!store.is_set_footer" />
                     </a-form-item>
                     <a-form-item name="footer_center ? 'upw' : 'upw-none'" label="中间">
-                        <a-textarea v-model:value="formState.footer_center" placeholder="页脚中间内容" allow-clear
-                            :disabled="!formState.is_set_footer" />
+                        <a-textarea v-model:value="store.footer_center" placeholder="页脚中间内容" allow-clear
+                            :disabled="!store.is_set_footer" />
                     </a-form-item>
                     <a-form-item name="footer_right ? 'upw' : 'upw-none'" label="右侧">
-                        <a-textarea v-model:value="formState.footer_right" placeholder="页脚右侧内容" allow-clear
-                            :disabled="!formState.is_set_footer" />
+                        <a-textarea v-model:value="store.footer_right" placeholder="页脚右侧内容" allow-clear
+                            :disabled="!store.is_set_footer" />
                     </a-form-item>
                 </div>
                 <a-form-item name="watermark_font_size" label="字体属性" hasFeedback>
                     <a-space size="large">
-                        <a-select v-model:value="formState.font_family" style="width: 200px" :options="font_options">
+                        <a-select v-model:value="store.font_family" style="width: 200px" :options="font_options">
                         </a-select>
                         <a-tooltip>
                             <template #title>字号</template>
-                            <a-input-number v-model:value="formState.font_size" :min="1">
+                            <a-input-number v-model:value="store.font_size" :min="1">
                                 <template #prefix>
                                     <font-size-outlined />
                                 </template>
@@ -58,8 +58,8 @@
                         </a-tooltip>
                         <a-tooltip>
                             <template #title>字体颜色</template>
-                            <a-input v-model:value="formState.font_color" placeholder="16进制字体颜色"
-                                :defaultValue="formState.font_color" allow-clear>
+                            <a-input v-model:value="store.font_color" placeholder="16进制字体颜色"
+                                :defaultValue="store.font_color" allow-clear>
                                 <template #prefix>
                                     <font-colors-outlined />
                                 </template>
@@ -70,25 +70,25 @@
                 <a-form-item label="不透明度">
                     <a-row>
                         <a-col :span="3">
-                            <a-input-number v-model:value="formState.opacity" :min="0" :max="1" :step="0.01">
+                            <a-input-number v-model:value="store.opacity" :min="0" :max="1" :step="0.01">
                             </a-input-number>
                         </a-col>
                         <a-col :span="5">
-                            <a-slider v-model:value="formState.opacity" :min="0" :max="1" :step="0.01" />
+                            <a-slider v-model:value="store.opacity" :min="0" :max="1" :step="0.01" />
                         </a-col>
                     </a-row>
                 </a-form-item>
             </div>
-            <div v-if="formState.op === 'remove'">
+            <div v-if="store.op === 'remove'">
                 <a-form-item label="删除对象">
-                    <a-checkbox-group v-model:value="formState.remove_list">
+                    <a-checkbox-group v-model:value="store.remove_list">
                         <a-checkbox value="header">页眉</a-checkbox>
                         <a-checkbox value="footer">页脚</a-checkbox>
                     </a-checkbox-group>
                 </a-form-item>
             </div>
             <a-form-item label="页边距单位">
-                <a-radio-group v-model:value="formState.unit">
+                <a-radio-group v-model:value="store.unit">
                     <a-radio value="pt">像素</a-radio>
                     <a-radio value="cm">厘米</a-radio>
                     <a-radio value="mm">毫米</a-radio>
@@ -97,22 +97,22 @@
             </a-form-item>
             <a-form-item name="crop.type" label="页边距">
                 <a-space size="large">
-                    <a-input-number v-model:value="formState.up" :min="0">
+                    <a-input-number v-model:value="store.up" :min="0">
                         <template #addonBefore>
                             上
                         </template>
                     </a-input-number>
-                    <a-input-number v-model:value="formState.down" :min="0">
+                    <a-input-number v-model:value="store.down" :min="0">
                         <template #addonBefore>
                             下
                         </template>
                     </a-input-number>
-                    <a-input-number v-model:value="formState.left" :min="0">
+                    <a-input-number v-model:value="store.left" :min="0">
                         <template #addonBefore>
                             左
                         </template>
                     </a-input-number>
-                    <a-input-number v-model:value="formState.right" :min="0">
+                    <a-input-number v-model:value="store.right" :min="0">
                         <template #addonBefore>
                             右
                         </template>
@@ -121,13 +121,14 @@
             </a-form-item>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
-                <a-input v-model:value="formState.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
+                <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -142,7 +143,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -178,6 +179,7 @@ import { FontSizeOutlined, FontColorsOutlined, EllipsisOutlined } from '@ant-des
 import type { HeaderAndFooterState } from "../data";
 import { handleOps, windows_fonts_options, mac_fonts_options } from "../data";
 import type { SelectProps } from 'ant-design-vue';
+import { useHeaderAndFooterState } from '../../store/header';
 
 export default defineComponent({
     components: {
@@ -187,30 +189,7 @@ export default defineComponent({
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<HeaderAndFooterState>({
-            input: "",
-            output: "",
-            page: "",
-            op: "add",
-            is_set_header: false,
-            is_set_footer: false,
-            header_left: '',
-            header_center: '',
-            header_right: '',
-            footer_left: '',
-            footer_center: '',
-            footer_right: '',
-            up: 1.27,
-            left: 2.54,
-            down: 1.27,
-            right: 2.54,
-            unit: 'cm',
-            font_family: 'msyh.ttc',
-            font_size: 11,
-            font_color: '#000000',
-            opacity: 1,
-            remove_list: []
-        });
+        const store = useHeaderAndFooterState();
         const font_options = ref<SelectProps['options']>([]);
 
         const setFontOptions = async () => {
@@ -219,7 +198,7 @@ export default defineComponent({
                     font_options.value = windows_fonts_options;
                 } else if (res === "darwin") {
                     font_options.value = mac_fonts_options;
-                    formState.font_family = 'STHeiti Light.ttc';
+                    store.font_family = 'STHeiti Light.ttc';
                 }
             }).catch((err: any) => {
                 console.log({ err });
@@ -302,35 +281,35 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case "add": {
                     await handleOps(AddPDFHeaderAndFooter, [
-                        formState.input,
-                        formState.output,
-                        formState.header_left,
-                        formState.header_center,
-                        formState.header_right,
-                        formState.footer_left,
-                        formState.footer_center,
-                        formState.footer_right,
-                        [formState.up, formState.down, formState.left, formState.right],
-                        formState.unit,
-                        formState.font_family,
-                        formState.font_size,
-                        formState.font_color,
-                        formState.opacity,
-                        formState.page,
+                        store.input,
+                        store.output,
+                        store.header_left,
+                        store.header_center,
+                        store.header_right,
+                        store.footer_left,
+                        store.footer_center,
+                        store.footer_right,
+                        [store.up, store.down, store.left, store.right],
+                        store.unit,
+                        store.font_family,
+                        store.font_size,
+                        store.font_color,
+                        store.opacity,
+                        store.page,
                     ]);
                     break;
                 }
                 case "remove": {
                     await handleOps(RemovePDFHeaderAndFooter, [
-                        formState.input,
-                        formState.output,
-                        [formState.up, formState.down, formState.left, formState.right],
-                        formState.remove_list,
-                        formState.unit,
-                        formState.page,
+                        store.input,
+                        store.output,
+                        [store.up, store.down, store.left, store.right],
+                        store.remove_list,
+                        store.unit,
+                        store.page,
                     ])
                     break;
                 }
@@ -357,7 +336,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -368,7 +347,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -378,7 +357,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

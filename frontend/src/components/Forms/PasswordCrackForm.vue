@@ -1,18 +1,18 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
             <a-form-item name="cracktype" label="破解类型">
-                <a-radio-group button-style="solid" v-model:value="formState.crack_type">
+                <a-radio-group button-style="solid" v-model:value="store.crack_type">
                     <a-radio-button value="PDF">PDF</a-radio-button>
                     <a-radio-button value="ZIP">压缩包</a-radio-button>
                     <a-radio-button value="md5">MD5</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="formState.crack_type === 'PDF'">
+            <div v-if="store.crack_type === 'PDF'">
                 <a-form-item name="hash_type" label="哈希类型">
-                    <a-select v-model:value="formState.hash_type" style="width: 400px">
+                    <a-select v-model:value="store.hash_type" style="width: 400px">
                         <a-select-option :value="10500">PDF 1.4 - 1.6 (Acrobat 5 - 8)</a-select-option>
                         <a-select-option :value="25400">PDF 1.4 - 1.6 (Acrobat 5 - 8) - user and owner
                             pass</a-select-option>
@@ -21,9 +21,9 @@
                     </a-select>
                 </a-form-item>
             </div>
-            <div v-if="formState.crack_type === 'ZIP'">
+            <div v-if="store.crack_type === 'ZIP'">
                 <a-form-item name="hash_type" label="哈希类型">
-                    <a-select v-model:value="formState.hash_type" style="width: 250px">
+                    <a-select v-model:value="store.hash_type" style="width: 250px">
                         <a-select-option :value="11600">7-Zip</a-select-option>
                         <a-select-option :value="17220">PKZIP (Compressed Multi-File)</a-select-option>
                         <a-select-option :value="17200">PKZIP (Compressed)</a-select-option>
@@ -33,7 +33,7 @@
                 </a-form-item>
             </div>
             <a-form-item name="charset" label="字符集">
-                <a-select v-model:value="formState.charset" style="width: 250px">
+                <a-select v-model:value="store.charset" style="width: 250px">
                     <a-select-option value="l">小写字母[a-z]</a-select-option>
                     <a-select-option value="u">大写字母[A-Z]</a-select-option>
                     <a-select-option value="d">数字[0-9]</a-select-option>
@@ -45,7 +45,7 @@
                 </a-select>
             </a-form-item>
             <a-form-item name="attack_mode" label="攻击模式">
-                <a-select v-model:value="formState.attack_mode" style="width: 250px">
+                <a-select v-model:value="store.attack_mode" style="width: 250px">
                     <a-select-option value="0">Straight</a-select-option>
                     <a-select-option value="1">Combination</a-select-option>
                     <a-select-option value="3">Brute-force</a-select-option>
@@ -55,13 +55,14 @@
                 </a-select>
             </a-form-item>
             <a-form-item name="dict_path" label="字典库">
-                <a-input v-model:value="formState.dict_path" placeholder="输入字典库文件路径(留空则使用内置字典库)" allow-clear />
+                <a-input v-model:value="store.dict_path" placeholder="输入字典库文件路径(留空则使用内置字典库)" allow-clear />
             </a-form-item>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -76,7 +77,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -111,22 +112,15 @@ import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { CrackState } from "../data";
 import { handleOps } from "../data";
+import { useCrackState } from '../../store/crack';
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<CrackState>({
-            input: "",
-            output: "",
-            hash_type: '',
-            charset: '',
-            attack_mode: '3',
-            crack_type: 'PDF',
-            dict_path: '',
-        });
-
+        const store = useCrackState();
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -201,7 +195,7 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            // await handleOps(RotatePDF, [formState.input, formState.output, formState.degree, formState.page]);
+            // await handleOps(RotatePDF, [store.input, store.output, store.degree, store.page]);
             confirmLoading.value = false;
         }
         const onFinish = async () => {
@@ -223,7 +217,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -234,7 +228,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -244,7 +238,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

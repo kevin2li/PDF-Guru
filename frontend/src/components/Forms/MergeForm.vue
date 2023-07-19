@@ -1,24 +1,24 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
             <a-form-item :label="index === 0 ? '输入路径列表' : ' '" :colon="index === 0 ? true : false"
                 :help="validateHelp.input_path_list[index]" :rules="[{ validator: validateFileExists, trigger: 'change' }]"
-                v-for="(item, index) in formState.input_path_list" :key="index">
-                <a-input v-model:value="formState.input_path_list[index]" style="width: 90%;" allow-clear
+                v-for="(item, index) in store.input_path_list" :key="index">
+                <a-input v-model:value="store.input_path_list[index]" style="width: 90%;" allow-clear
                     placeholder="待合并pdf文件路径" />
                 <MinusCircleOutlined @click="removePath(item)" style="margin-left: 1vw;" />
             </a-form-item>
-            <a-form-item name="span" :label="formState.input_path_list.length === 0 ? '输入路径列表' : ' '"
-                :colon="formState.input_path_list.length === 0 ? true : false">
+            <a-form-item name="span" :label="store.input_path_list.length === 0 ? '输入路径列表' : ' '"
+                :colon="store.input_path_list.length === 0 ? true : false">
                 <a-button type="dashed" block @click="addPath">
                     <PlusOutlined />
                     添加路径
                 </a-button>
             </a-form-item>
             <a-form-item name="merge.sort" label="排序字段">
-                <a-radio-group v-model:value="formState.sort">
+                <a-radio-group v-model:value="store.sort">
                     <a-radio value="default">添加顺序</a-radio>
                     <a-radio value="name">文件名(字母)</a-radio>
                     <a-radio value="name_digit">文件名(编号)</a-radio>
@@ -27,7 +27,7 @@
                 </a-radio-group>
             </a-form-item>
             <a-form-item label="排序方向">
-                <a-radio-group v-model:value="formState.sort_direction">
+                <a-radio-group v-model:value="store.sort_direction">
                     <a-radio value="asc">升序</a-radio>
                     <a-radio value="desc">降序</a-radio>
                 </a-radio-group>
@@ -37,7 +37,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -69,8 +69,8 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { MinusCircleOutlined, PlusOutlined, EllipsisOutlined } from '@ant-design/icons-vue';
-import type { MergeState } from "../data";
 import { handleOps } from "../data";
+import { useMergeState } from '../../store/merge';
 export default defineComponent({
     components: {
         MinusCircleOutlined,
@@ -79,12 +79,7 @@ export default defineComponent({
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<MergeState>({
-            input_path_list: [],
-            output: "",
-            sort: "default",
-            sort_direction: "asc",
-        });
+        const store = useMergeState();
 
         const validateStatus = reactive({
             input_path_list: [],
@@ -165,7 +160,7 @@ export default defineComponent({
             await SelectMultipleFiles().then((res: any) => {
                 console.log({ res });
                 if (res) {
-                    formState.input_path_list.push(...res);
+                    store.input_path_list.push(...res);
                 }
                 formRef.value?.validateFields("input_path_list");
                 for (let i = 0; i < res.length; i++) {
@@ -179,9 +174,9 @@ export default defineComponent({
             });
         }
         const removePath = (item: string) => {
-            const index = formState.input_path_list.indexOf(item);
+            const index = store.input_path_list.indexOf(item);
             if (index != -1) {
-                formState.input_path_list.splice(index, 1);
+                store.input_path_list.splice(index, 1);
                 // @ts-ignore
                 validateStatus.input_path_list.splice(index, 1);
                 // @ts-ignore
@@ -197,7 +192,7 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(MergePDF, [formState.input_path_list, formState.output, formState.sort, formState.sort_direction]);
+            await handleOps(MergePDF, [store.input_path_list, store.output, store.sort, store.sort_direction]);
             confirmLoading.value = false;
         }
         const onFinish = async () => {
@@ -219,7 +214,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -230,7 +225,7 @@ export default defineComponent({
             await SaveFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -248,7 +243,7 @@ export default defineComponent({
             selectFile,
             saveFile,
             selectMultipleFiles,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,

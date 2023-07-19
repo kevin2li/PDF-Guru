@@ -1,8 +1,14 @@
 <template>
     <a-row>
         <a-col :span="4">
-            <a-menu v-model:selectedKeys="state.selectedKeys" :open-keys="state.openKeys" style="width: 180px"
-                @openChange="onOpenChange" mode="inline">
+            <a-menu v-model:selectedKeys="store.selectedKeys" :open-keys="store.openKeys" style="width: 180px"
+                @openChange="store.onOpenChange" mode="inline">
+                <a-menu-item key="index">
+                    <template #icon>
+                        <home-outlined />
+                    </template>
+                    {{ menuRecord['index'] }}
+                </a-menu-item>
                 <a-sub-menu key="page_edit">
                     <template #title>页面编辑</template>
                     <template #icon>
@@ -163,36 +169,40 @@
         </a-col>
         <a-col :span="20">
             <div>
-                <div style="margin-right: 5vw;margin-top: 0.5em;">
-                    <a-typography-title>{{ menuRecord[state.selectedKeys.at(0) || "merge"] }}</a-typography-title>
+                <div style="margin-right: 5vw;margin-top: 0.5em;" v-if="store.selectedKeys.at(0) !== 'index'">
+                    <a-typography-title>{{ menuRecord[store.selectedKeys.at(0) || "merge"] }}</a-typography-title>
                     <a-typography-paragraph>
-                        <blockquote>功能说明：{{ menuDesc[state.selectedKeys.at(0) || "merge"] }}</blockquote>
+                        <blockquote>功能说明：{{ menuDesc[store.selectedKeys.at(0) || "merge"] }}</blockquote>
                     </a-typography-paragraph>
                 </div>
+                <div style="margin-right: 5vw;margin-top: 0.5em;" v-else>
+                    <a-typography-title>功能列表</a-typography-title>
+                </div>
                 <div>
-                    <MergeForm v-if="state.selectedKeys.at(0) === 'merge'" />
-                    <SplitForm v-if="state.selectedKeys.at(0) === 'split'" />
-                    <DeleteForm v-if="state.selectedKeys.at(0) === 'delete'" />
-                    <ReorderForm v-if="state.selectedKeys.at(0) === 'reorder'" />
-                    <InsertForm v-if="state.selectedKeys.at(0) === 'insert'" />
-                    <BookmarkForm v-if="state.selectedKeys.at(0) === 'bookmark'" />
-                    <ScaleForm v-if="state.selectedKeys.at(0) === 'scale'" />
-                    <WatermarkForm v-if="state.selectedKeys.at(0) === 'watermark'" />
-                    <RotateForm v-if="state.selectedKeys.at(0) === 'rotate'" />
-                    <CropForm v-if="state.selectedKeys.at(0) === 'crop'" />
-                    <CutForm v-if="state.selectedKeys.at(0) === 'cut'" />
-                    <ExtractForm v-if="state.selectedKeys.at(0) === 'extract'" />
-                    <CompressForm v-if="state.selectedKeys.at(0) === 'compress'" />
-                    <ConvertForm v-if="state.selectedKeys.at(0) === 'convert'" />
-                    <EncryptForm v-if="state.selectedKeys.at(0) === 'encrypt'" />
-                    <OcrForm v-if="state.selectedKeys.at(0) === 'ocr'" />
-                    <PreferencesForm v-if="state.selectedKeys.at(0) === 'settings'" />
-                    <HeaderAndFooterForm v-if="state.selectedKeys.at(0) === 'header'" />
-                    <PageNumberForm v-if="state.selectedKeys.at(0) === 'page_number'" />
-                    <BackgroundForm v-if="state.selectedKeys.at(0) === 'background'" />
-                    <!-- <MetaForm v-if="state.selectedKeys.at(0) === 'meta'" /> -->
-                    <DualLayerForm v-if="state.selectedKeys.at(0) === 'dual'" />
-                    <PasswordCrackForm v-if="state.selectedKeys.at(0) === 'crack'" />
+                    <Index v-if="store.selectedKeys.at(0) === 'index'" />
+                    <MergeForm v-if="store.selectedKeys.at(0) === 'merge'" />
+                    <SplitForm v-if="store.selectedKeys.at(0) === 'split'" />
+                    <DeleteForm v-if="store.selectedKeys.at(0) === 'delete'" />
+                    <ReorderForm v-if="store.selectedKeys.at(0) === 'reorder'" />
+                    <InsertForm v-if="store.selectedKeys.at(0) === 'insert'" />
+                    <BookmarkForm v-if="store.selectedKeys.at(0) === 'bookmark'" />
+                    <ScaleForm v-if="store.selectedKeys.at(0) === 'scale'" />
+                    <WatermarkForm v-if="store.selectedKeys.at(0) === 'watermark'" />
+                    <RotateForm v-if="store.selectedKeys.at(0) === 'rotate'" />
+                    <CropForm v-if="store.selectedKeys.at(0) === 'crop'" />
+                    <CutForm v-if="store.selectedKeys.at(0) === 'cut'" />
+                    <ExtractForm v-if="store.selectedKeys.at(0) === 'extract'" />
+                    <CompressForm v-if="store.selectedKeys.at(0) === 'compress'" />
+                    <ConvertForm v-if="store.selectedKeys.at(0) === 'convert'" />
+                    <EncryptForm v-if="store.selectedKeys.at(0) === 'encrypt'" />
+                    <OcrForm v-if="store.selectedKeys.at(0) === 'ocr'" />
+                    <PreferencesForm v-if="store.selectedKeys.at(0) === 'settings'" />
+                    <HeaderAndFooterForm v-if="store.selectedKeys.at(0) === 'header'" />
+                    <PageNumberForm v-if="store.selectedKeys.at(0) === 'page_number'" />
+                    <BackgroundForm v-if="store.selectedKeys.at(0) === 'background'" />
+                    <!-- <MetaForm v-if="store.selectedKeys.at(0) === 'meta'" /> -->
+                    <DualLayerForm v-if="store.selectedKeys.at(0) === 'dual'" />
+                    <PasswordCrackForm v-if="store.selectedKeys.at(0) === 'crack'" />
                 </div>
             </div>
         </a-col>
@@ -238,34 +248,36 @@ import {
     SyncOutlined,
     FileSearchOutlined,
     ToolOutlined,
+    HomeOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
-import { menuDesc, menuRecord } from "./data";
-import MergeForm from "./Forms/MergeForm.vue";
-import SplitForm from "./Forms/SplitForm.vue";
-import DeleteForm from "./Forms/DeleteForm.vue";
-import ReorderForm from "./Forms/ReorderForm.vue";
-import InsertForm from "./Forms/InsertForm.vue";
-import BookmarkForm from "./Forms/BookmarkForm.vue";
-import ScaleForm from "./Forms/ScaleForm.vue";
-import WatermarkForm from './Forms/WatermarkForm.vue';
-import RotateForm from "./Forms/RotateForm.vue";
-import CropForm from "./Forms/CropForm.vue";
-import CutForm from "./Forms/CutForm.vue";
-import ExtractForm from "./Forms/ExtractForm.vue";
-import CompressForm from "./Forms/CompressForm.vue";
-import ConvertForm from "./Forms/ConvertForm.vue";
-import EncryptForm from "./Forms/EncryptForm.vue";
-import OcrForm from "./Forms/OcrForm.vue";
-import PreferencesForm from "./Forms/PreferencesForm.vue";
-import HeaderAndFooterForm from "./Forms/HeaderAndFooterForm.vue";
-import BackgroundForm from "./Forms/BackgroundForm.vue";
-import PageNumberForm from "./Forms/PageNumberForm.vue";
-import MetaForm from "./Forms/MetaForm.vue";
-import DualLayerForm from "./Forms/DualLayerForm.vue";
-import PasswordCrackForm from "./Forms/PasswordCrackForm.vue";
-
+import { menuDesc, menuRecord } from "./components/data";
+import MergeForm from "./components/Forms/MergeForm.vue";
+import SplitForm from "./components/Forms/SplitForm.vue";
+import DeleteForm from "./components/Forms/DeleteForm.vue";
+import ReorderForm from "./components/Forms/ReorderForm.vue";
+import InsertForm from "./components/Forms/InsertForm.vue";
+import BookmarkForm from "./components/Forms/BookmarkForm.vue";
+import ScaleForm from "./components/Forms/ScaleForm.vue";
+import WatermarkForm from './components/Forms/WatermarkForm.vue';
+import RotateForm from "./components/Forms/RotateForm.vue";
+import CropForm from "./components/Forms/CropForm.vue";
+import CutForm from "./components/Forms/CutForm.vue";
+import ExtractForm from "./components/Forms/ExtractForm.vue";
+import CompressForm from "./components/Forms/CompressForm.vue";
+import ConvertForm from "./components/Forms/ConvertForm.vue";
+import EncryptForm from "./components/Forms/EncryptForm.vue";
+import OcrForm from "./components/Forms/OcrForm.vue";
+import PreferencesForm from "./components/Forms/PreferencesForm.vue";
+import HeaderAndFooterForm from "./components/Forms/HeaderAndFooterForm.vue";
+import BackgroundForm from "./components/Forms/BackgroundForm.vue";
+import PageNumberForm from "./components/Forms/PageNumberForm.vue";
+import MetaForm from "./components/Forms/MetaForm.vue";
+import DualLayerForm from "./components/Forms/DualLayerForm.vue";
+import PasswordCrackForm from "./components/Forms/PasswordCrackForm.vue";
+import Index from "./components/Forms/Index.vue";
+import { useMenuState } from './store/menu';
 
 const IconFont = createFromIconfontCN({ scriptUrl: '//at.alicdn.com/t/font_8d5l8fzk5b87iudi.js' });
 
@@ -309,6 +321,7 @@ export default defineComponent({
         SyncOutlined,
         FileSearchOutlined,
         ToolOutlined,
+        HomeOutlined,
         IconFont,
         // form
         // 合并
@@ -356,27 +369,16 @@ export default defineComponent({
         // 双层PDF
         DualLayerForm,
         // 密码破解
-        PasswordCrackForm
+        PasswordCrackForm,
+        // 首页
+        Index,
     },
     setup() {
-        const state = reactive({
-            rootSubmenuKeys: ['page_edit', 'protect', 'other', "settings"],
-            selectedKeys: ["insert"],
-            openKeys: ["page_edit"]
-        });
-        const onOpenChange = (openKeys: string[]) => {
-            const latestOpenKey = openKeys.find(key => state.openKeys.indexOf(key) === -1);
-            if (state.rootSubmenuKeys.indexOf(latestOpenKey!) === -1) {
-                state.openKeys = openKeys;
-            } else {
-                state.openKeys = latestOpenKey ? [latestOpenKey] : [];
-            }
-        };
+        const store = useMenuState();
         return {
             menuRecord,
             menuDesc,
-            state,
-            onOpenChange
+            store,
         };
     },
 });

@@ -1,24 +1,24 @@
 <template>
     <div>
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
-            :model="formState" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules"
-            @finish="onFinish" @finishFailed="onFinishFailed">
+            :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
+            @finishFailed="onFinishFailed">
             <a-form-item name="op" label="类型">
-                <a-radio-group button-style="solid" v-model:value="formState.op">
+                <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="span">均匀分块</a-radio-button>
                     <a-radio-button value="range">自定义范围</a-radio-button>
                     <a-radio-button value="bookmark">目录</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item name="span" label="块大小" v-if="formState.op == 'span'">
-                <a-input-number v-model:value="formState.span" :min="1" />
+            <a-form-item name="span" label="块大小" v-if="store.op == 'span'">
+                <a-input-number v-model:value="store.span" :min="1" />
             </a-form-item>
-            <a-form-item name="page" label="页码范围" v-if="formState.op == 'range'" hasFeedback
+            <a-form-item name="page" label="页码范围" v-if="store.op == 'range'" hasFeedback
                 :validateStatus="validateStatus.page" :help="validateHelp.page">
-                <a-input v-model:value="formState.page" placeholder="自定义页码范围,用英文逗号隔开,e.g. 1-10,11-15,16-19" />
+                <a-input v-model:value="store.page" placeholder="自定义页码范围,用英文逗号隔开,e.g. 1-10,11-15,16-19" />
             </a-form-item>
-            <a-form-item name="bookmark_level" label="目录级别" v-if="formState.op == 'bookmark'">
-                <a-select v-model:value="formState.bookmark_level" style="width: 200px">
+            <a-form-item name="bookmark_level" label="目录级别" v-if="store.op == 'bookmark'">
+                <a-select v-model:value="store.bookmark_level" style="width: 200px">
                     <a-select-option value="1">一级标题</a-select-option>
                     <a-select-option value="2">二级标题</a-select-option>
                     <a-select-option value="3">三级标题</a-select-option>
@@ -28,7 +28,8 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf" allow-clear />
+                            <a-input v-model:value="store.input" placeholder="输入文件路径, 支持使用*匹配多个文件, 如D:\test\*.pdf"
+                                allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -43,7 +44,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="formState.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -79,20 +80,15 @@ import type { Rule } from 'ant-design-vue/es/form';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { SplitState } from "../data";
 import { handleOps } from "../data";
+import { useSplitState } from '../../store/split';
+
 export default defineComponent({
     components: {
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const formState = reactive<SplitState>({
-            input: "",
-            output: "",
-            page: "",
-            op: "span",
-            span: 5,
-            bookmark_level: "1",
-        });
+        const store = useSplitState();
 
         const validateStatus = reactive({
             input: "",
@@ -165,17 +161,17 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (formState.op) {
+            switch (store.op) {
                 case "span": {
-                    await handleOps(SplitPDFByChunk, [formState.input.trim(), formState.span, formState.output.trim()]);
+                    await handleOps(SplitPDFByChunk, [store.input.trim(), store.span, store.output.trim()]);
                     break;
                 }
                 case "range": {
-                    await handleOps(SplitPDFByPage, [formState.input.trim(), formState.page, formState.output.trim()]);
+                    await handleOps(SplitPDFByPage, [store.input.trim(), store.page, store.output.trim()]);
                     break;
                 }
                 case "bookmark": {
-                    await handleOps(SplitPDFByBookmark, [formState.input.trim(), formState.bookmark_level, formState.output.trim()]);
+                    await handleOps(SplitPDFByBookmark, [store.input.trim(), store.bookmark_level, store.output.trim()]);
                     break;
                 }
             }
@@ -201,7 +197,7 @@ export default defineComponent({
             await SelectFile().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -212,7 +208,7 @@ export default defineComponent({
             await SelectDir().then((res: string) => {
                 console.log({ res });
                 if (res) {
-                    Object.assign(formState, { [field]: res });
+                    Object.assign(store, { [field]: res });
                 }
                 formRef.value?.validateFields(field);
             }).catch((err: any) => {
@@ -223,7 +219,7 @@ export default defineComponent({
         return {
             selectFile,
             saveFile,
-            formState,
+            store,
             rules,
             formRef,
             validateStatus,
