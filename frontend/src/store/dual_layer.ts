@@ -14,6 +14,13 @@ export const useDualLayerState = defineStore("DualLayerState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+                page: "",
+                lang: "chi_sim",
+                dpi: 300,
+            })
         },
     }
 })

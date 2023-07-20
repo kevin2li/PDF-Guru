@@ -13,6 +13,12 @@ export const useMergeState = defineStore("MergeState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input_path_list: [],
+                output: "",
+                sort: "default",
+                sort_direction: "asc",
+            })
         },
     }
 })

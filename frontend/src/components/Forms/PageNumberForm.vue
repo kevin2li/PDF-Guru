@@ -50,35 +50,43 @@
                         allow-clear :disabled="!store.is_custom_style" />
                 </a-form-item>
                 <a-form-item name="watermark_font_size" label="字体属性" hasFeedback>
-                    <a-space size="large">
-                        <a-select v-model:value="store.font_family" style="width: 200px" :options="font_options">
-                        </a-select>
-                        <a-tooltip>
-                            <template #title>字号</template>
-                            <a-input-number v-model:value="store.font_size" :min="1">
-                                <template #prefix>
-                                    <font-size-outlined />
-                                </template>
-                            </a-input-number>
-                        </a-tooltip>
-                        <a-tooltip>
-                            <template #title>字体颜色</template>
-                            <a-input v-model:value="store.font_color" placeholder="16进制字体颜色"
-                                :defaultValue="store.font_color" allow-clear>
-                                <template #prefix>
-                                    <font-colors-outlined />
-                                </template>
-                            </a-input>
-                        </a-tooltip>
-                        <a-tooltip>
-                            <template #title>不透明度</template>
-                            <a-input-number v-model:value="store.opacity" :min="0" :max="1" :step="0.01">
-                                <template #addonBefore>
-                                    不透明度
-                                </template>
-                            </a-input-number>
-                        </a-tooltip>
-                    </a-space>
+                    <div>
+                        <a-row :gutter="10">
+                            <a-col>
+                                <a-select v-model:value="store.font_family" style="width: 200px" :options="font_options">
+                                </a-select>
+                            </a-col>
+                            <a-col>
+                                <a-tooltip>
+                                    <template #title>字号</template>
+                                    <a-input-number v-model:value="store.font_size" :min="1">
+                                        <template #prefix>
+                                            <font-size-outlined />
+                                        </template>
+                                    </a-input-number>
+                                </a-tooltip>
+                            </a-col>
+                            <a-col>
+                                <a-space>
+                                    <a-tooltip>
+                                        <template #title>字体颜色</template>
+                                        <a-input v-model:value="store.font_color" placeholder="16进制字体颜色"
+                                            :defaultValue="store.font_color" allow-clear>
+                                            <template #prefix>
+                                                <font-colors-outlined />
+                                            </template>
+                                        </a-input>
+                                    </a-tooltip>
+                                    <color-picker v-model:pureColor="pureColor" v-model:gradientColor="gradientColor"
+                                        shape="square" use-type="pure" format="hex6" @pureColorChange="handleColorChange" />
+                                </a-space>
+                            </a-col>
+                        </a-row>
+                    </div>
+                </a-form-item>
+                <a-form-item name="watermark_font_size" label="不透明度" hasFeedback>
+                    <a-input-number v-model:value="store.opacity" :min="0" :max="1" :step="0.01">
+                    </a-input-number>
                 </a-form-item>
             </div>
             <a-form-item label="页边距单位">
@@ -156,7 +164,7 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, onMounted, ref } from 'vue';
+import { defineComponent, reactive, onMounted, ref, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
     SelectFile,
@@ -174,12 +182,16 @@ import type { PageNumberState } from "../data";
 import { handleOps, windows_fonts_options, mac_fonts_options } from "../data";
 import type { SelectProps } from 'ant-design-vue';
 import { usePageNumberState } from '../../store/page_number';
-
+import { ColorPicker } from "vue3-colorpicker";
+import "vue3-colorpicker/style.css";
+// @ts-ignore
+import { ColorInputWithoutInstance } from "tinycolor2";
 export default defineComponent({
     components: {
         FontSizeOutlined,
         FontColorsOutlined,
-        EllipsisOutlined
+        EllipsisOutlined,
+        ColorPicker
     },
     setup() {
         const formRef = ref<FormInstance>();
@@ -270,7 +282,8 @@ export default defineComponent({
         };
         // 重置表单
         const resetFields = () => {
-            formRef.value?.resetFields();
+            formRef.value?.clearValidate();
+            store.resetState();
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
@@ -350,6 +363,16 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+        const pureColor = ref<ColorInputWithoutInstance>(store.font_color);
+        const gradientColor = ref("linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 100%)");
+        const handleColorChange = (color: ColorInputWithoutInstance) => {
+            console.log({ color });
+            store.font_color = color;
+        }
+        watch(() => store.font_color, (newVal, oldVal) => {
+            console.log({ newVal, oldVal });
+            pureColor.value = newVal;
+        })
         return {
             selectFile,
             saveFile,
@@ -362,7 +385,10 @@ export default defineComponent({
             resetFields,
             onFinish,
             onFinishFailed,
-            font_options
+            font_options,
+            pureColor,
+            gradientColor,
+            handleColorChange
         };
     }
 })

@@ -11,6 +11,10 @@ export const useCompressState = defineStore("CompressState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+            })
         },
     }
 })

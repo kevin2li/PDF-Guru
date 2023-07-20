@@ -12,6 +12,11 @@ export const useDeleteState = defineStore("DeleteState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+                page: "",
+            })
         },
     }
 })

@@ -104,6 +104,12 @@
                         </template>
                         {{ menuRecord['encrypt'] }}
                     </a-menu-item>
+                    <a-menu-item key="sign">
+                        <template #icon>
+                            <edit-outlined />
+                        </template>
+                        {{ menuRecord['sign'] }}
+                    </a-menu-item>
                 </a-sub-menu>
                 <a-sub-menu key="other">
                     <template #title>其他</template>
@@ -165,6 +171,12 @@
                     </template>
                     {{ menuRecord['settings'] }}
                 </a-menu-item>
+                <!-- <a-menu-item key="debug">
+                    <template #icon>
+                        <SettingOutlined />
+                    </template>
+                    {{ menuRecord['debug'] }}
+                </a-menu-item> -->
             </a-menu>
         </a-col>
         <a-col :span="20">
@@ -203,6 +215,8 @@
                     <!-- <MetaForm v-if="store.selectedKeys.at(0) === 'meta'" /> -->
                     <DualLayerForm v-if="store.selectedKeys.at(0) === 'dual'" />
                     <PasswordCrackForm v-if="store.selectedKeys.at(0) === 'crack'" />
+                    <SignForm :width="400" :height="200" v-if="store.selectedKeys.at(0) === 'sign'" />
+                    <Debug :width="400" :height="200" v-if="store.selectedKeys.at(0) === 'debug'" />
                 </div>
             </div>
         </a-col>
@@ -249,6 +263,7 @@ import {
     FileSearchOutlined,
     ToolOutlined,
     HomeOutlined,
+    EditOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
@@ -277,6 +292,8 @@ import MetaForm from "./components/Forms/MetaForm.vue";
 import DualLayerForm from "./components/Forms/DualLayerForm.vue";
 import PasswordCrackForm from "./components/Forms/PasswordCrackForm.vue";
 import Index from "./components/Forms/Index.vue";
+import SignForm from "./components/Forms/Sign.vue";
+import Debug from "./components/Forms/Debug.vue";
 import { useMenuState } from './store/menu';
 
 const IconFont = createFromIconfontCN({ scriptUrl: '//at.alicdn.com/t/font_8d5l8fzk5b87iudi.js' });
@@ -322,6 +339,7 @@ export default defineComponent({
         FileSearchOutlined,
         ToolOutlined,
         HomeOutlined,
+        EditOutlined,
         IconFont,
         // form
         // 合并
@@ -372,6 +390,10 @@ export default defineComponent({
         PasswordCrackForm,
         // 首页
         Index,
+        // 电子签名
+        SignForm,
+        // 调试
+        Debug,
     },
     setup() {
         const store = useMenuState();

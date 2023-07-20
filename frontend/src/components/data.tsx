@@ -78,6 +78,8 @@ interface EncryptState {
     is_set_opw: boolean;
     upw_confirm: string;
     opw_confirm: string;
+    old_upw: string;
+    old_opw: string;
 }
 
 interface WatermarkState {
@@ -296,6 +298,23 @@ interface CrackState {
     dict_path: string;
 }
 
+interface SignState {
+    input: string;
+    output: string;
+    op: string;
+    // for input
+    text: string;
+    font_family: string;
+    // for handwrite
+    thinning: number;
+    smoothing: number;
+    streamline: number;
+    is_pressure: boolean;
+
+    // for both
+    font_size: number;
+    font_color: string;
+}
 
 const menuRecord: Record<string, string> = {
     "index": "首页",
@@ -321,7 +340,9 @@ const menuRecord: Record<string, string> = {
     "meta": "查看元信息",
     "dual": "双层PDF制作",
     "crack": "密码破解",
-    "settings": "首选项"
+    "sign": "电子签名",
+    "settings": "首选项",
+    "debug": "调试",
 };
 
 const menuDesc: Record<string, string> = {
@@ -348,7 +369,9 @@ const menuDesc: Record<string, string> = {
     "meta": "查看文档属性",
     "dual": "双层PDF制作，可以为扫描件创建隐藏文字图层，从而支持文字复制、检索等功能",
     "crack": "密码破解",
-    "settings": "对软件功能进行配置"
+    "sign": "电子签名制作",
+    "settings": "对软件功能进行配置",
+    "debug": "调试",
 }
 
 const windows_fonts_options: SelectProps['options'] = [
@@ -418,6 +441,7 @@ export type {
     PageNumberState,
     DualLayerState,
     CrackState,
+    SignState,
 };
 
 export {

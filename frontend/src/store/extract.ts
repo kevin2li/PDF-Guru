@@ -13,6 +13,12 @@ export const useExtractState = defineStore("ExtractState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+                page: "",
+                op: "page",
+            })
         },
     }
 })

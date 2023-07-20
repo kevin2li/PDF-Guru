@@ -29,7 +29,7 @@
                 </div>
             </a-col>
             <a-col>
-                <div class="mycard" @click="switchMenu('insert', '')">
+                <div class="mycard" @click="switchMenu('insert', 'insert')">
                     <div style="margin-top: 10px;">
                         <svg t="1689735440179" class="icon" viewBox="0 0 1024 1024" version="1.1"
                             xmlns="http://www.w3.org/2000/svg" p-id="10571" width="50" height="50">
@@ -270,6 +270,19 @@
                 </div>
             </a-col>
             <a-col>
+                <div class="mycard" @click="switchMenu('encrypt', 'change')">
+                    <div style="margin-top: 10px;">
+                        <svg t="1689756935713" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="2619" width="50" height="50">
+                            <path
+                                d="M350.334 1024c-93.643 0-181.663-36.448-247.844-102.629-136.625-136.8-136.619-359.229 0-495.848 66.181-66.181 154.201-102.629 247.844-102.629 55.7 0 110.859 13.74 160.967 39.925L833.41 40.711c43.51-43.51 114.307-43.522 157.834-0.029l0 0c21.122 21.068 32.755 49.096 32.756 78.92 0 29.824-11.633 57.852-32.755 78.921l-76.494 76.493 76.522 76.522c43.522 43.523 43.522 114.34 0.001 157.863-21.093 21.092-49.125 32.707-78.933 32.707-29.809 0-57.841-11.615-78.932-32.706l-76.522-76.522-90.886 90.886c23.087 47.813 34.812 97.988 34.886 149.477 0.087 93.694-36.39 181.81-102.71 248.129C531.996 987.552 443.977 1024 350.334 1024zM350.334 386.894c-76.548 0-148.496 29.791-202.589 83.884C36.064 582.459 36.07 764.299 147.759 876.13 201.838 930.209 273.786 960 350.334 960s148.496-29.791 202.59-83.884c54.216-54.216 84.035-126.237 83.964-202.799-0.069-48.215-12.854-95.27-37.999-139.84l-11.942-21.167L756.888 342.37l121.777 121.777c9.003 9.003 20.963 13.961 33.677 13.961 12.713 0 24.674-4.958 33.678-13.962 18.568-18.569 18.568-48.784-0.001-67.354L824.241 275.017 946.02 153.24c9.025-9.003 13.98-20.939 13.98-33.637s-4.956-24.633-13.953-33.607l-0.028-0.029c-18.569-18.568-48.784-18.569-67.354 0L521.44 443.19l-21.533-13.272C454.243 401.771 402.521 386.894 350.334 386.894zM350.222 863.15c-51.316 0-100.555-19.785-135.109-54.293-74.568-74.759-74.555-196.187-0.015-270.726 36.087-36.088 84.115-55.962 135.236-55.962s99.148 19.874 135.236 55.962c36.138 36.138 56.041 84.194 56.041 135.315 0 51.218-19.913 99.284-56.071 135.345-34.612 34.521-83.898 54.334-135.22 54.358C350.288 863.15 350.254 863.15 350.222 863.15zM350.334 546.17c-34.026 0-65.981 13.217-89.981 37.216-49.618 49.618-49.605 130.47 0.029 180.23 47.844 47.78 131.96 47.736 179.963-0.139l0 0c24.031-23.967 37.265-55.94 37.265-90.03 0-34.026-13.245-66.011-37.295-90.062C416.316 559.387 384.36 546.17 350.334 546.17z"
+                                p-id="2620" fill="#1296db"></path>
+                        </svg>
+                    </div>
+                    <p><b style="font-size: medium;">修改密码</b></p>
+                </div>
+            </a-col>
+            <a-col>
                 <div class="mycard" @click="switchMenu('encrypt', 'recover')">
                     <div style="margin-top: 10px;">
                         <svg t="1689736116541" class="icon" viewBox="0 0 1024 1024" version="1.1"
@@ -283,6 +296,19 @@
                         </svg>
                     </div>
                     <p><b style="font-size: medium;">恢复权限</b></p>
+                </div>
+            </a-col>
+            <a-col>
+                <div class="mycard" @click="switchMenu('sign', 'image')">
+                    <div style="margin-top: 10px;">
+                        <svg t="1689819444028" class="icon" viewBox="0 0 1137 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="2010" width="50" height="50">
+                            <path
+                                d="M829.573458 305.578582l109.283526-109.255081L827.866792 85.33331l-109.283525 109.226636 110.990191 110.990191z m-68.86398 68.835536L649.719286 263.452371 161.043866 751.985569c-20.366217 20.337772-45.767098 67.64087-51.569763 96.056862l-17.18044 83.683532 83.740421-17.180439c28.728881-5.887998 75.434646-31.061325 96.028418-51.655097l488.618531-488.476309z m9.102219-350.151014a81.720866 81.720866 0 0 1 116.138635 0l114.06219 113.976858a82.147533 82.147533 0 0 1 0 116.138634L331.710486 922.53841c-32.085324 32.028436-93.582196 65.336871-138.723517 74.581313l-125.439966 25.713771A56.206207 56.206207 0 0 1 1.186133 956.501068l25.713771-125.383077c9.130664-44.543988 42.495988-106.666637 74.581312-138.751961L769.783253 24.23466zM951.40098 824.88866c-6.428443 39.082656-30.378658 74.382202-68.209759 102.20086 77.596423 4.977776 136.419518-20.764439 180.565284-77.141312a41.585766 41.585766 0 0 1 58.055095-7.224887c18.033773 13.937774 21.304883 39.736878 7.281775 57.656873-75.71909 96.711084-186.282615 129.25152-323.982132 97.848862a234.012379 234.012379 0 0 1-50.119097-17.351106C640.048178 1009.635275 534.91754 1023.999716 439.657122 1023.999716A41.244433 41.244433 0 0 1 398.270467 982.897505a41.244433 41.244433 0 0 1 41.386655-41.073767c73.528868 0 154.282624-9.415108 242.261266-28.302214-16.298662-30.407103-20.764439-65.991093-12.287996-103.167971 17.863106-78.307534 88.689753-137.557295 166.684398-126.293299 77.795534 11.207108 126.663076 70.826647 115.114635 140.799961z m-201.102166 3.612443c-5.660443 24.917326-0.199111 47.047098 18.119106 63.800871 119.096856-35.83999 130.133297-116.252412 55.978651-126.94752-31.402658-4.522665-65.080871 23.665771-74.069313 63.146649z"
+                                fill="#1296db" p-id="2011"></path>
+                        </svg>
+                    </div>
+                    <p><b style="font-size: medium;">电子签名</b></p>
                 </div>
             </a-col>
         </a-row>
@@ -565,6 +591,7 @@ import { useBookmarkState } from '../../store/bookmark';
 import { useExtractState } from '../../store/extract';
 import { useConvertState } from '../../store/convert';
 import { useEncryptState } from '../../store/encrypt';
+import { useSignState } from '../../store/sign';
 
 export default defineComponent({
     components: {
@@ -580,17 +607,13 @@ export default defineComponent({
         const extractStore = useExtractState();
         const convertStore = useConvertState();
         const encryptStore = useEncryptState();
+        const signStore = useSignState();
 
         const switchMenu = (key: string, op: string) => {
             store.selectedKeys = [key];
             switch (key) {
                 case "insert": {
-                    switch (op) {
-                        case "replace": {
-                            insertStore.op = "replace";
-                            break;
-                        }
-                    }
+                    insertStore.op = op;
                     store.openKeys = ['page_edit'];
                     break;
                 }
@@ -623,12 +646,7 @@ export default defineComponent({
                     break;
                 }
                 case "cut": {
-                    switch (op) {
-                        case "combine": {
-                            cutStore.op = "combine";
-                            break;
-                        }
-                    }
+                    cutStore.op = op;
                     store.openKeys = ['page_edit'];
                     break;
                 }
@@ -645,74 +663,27 @@ export default defineComponent({
                     break;
                 }
                 case "watermark": {
-                    switch (op) {
-                        case "remove": {
-                            watermarkStore.op = "remove";
-                            break;
-                        }
-                    }
+                    watermarkStore.op = op;
                     store.openKeys = ['protect'];
                     break;
                 }
                 case "encrypt": {
-                    switch (op) {
-                        case "encrypt": {
-                            encryptStore.op = "encrypt";
-                            break;
-                        }
-                        case "decrypt": {
-                            encryptStore.op = "decrypt";
-                            break;
-                        }
-                        case "recover": {
-                            encryptStore.op = "recover";
-                            break;
-                        }
-                    }
+                    encryptStore.op = op;
+                    store.openKeys = ['protect'];
+                    break;
+                }
+                case "sign": {
+                    signStore.op = op;
                     store.openKeys = ['protect'];
                     break;
                 }
                 case "bookmark": {
-                    switch (op) {
-                        case "extract": {
-                            bookmarkStore.op = "extract";
-                            break;
-                        }
-                        case "write": {
-                            bookmarkStore.op = "write";
-                            break;
-                        }
-                        case "transform": {
-                            bookmarkStore.op = "transform";
-                            break;
-                        }
-                        case "recognize": {
-                            bookmarkStore.op = "recognize";
-                            break;
-                        }
-                    }
+                    bookmarkStore.op = op;
                     store.openKeys = ['other'];
                     break;
                 }
                 case "extract": {
-                    switch (op) {
-                        case "page": {
-                            extractStore.op = "page";
-                            break;
-                        }
-                        case "text": {
-                            extractStore.op = "text";
-                            break;
-                        }
-                        case "image": {
-                            extractStore.op = "image";
-                            break;
-                        }
-                        case "bookmark": {
-                            extractStore.op = "bookmark";
-                            break;
-                        }
-                    }
+                    extractStore.op = op;
                     store.openKeys = ['other'];
                     break;
                 }
@@ -721,32 +692,7 @@ export default defineComponent({
                     break;
                 }
                 case "convert": {
-                    switch (op) {
-                        case "pdf2png": {
-                            convertStore.type = "pdf2png";
-                            break;
-                        }
-                        case "png2pdf": {
-                            convertStore.type = "png2pdf";
-                            break;
-                        }
-                        case "epub2pdf-python": {
-                            convertStore.type = "epub2pdf-python";
-                            break;
-                        }
-                        case "mobi2pdf-python": {
-                            convertStore.type = "mobi2pdf-python";
-                            break;
-                        }
-                        case "pdf2docx": {
-                            convertStore.type = "pdf2docx";
-                            break;
-                        }
-                        case "pdf2image-pdf": {
-                            convertStore.type = "pdf2image-pdf";
-                            break;
-                        }
-                    }
+                    convertStore.type = op;
                     store.openKeys = ['other'];
                     break;
                 }

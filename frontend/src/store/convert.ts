@@ -18,6 +18,17 @@ export const useConvertState = defineStore("ConvertState", {
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+                page: "",
+                type: "pdf2png",
+                dpi: 300,
+                is_merge: false,
+                sort_method: 'name',
+                sort_direction: 'asc',
+                input_list: []
+            })
         },
     }
 })

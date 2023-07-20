@@ -7,7 +7,8 @@
                 <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="encrypt">添加密码</a-radio-button>
                     <a-radio-button value="decrypt">移除密码</a-radio-button>
-                    <a-radio-button value="recover">权限恢复</a-radio-button>
+                    <a-radio-button value="change">修改密码</a-radio-button>
+                    <a-radio-button value="recover">恢复权限</a-radio-button>
                 </a-radio-group>
             </a-form-item>
             <div v-if="store.op == 'encrypt'">
@@ -56,7 +57,34 @@
                     <a-input-password v-model:value="store.upw" placeholder="解密密码" allow-clear />
                 </a-form-item>
             </div>
-
+            <div v-if="store.op === 'change'">
+                <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 0 1vw;">
+                    <a-form-item label="修改打开密码">
+                        <a-checkbox v-model:checked="store.is_set_upw"></a-checkbox>
+                    </a-form-item>
+                    <a-form-item :name="store.is_set_upw ? 'old_upw' : 'old_upw-none'" label="旧打开密码">
+                        <a-input-password v-model:value="store.old_upw" placeholder="请输入旧密码" allow-clear
+                            :disabled="!store.is_set_upw" />
+                    </a-form-item>
+                    <a-form-item :name="store.is_set_upw ? 'upw' : 'upw-none'" label="新打开密码">
+                        <a-input-password v-model:value="store.upw" placeholder="请输入打开密码" allow-clear
+                            :disabled="!store.is_set_upw" />
+                    </a-form-item>
+                </div>
+                <div style="border: 1px solid #dddddd;border-radius: 10px;margin: 1vh 1vw;">
+                    <a-form-item label="修改权限密码">
+                        <a-checkbox v-model:checked="store.is_set_opw"></a-checkbox>
+                    </a-form-item>
+                    <a-form-item :name="store.is_set_opw ? 'old_opw' : 'old_opw-none'" label="旧权限密码">
+                        <a-input-password v-model:value="store.old_opw" placeholder="请输入旧密码" allow-clear
+                            :disabled="!store.is_set_opw" />
+                    </a-form-item>
+                    <a-form-item :name="store.is_set_opw ? 'opw' : 'opw-none'" label="新权限密码">
+                        <a-input-password v-model:value="store.opw" placeholder="请输入权限密码" allow-clear
+                            :disabled="!store.is_set_opw" />
+                    </a-form-item>
+                </div>
+            </div>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
                     <a-row>
@@ -103,7 +131,8 @@ import {
     SaveFile,
     CheckFileExists,
     EncryptPDF,
-    DecryptPDF
+    DecryptPDF,
+    ChangePasswordPDF,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
@@ -125,6 +154,8 @@ export default defineComponent({
             encrypt_upw_confirm: '',
             encrypt_opw: '',
             encrypt_opw_confirm: '',
+            old_upw: '',
+            old_opw: '',
         });
         const validateHelp = reactive({
             input: "",
@@ -132,6 +163,8 @@ export default defineComponent({
             encrypt_upw_confirm: '',
             encrypt_opw: '',
             encrypt_opw_confirm: '',
+            old_upw: '',
+            old_opw: '',
         })
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
@@ -226,6 +259,8 @@ export default defineComponent({
             upw_confirm: [{ required: true, validator: validatePassUpwConfirm, trigger: 'change' }],
             opw: [{ required: true, validator: validatePassOpw, trigger: 'change' }],
             opw_confirm: [{ required: true, validator: validatePassOpwConfirm, trigger: 'change' }],
+            old_upw: [{ required: true, validator: validatePassUpw, trigger: 'change' }],
+            old_opw: [{ required: true, validator: validatePassOpw, trigger: 'change' }],
         };
         // 多选框
         const indeterminate = ref<boolean>(false);
@@ -248,7 +283,8 @@ export default defineComponent({
         )
         // 重置表单
         const resetFields = () => {
-            formRef.value?.resetFields();
+            formRef.value?.clearValidate();
+            store.resetState();
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
@@ -277,6 +313,19 @@ export default defineComponent({
                 }
                 case "decrypt": {
                     await handleOps(DecryptPDF, [store.input, store.output, store.upw]);
+                    break;
+                }
+                case "change": {
+                    let old_upw = "", upw = "", old_opw = "", opw = "";
+                    if (store.is_set_upw) {
+                        old_upw = store.old_upw;
+                        upw = store.upw;
+                    }
+                    if (store.is_set_opw) {
+                        old_opw = store.old_opw;
+                        opw = store.opw;
+                    }
+                    await handleOps(ChangePasswordPDF, [store.input, store.output, old_upw, upw, old_opw, opw])
                     break;
                 }
                 case "recover": {

@@ -70,6 +70,7 @@ func (a *App) cmdRunner(args []string, cmdType string) error {
 	} else if cmdType == "python" {
 		err = a.CheckFileExists(config.PythonPath)
 		if err != nil {
+			err = errors.Wrap(err, "python not found!")
 			return err
 		}
 		cmd = exec.Command(config.PythonPath, args...)

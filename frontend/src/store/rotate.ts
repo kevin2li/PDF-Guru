@@ -9,10 +9,16 @@ export const useRotateState = defineStore("RotateState", {
         degree: 90,
     }),
     getters: {
-        
+
     },
     actions: {
         resetState() {
+            this.$patch({
+                input: "",
+                output: "",
+                page: "",
+                degree: 90,
+            })
         },
     }
 })

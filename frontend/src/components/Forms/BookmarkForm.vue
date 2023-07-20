@@ -346,7 +346,8 @@ export default defineComponent({
         };
         // 重置表单
         const resetFields = () => {
-            formRef.value?.resetFields();
+            formRef.value?.clearValidate();
+            store.resetState();
         }
         // 提交表单
         const confirmLoading = ref<boolean>(false);
