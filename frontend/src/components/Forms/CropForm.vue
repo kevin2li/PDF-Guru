@@ -7,64 +7,72 @@
                 <a-radio-group button-style="solid" v-model:value="store.op">
                     <a-radio-button value="margin">根据页边距</a-radio-button>
                     <a-radio-button value="bbox">根据锚框</a-radio-button>
+                    <a-radio-button value="annot">根据矩形注释</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <a-form-item label="单位">
-                <a-radio-group v-model:value="store.unit">
-                    <a-radio value="pt">像素</a-radio>
-                    <a-radio value="cm">厘米</a-radio>
-                    <a-radio value="mm">毫米</a-radio>
-                    <a-radio value="in">英寸</a-radio>
-                </a-radio-group>
-            </a-form-item>
-            <a-form-item name="crop.type" label="页边距" v-if="store.op === 'margin'">
-                <a-space size="large">
-                    <a-input-number v-model:value="store.up" :min="0">
-                        <template #addonBefore>
-                            上
-                        </template>
-                    </a-input-number>
-                    <a-input-number v-model:value="store.down" :min="0">
-                        <template #addonBefore>
-                            下
-                        </template>
-                    </a-input-number>
-                    <a-input-number v-model:value="store.left" :min="0">
-                        <template #addonBefore>
-                            左
-                        </template>
-                    </a-input-number>
-                    <a-input-number v-model:value="store.right" :min="0">
-                        <template #addonBefore>
-                            右
-                        </template>
-                    </a-input-number>
-                </a-space>
-            </a-form-item>
-            <a-form-item name="crop.type" label="锚框" v-if="store.op === 'bbox'">
-                <a-space size="large">
-                    <a-input-number v-model:value="store.up" :min="0">
-                        <template #addonBefore>
-                            左上x
-                        </template>
-                    </a-input-number>
-                    <a-input-number v-model:value="store.left" :min="0">
-                        <template #addonBefore>
-                            左上y
-                        </template>
-                    </a-input-number>
-                    <a-input-number v-model:value="store.down" :min="0">
-                        <template #addonBefore>
-                            右下x
-                        </template>
-                    </a-input-number>
-                    <a-input-number v-model:value="store.right" :min="0">
-                        <template #addonBefore>
-                            右下y
-                        </template>
-                    </a-input-number>
-                </a-space>
-            </a-form-item>
+            <div v-if="store.op !== 'annot'">
+                <a-form-item label="单位">
+                    <a-radio-group v-model:value="store.unit">
+                        <a-radio value="pt">像素</a-radio>
+                        <a-radio value="cm">厘米</a-radio>
+                        <a-radio value="mm">毫米</a-radio>
+                        <a-radio value="in">英寸</a-radio>
+                    </a-radio-group>
+                </a-form-item>
+            </div>
+            <div v-if="store.op === 'margin'">
+                <a-form-item name="" label="页边距">
+                    <a-space size="large">
+                        <a-input-number v-model:value="store.up" :min="0">
+                            <template #addonBefore>
+                                上
+                            </template>
+                        </a-input-number>
+                        <a-input-number v-model:value="store.down" :min="0">
+                            <template #addonBefore>
+                                下
+                            </template>
+                        </a-input-number>
+                        <a-input-number v-model:value="store.left" :min="0">
+                            <template #addonBefore>
+                                左
+                            </template>
+                        </a-input-number>
+                        <a-input-number v-model:value="store.right" :min="0">
+                            <template #addonBefore>
+                                右
+                            </template>
+                        </a-input-number>
+                    </a-space>
+                </a-form-item>
+            </div>
+            <div v-if="store.op === 'bbox'">
+                <a-form-item name="crop.type" label="锚框">
+                    <a-space size="large">
+                        <a-input-number v-model:value="store.up" :min="0">
+                            <template #addonBefore>
+                                左上x
+                            </template>
+                        </a-input-number>
+                        <a-input-number v-model:value="store.left" :min="0">
+                            <template #addonBefore>
+                                左上y
+                            </template>
+                        </a-input-number>
+                        <a-input-number v-model:value="store.down" :min="0">
+                            <template #addonBefore>
+                                右下x
+                            </template>
+                        </a-input-number>
+                        <a-input-number v-model:value="store.right" :min="0">
+                            <template #addonBefore>
+                                右下y
+                            </template>
+                        </a-input-number>
+                    </a-space>
+                </a-form-item>
+            </div>
+
             <a-form-item label="保持页面尺寸">
                 <a-switch v-model:checked="store.keep_size" />
             </a-form-item>
@@ -119,7 +127,8 @@ import {
     CheckFileExists,
     CheckRangeFormat,
     CropPDFByBBOX,
-    CropPDFByMargin
+    CropPDFByMargin,
+    CropPDFByRectAnnots,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
@@ -219,6 +228,8 @@ export default defineComponent({
             else if (store.op === "bbox") {
                 let bbox = [store.up, store.left, store.down, store.right];
                 await handleOps(CropPDFByBBOX, [store.input, store.output, bbox, store.unit, store.keep_size, store.page]);
+            } else if (store.op === "annot") {
+                await handleOps(CropPDFByRectAnnots, [store.input, store.output, store.keep_size, store.page]);
             }
             else {
                 message.error("未知的操作类型");

@@ -292,7 +292,7 @@ import MetaForm from "./components/Forms/MetaForm.vue";
 import DualLayerForm from "./components/Forms/DualLayerForm.vue";
 import PasswordCrackForm from "./components/Forms/PasswordCrackForm.vue";
 import Index from "./components/Forms/Index.vue";
-import SignForm from "./components/Forms/Sign.vue";
+import SignForm from "./components/Forms/SignForm.vue";
 import Debug from "./components/Forms/Debug.vue";
 import { useMenuState } from './store/menu';
 

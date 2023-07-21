@@ -49,3 +49,20 @@ func (a *App) CropPDFByMargin(inFile string, outFile string, margin []float32, u
 	logger.Println(args)
 	return a.cmdRunner(args, "pdf")
 }
+
+func (a *App) CropPDFByRectAnnots(inFile string, outFile string, keepSize bool, pages string) error {
+	logger.Printf("inFile: %s, outFile: %s, keepSize: %v, pages: %s\n", inFile, outFile, keepSize, pages)
+	args := []string{"crop", "--method", "annot"}
+	if keepSize {
+		args = append(args, "--keep_size")
+	}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	logger.Println(args)
+	return a.cmdRunner(args, "pdf")
+}

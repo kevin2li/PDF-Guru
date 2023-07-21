@@ -62,6 +62,10 @@ export function CropPDFByMargin(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['CropPDFByMargin'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
+export function CropPDFByRectAnnots(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['CropPDFByRectAnnots'](arg1, arg2, arg3, arg4);
+}
+
 export function CutPDFByBreakpoints(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['CutPDFByBreakpoints'](arg1, arg2, arg3, arg4, arg5);
 }

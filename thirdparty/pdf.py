@@ -12,11 +12,11 @@ import subprocess
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union
+from uuid import uuid4
 
 import fitz
 import numpy as np
 from loguru import logger
-from PIL import Image
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
@@ -609,6 +609,42 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+def crop_pdf_by_rect_annot(doc_path: str,  keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        writer: fitz.Document = fitz.open()
+        FLAG = False
+        for page_index in roi_indices:
+            page = doc[page_index]
+            rect_list = []
+            for annot in page.annots():
+                if annot.type[0] == 4: # Square
+                    rect_list.append(annot.rect)
+                page.delete_annot(annot)
+            logger.debug(rect_list)
+            if rect_list:
+                FLAG = True
+                page_width, page_height = page.rect.width, page.rect.height
+                for rect in rect_list:
+                    if keep_page_size:
+                        new_page = writer.new_page(-1, width=page_width, height=page_height)
+                        new_page.show_pdf_page(new_page.rect, doc, page_index, clip=rect)
+                    else:
+                        new_page = writer.new_page(-1, width=rect[2]-rect[0], height=rect[3]-rect[1])
+                        new_page.show_pdf_page(new_page.rect, doc, page_index, clip=rect)
+        if not FLAG:
+            dump_json(cmd_output_path, {"status": "error", "message": "未找到矩形标注!"})
+            return
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-注释裁剪.pdf")
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
 
 @batch_process()
 def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "all", output_path: str = None):
@@ -1348,7 +1384,6 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
 def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         WATERMARK_FLAG = False
         for page_index in range(doc.page_count):
@@ -1367,7 +1402,6 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
                             i2 = stream.find(b"EMC", i1)  # end of definition
                             stream[i1 : i2+3] = b""  # remove the full definition source "/Artifact ... EMC"
                         doc.update_stream(xref, stream, compress=True)
-            writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
         if not WATERMARK_FLAG:
             logger.error("该文件没有找到水印!")
             dump_json(cmd_output_path, {"status": "error", "message": "该文件没有找到水印!"})
@@ -1375,7 +1409,7 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-        writer.ez_save(output_path)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1893,7 +1927,7 @@ def mask_pdf_by_rectangle_annot(
         if rect_list:
             p = Path(doc_path)
             clean_doc_path = str(p.parent / "tmp_clean.pdf")
-            doc.save(clean_doc_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+            doc.save(clean_doc_path, garbage=3, deflate=True)
             if output_path is None:
                 output_path = str(p.parent / f"{p.stem}-批注遮罩版.pdf")
             mask_pdf_by_rectangle(doc_path=clean_doc_path, bbox_list=rect_list, color=color, opacity=opacity, angle=angle, page_range=page_range, output_path=output_path)
@@ -2014,7 +2048,14 @@ def convert_pdf2svg(doc_path: str, dpi: int = 300, page_range: str = "all", outp
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, sort_method: str = 'name', sort_direction: str = 'asc', output_path: str = None):
+def convert_svg2pdf(
+        input_path: Union[str, List[str]],
+        is_merge: bool = True,
+        sort_method: str = 'name',
+        sort_direction: str = 'asc',
+        paper_size: str = "a4",
+        orientation: str = "portrait",
+        output_path: str = None):
     try:
         path_list = []
         if isinstance(input_path, str):
@@ -2067,11 +2108,15 @@ def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, so
             for path in new_path_list:
                 with open(path, 'r') as f:
                     img = fitz.open(path)
+                    if paper_size == "same":
+                        w, h = img[0].rect.width, img[0].rect.height
+                    else:
+                        fmt = fitz.paper_rect(f"{paper_size}-l") if orientation == "landscape" else fitz.paper_rect(paper_size)
+                        w, h = fmt.width, fmt.height
                     pdfbytes = img.convert_to_pdf()
                     pdf = fitz.open('pdf', pdfbytes)
-                    rect = img[0].rect
-                    page = writer.new_page(width=rect.width, height=rect.height)
-                    page.show_pdf_page(rect, pdf, 0)
+                    page = writer.new_page(width=w, height=h)
+                    page.show_pdf_page(img[0].rect, pdf, 0)
 
             writer.save(output_path, garbage=3, deflate=True)
         else:
@@ -2698,7 +2743,7 @@ def main():
     # 裁剪子命令
     crop_parser = sub_parsers.add_parser("crop", help="裁剪", description="裁剪pdf文件")
     crop_parser.set_defaults(which='crop')
-    crop_parser.add_argument("--method", type=str, choices=['bbox', 'margin'], default="bbox", help="裁剪模式")
+    crop_parser.add_argument("--method", type=str, choices=['bbox', 'margin', "annot"], default="bbox", help="裁剪模式")
     crop_parser.add_argument("input_path", type=str, help="pdf文件路径")
     crop_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
     crop_parser.add_argument("--bbox", type=float, nargs=4, help="裁剪框")
@@ -2715,6 +2760,8 @@ def main():
     convert_parser.add_argument("--source-type", type=str, default="pdf", help="源类型")
     convert_parser.add_argument("--target-type", type=str, default="png", help="目标类型")
     convert_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
+    convert_parser.add_argument("--paper-size", type=str, default="A4", help="纸张大小")
+    convert_parser.add_argument("--orientation", type=str, choices=['portrait', 'landscape'], default="portrait", help="纸张方向")
     convert_parser.add_argument("--is_merge", action="store_true", help="是否合并")
     convert_parser.add_argument("--sort-method", type=str, choices=['custom', 'name', 'name_digit', 'ctime', 'mtime'], default="default", help="排序方式")
     convert_parser.add_argument("--sort-direction", type=str, choices=['asc', 'desc'], default="asc", help="排序方向")
@@ -2804,6 +2851,7 @@ def main():
     sign_parser.add_argument("input_path", type=str, help="输入图片路径")
     sign_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
+
     # 参数解析
     args = parser.parse_args()
     logger.debug(args)
@@ -2884,6 +2932,8 @@ def main():
             crop_pdf_by_bbox(doc_path=args.input_path, bbox=args.bbox, unit=args.unit, keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
         elif args.method == "margin":
             crop_pdf_by_page_margin(doc_path=args.input_path, margin=args.margin, unit=args.unit, keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
+        elif args.method == "annot":
+            crop_pdf_by_rect_annot(doc_path=args.input_path,  keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
     elif args.which == "convert":
         if args.source_type == "pdf":
             if args.target_type == "png":
@@ -2894,9 +2944,9 @@ def main():
                 convert_to_image_pdf(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
         elif args.target_type == "pdf":
             if args.source_type == "png":
-                convert_png2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, output_path=args.output)
+                convert_png2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, paper_size=args.paper_size, orientation=args.orientation, output_path=args.output)
             elif args.source_type == "svg":
-                convert_svg2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, output_path=args.output)
+                convert_svg2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, paper_size=args.paper_size, orientation=args.orientation, output_path=args.output)
             elif args.source_type == "mobi":
                 convert_anydoc2pdf(input_path=args.input_path, output_path=args.output)
             elif args.source_type == "epub":

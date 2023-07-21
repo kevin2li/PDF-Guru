@@ -3,3 +3,5 @@ reportlab
 pillow
 loguru
 pyinstaller
+numpy
+requests
