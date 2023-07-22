@@ -316,6 +316,13 @@ interface SignState {
     font_color: string;
 }
 
+interface AnkiState {
+    input: string;
+    output: string;
+    page: string;
+}
+
+
 const menuRecord: Record<string, string> = {
     "index": "首页",
     "merge": "PDF合并",
@@ -342,6 +349,7 @@ const menuRecord: Record<string, string> = {
     "crack": "密码破解",
     "sign": "电子签名",
     "settings": "首选项",
+    "anki": "Anki卡片制作",
     "debug": "调试",
 };
 
@@ -371,6 +379,7 @@ const menuDesc: Record<string, string> = {
     "crack": "密码破解",
     "sign": "电子签名制作",
     "settings": "对软件功能进行配置",
+    "anki": "Anki卡片制作，支持图片挖空制卡、PDF切图制卡等",
     "debug": "调试",
 }
 
@@ -442,6 +451,7 @@ export type {
     DualLayerState,
     CrackState,
     SignState,
+    AnkiState,
 };
 
 export {

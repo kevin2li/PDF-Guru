@@ -32,6 +32,8 @@ export function CropPDFByBBOX(arg1:string,arg2:string,arg3:Array<number>,arg4:st
 
 export function CropPDFByMargin(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
 
+export function CropPDFByRectAnnots(arg1:string,arg2:string,arg3:boolean,arg4:string):Promise<void>;
+
 export function CutPDFByBreakpoints(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<number>,arg5:string):Promise<void>;
 
 export function CutPDFByGrid(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string):Promise<void>;

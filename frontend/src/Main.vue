@@ -164,6 +164,12 @@
                         </template>
                         {{ menuRecord['dual'] }}
                     </a-menu-item>
+                    <a-menu-item key="anki">
+                        <template #icon>
+                            <star-outlined />
+                        </template>
+                        {{ menuRecord['anki'] }}
+                    </a-menu-item>
                 </a-sub-menu>
                 <a-menu-item key="settings">
                     <template #icon>
@@ -216,6 +222,7 @@
                     <DualLayerForm v-if="store.selectedKeys.at(0) === 'dual'" />
                     <PasswordCrackForm v-if="store.selectedKeys.at(0) === 'crack'" />
                     <SignForm :width="400" :height="200" v-if="store.selectedKeys.at(0) === 'sign'" />
+                    <AnkiForm :width="400" :height="200" v-if="store.selectedKeys.at(0) === 'anki'" />
                     <Debug :width="400" :height="200" v-if="store.selectedKeys.at(0) === 'debug'" />
                 </div>
             </div>
@@ -264,6 +271,7 @@ import {
     ToolOutlined,
     HomeOutlined,
     EditOutlined,
+    StarOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
@@ -292,7 +300,8 @@ import MetaForm from "./components/Forms/MetaForm.vue";
 import DualLayerForm from "./components/Forms/DualLayerForm.vue";
 import PasswordCrackForm from "./components/Forms/PasswordCrackForm.vue";
 import Index from "./components/Forms/Index.vue";
-import SignForm from "./components/Forms/Sign.vue";
+import SignForm from "./components/Forms/SignForm.vue";
+import AnkiForm from "./components/Forms/AnkiForm.vue";
 import Debug from "./components/Forms/Debug.vue";
 import { useMenuState } from './store/menu';
 
@@ -340,6 +349,7 @@ export default defineComponent({
         ToolOutlined,
         HomeOutlined,
         EditOutlined,
+        StarOutlined,
         IconFont,
         // form
         // 合并
@@ -392,6 +402,8 @@ export default defineComponent({
         Index,
         // 电子签名
         SignForm,
+        // Anki制卡
+        AnkiForm,
         // 调试
         Debug,
     },

@@ -610,6 +610,42 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
+def crop_pdf_by_rect_annot(doc_path: str,  keep_page_size: bool = True, page_range: str = "all", output_path: str = None):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        writer: fitz.Document = fitz.open()
+        FLAG = False
+        for page_index in roi_indices:
+            page = doc[page_index]
+            rect_list = []
+            for annot in page.annots():
+                if annot.type[0] == 4: # Square
+                    rect_list.append(annot.rect)
+                page.delete_annot(annot)
+            logger.debug(rect_list)
+            if rect_list:
+                FLAG = True
+                page_width, page_height = page.rect.width, page.rect.height
+                for rect in rect_list:
+                    if keep_page_size:
+                        new_page = writer.new_page(-1, width=page_width, height=page_height)
+                        new_page.show_pdf_page(new_page.rect, doc, page_index, clip=rect)
+                    else:
+                        new_page = writer.new_page(-1, width=rect[2]-rect[0], height=rect[3]-rect[1])
+                        new_page.show_pdf_page(new_page.rect, doc, page_index, clip=rect)
+        if not FLAG:
+            dump_json(cmd_output_path, {"status": "error", "message": "未找到矩形标注!"})
+            return
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-注释裁剪.pdf")
+        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+
 @batch_process()
 def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "all", output_path: str = None):
     try:
@@ -1893,7 +1929,7 @@ def mask_pdf_by_rectangle_annot(
         if rect_list:
             p = Path(doc_path)
             clean_doc_path = str(p.parent / "tmp_clean.pdf")
-            doc.save(clean_doc_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+            doc.save(clean_doc_path, garbage=3, deflate=True)
             if output_path is None:
                 output_path = str(p.parent / f"{p.stem}-批注遮罩版.pdf")
             mask_pdf_by_rectangle(doc_path=clean_doc_path, bbox_list=rect_list, color=color, opacity=opacity, angle=angle, page_range=page_range, output_path=output_path)
@@ -2698,7 +2734,7 @@ def main():
     # 裁剪子命令
     crop_parser = sub_parsers.add_parser("crop", help="裁剪", description="裁剪pdf文件")
     crop_parser.set_defaults(which='crop')
-    crop_parser.add_argument("--method", type=str, choices=['bbox', 'margin'], default="bbox", help="裁剪模式")
+    crop_parser.add_argument("--method", type=str, choices=['bbox', 'margin', "annot"], default="bbox", help="裁剪模式")
     crop_parser.add_argument("input_path", type=str, help="pdf文件路径")
     crop_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
     crop_parser.add_argument("--bbox", type=float, nargs=4, help="裁剪框")
@@ -2884,6 +2920,8 @@ def main():
             crop_pdf_by_bbox(doc_path=args.input_path, bbox=args.bbox, unit=args.unit, keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
         elif args.method == "margin":
             crop_pdf_by_page_margin(doc_path=args.input_path, margin=args.margin, unit=args.unit, keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
+        elif args.method == "annot":
+            crop_pdf_by_rect_annot(doc_path=args.input_path,  keep_page_size=args.keep_size, page_range=args.page_range, output_path=args.output)
     elif args.which == "convert":
         if args.source_type == "pdf":
             if args.target_type == "png":
