@@ -1,6 +1,6 @@
-package main
+package backend
 
-func (a *App) DeletePDF(inFile string, outFile string, pages string) error {
+func DeletePDF(inFile string, outFile string, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, pages: %s\n", inFile, outFile, pages)
 	args := []string{"delete"}
 	if pages != "" {
@@ -11,5 +11,5 @@ func (a *App) DeletePDF(inFile string, outFile string, pages string) error {
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

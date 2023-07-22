@@ -1,12 +1,13 @@
-//go:build darwin || linux
+//go:build windows
 
-package main
+package backend
 
 import (
 	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/pkg/errors"
 )
@@ -16,12 +17,21 @@ type CmdOutput struct {
 	Message string `json:"message"`
 }
 
+type MyConfig struct {
+	PdfPath       string `json:"pdf_path"`
+	PythonPath    string `json:"python_path"`
+	TesseractPath string `json:"tesseract_path"`
+	PandocPath    string `json:"pandoc_path"`
+	HashcatPath   string `json:"hashcat_path"`
+}
+
 func GetCmdStatusAndMessage(cmd *exec.Cmd, cmdType string) error {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Fatalln(err)
 		}
 	}()
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -56,8 +66,15 @@ func GetCmdStatusAndMessage(cmd *exec.Cmd, cmdType string) error {
 	return nil
 }
 
-func (a *App) cmdRunner(args []string, cmdType string) error {
-	config, err := a.LoadConfig()
+func cmdRunner(args []string, cmdType string) error {
+	var config MyConfig
+	config_path := "config.json"
+	data, err := os.ReadFile(config_path)
+	if err != nil {
+		err = errors.Wrap(err, "")
+		return err
+	}
+	json.Unmarshal(data, &config)
 	if err != nil {
 		err = errors.Wrap(err, "")
 		return err
@@ -66,41 +83,14 @@ func (a *App) cmdRunner(args []string, cmdType string) error {
 	if cmdType == "pdf" {
 		cmd = exec.Command(config.PdfPath, args...)
 	} else if cmdType == "python" {
-		err = a.CheckFileExists(config.PythonPath)
-		if err != nil {
-			return err
-		}
 		cmd = exec.Command(config.PythonPath, args...)
 	} else if cmdType == "pandoc" {
 		path := config.PandocPath
-		err = a.CheckFileExists(config.PandocPath)
-		if err != nil {
-			pandoc_path, err := exec.LookPath("pandoc.exe")
-			if err != nil {
-				err = errors.Wrap(err, "pandoc not found!")
-				return err
-			}
-			path = pandoc_path
-		}
 		cmd = exec.Command(path, args...)
 	} else if cmdType == "tesseract" {
 		path := config.TesseractPath
-		err = a.CheckFileExists(config.TesseractPath)
-		if err != nil {
-			tesseract_path, err := exec.LookPath("tesseract.exe")
-			if err != nil {
-				err = errors.Wrap(err, "tesseract not found!")
-				return err
-			}
-			path = tesseract_path
-		}
 		cmd = exec.Command(path, args...)
 	} else if cmdType == "hashcat" {
-		err = a.CheckFileExists(config.HashcatPath)
-		if err != nil {
-			err = errors.Wrap(err, "hashcat not found!")
-			return err
-		}
 		cmd = exec.Command(config.HashcatPath, args...)
 	} else {
 		err = errors.Wrap(err, "unsupport cmd type!")

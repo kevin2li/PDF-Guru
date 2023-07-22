@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "fmt"
 
-func (a *App) MakeDualLayerPDF(
+func MakeDualLayerPDF(
 	inFile string,
 	outFile string,
 	dpi int,
@@ -19,5 +19,5 @@ func (a *App) MakeDualLayerPDF(
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

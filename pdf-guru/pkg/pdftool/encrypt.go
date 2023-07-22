@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "os"
 
-func (a *App) EncryptPDF(inFile string, outFile string, upw string, opw string, perm []string) error {
+func EncryptPDF(inFile string, outFile string, upw string, opw string, perm []string) error {
 	logger.Printf("inFile: %s, outFile: %s, upw: %s, opw: %s, perm: %v\n", inFile, outFile, upw, opw, perm)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
@@ -25,10 +25,10 @@ func (a *App) EncryptPDF(inFile string, outFile string, upw string, opw string, 
 	args = append(args, inFile)
 	logger.Println(args)
 
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) DecryptPDF(inFile string, outFile string, passwd string) error {
+func DecryptPDF(inFile string, outFile string, passwd string) error {
 	logger.Printf("inFile: %s, outFile: %s, passwd: %s\n", inFile, outFile, passwd)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
@@ -43,10 +43,10 @@ func (a *App) DecryptPDF(inFile string, outFile string, passwd string) error {
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) ChangePasswordPDF(inFile string, outFile string, oldUpw string, upw string, oldOpw string, opw string) error {
+func ChangePasswordPDF(inFile string, outFile string, oldUpw string, upw string, oldOpw string, opw string) error {
 	logger.Printf("inFile: %s, outFile: %s, oldUpw: %s, upw: %s, oldOpw: %s, opw: %s\n", inFile, outFile, oldUpw, upw, oldOpw, opw)
 	args := []string{"change_password"}
 	if oldUpw != "" {
@@ -66,5 +66,5 @@ func (a *App) ChangePasswordPDF(inFile string, outFile string, oldUpw string, up
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

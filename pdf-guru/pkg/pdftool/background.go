@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "fmt"
 
-func (a *App) AddPDFBackgroundByImage(inFile string, imgFile string, outFile string, opacity float32, angle float32, x_offset float32, y_offset float32, scale float32, pages string) error {
+func AddPDFBackgroundByImage(inFile string, imgFile string, outFile string, opacity float32, angle float32, x_offset float32, y_offset float32, scale float32, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, imgFile: %s, opacity: %f, angle: %f, x_offset: %f, y_offset: %f, pages: %s\n", inFile, outFile, imgFile, opacity, angle, x_offset, y_offset, pages)
 	args := []string{"bg", "--type", "image"}
 	if imgFile != "" {
@@ -23,10 +23,10 @@ func (a *App) AddPDFBackgroundByImage(inFile string, imgFile string, outFile str
 	args = append(args, inFile)
 
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) AddPDFBackgroundByColor(inFile string, outFile string, color string, opacity float32, angle float32, x_offset float32, y_offset float32, pages string) error {
+func AddPDFBackgroundByColor(inFile string, outFile string, color string, opacity float32, angle float32, x_offset float32, y_offset float32, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, color: %s, opacity: %f, angle: %f, x_offset: %f, y_offset: %f, pages: %s\n", inFile, outFile, color, opacity, angle, x_offset, y_offset, pages)
 	args := []string{"bg", "--type", "color"}
 	if color != "" {
@@ -46,5 +46,5 @@ func (a *App) AddPDFBackgroundByColor(inFile string, outFile string, color strin
 	args = append(args, inFile)
 
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

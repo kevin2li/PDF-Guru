@@ -6,3 +6,5 @@ frontend/dist
 *log*
 config.json
 cmd_output.json
+go.work
+go.work.sum

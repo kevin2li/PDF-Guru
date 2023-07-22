@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (a *App) PDFConversion(
+func PDFConversion(
 	inFileList []string,
 	outFile string,
 	dpi int,
@@ -41,10 +41,10 @@ func (a *App) PDFConversion(
 	}
 	args = append(args, inFileList...)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) ConvertPDF2Docx(
+func ConvertPDF2Docx(
 	inFile string,
 	outFile string,
 ) error {
@@ -62,12 +62,12 @@ func (a *App) ConvertPDF2Docx(
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "python")
+	return cmdRunner(args, "python")
 }
 
 // Pandoc convert
 
-func (a *App) PandocConvert(
+func PandocConvert(
 	inFile string,
 	outFile string,
 	dstType string,
@@ -78,5 +78,5 @@ func (a *App) PandocConvert(
 	}
 	args := []string{"-s", "-t", dstType[1:], "-o", outFile, inFile}
 	logger.Println(args)
-	return a.cmdRunner(args, "pandoc")
+	return cmdRunner(args, "pandoc")
 }

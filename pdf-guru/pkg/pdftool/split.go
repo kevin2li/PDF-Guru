@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "fmt"
 
-func (a *App) SplitPDFByChunk(inFile string, chunkSize int, outDir string) error {
+func SplitPDFByChunk(inFile string, chunkSize int, outDir string) error {
 	logger.Printf("inFile: %s, chunkSize: %d, outDir: %s\n", inFile, chunkSize, outDir)
 	args := []string{"split", "--mode", "chunk"}
 	args = append(args, "--chunk_size")
@@ -13,10 +13,10 @@ func (a *App) SplitPDFByChunk(inFile string, chunkSize int, outDir string) error
 	args = append(args, inFile)
 	logger.Println(args)
 
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) SplitPDFByBookmark(inFile string, tocLevel string, outDir string) error {
+func SplitPDFByBookmark(inFile string, tocLevel string, outDir string) error {
 	logger.Printf("inFile: %s, outDir: %s\n", inFile, outDir)
 	args := []string{"split", "--mode", "toc"}
 	if tocLevel != "" {
@@ -28,10 +28,10 @@ func (a *App) SplitPDFByBookmark(inFile string, tocLevel string, outDir string) 
 	args = append(args, inFile)
 	logger.Println(args)
 
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) SplitPDFByPage(inFile string, pages string, outDir string) error {
+func SplitPDFByPage(inFile string, pages string, outDir string) error {
 	logger.Printf("inFile: %s, pages: %s, outDir: %s\n", inFile, pages, outDir)
 	args := []string{"split", "--mode", "page"}
 	if pages != "" {
@@ -43,5 +43,5 @@ func (a *App) SplitPDFByPage(inFile string, pages string, outDir string) error {
 	args = append(args, inFile)
 	logger.Println(args)
 
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

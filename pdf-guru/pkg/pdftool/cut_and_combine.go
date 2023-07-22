@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "fmt"
 
-func (a *App) CutPDFByGrid(inFile string, outFile string, row int, col int, pages string) error {
+func CutPDFByGrid(inFile string, outFile string, row int, col int, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, row: %d, col: %d, pages: %s\n", inFile, outFile, row, col, pages)
 	args := []string{"cut", "--method", "grid"}
 	args = append(args, "--nrow", fmt.Sprintf("%d", row))
@@ -15,10 +15,10 @@ func (a *App) CutPDFByGrid(inFile string, outFile string, row int, col int, page
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []float32, VBreakpoints []float32, pages string) error {
+func CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []float32, VBreakpoints []float32, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, HBreakpoints: %v, VBreakpoints: %v, pages: %s\n", inFile, outFile, HBreakpoints, VBreakpoints, pages)
 	args := []string{"cut", "--method", "breakpoints"}
 	args = append(args, inFile)
@@ -41,10 +41,10 @@ func (a *App) CutPDFByBreakpoints(inFile string, outFile string, HBreakpoints []
 		args = append(args, "-o", outFile)
 	}
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) CombinePDFByGrid(inFile string, outFile string, row int, col int, pages string, paperSize string, orientation string) error {
+func CombinePDFByGrid(inFile string, outFile string, row int, col int, pages string, paperSize string, orientation string) error {
 	logger.Printf("inFile: %s, outFile: %s, row: %d, col: %d, pages: %s, paperSize: %s, orientation: %s\n", inFile, outFile, row, col, pages, paperSize, orientation)
 	args := []string{"combine"}
 	args = append(args, "--nrow", fmt.Sprintf("%d", row))
@@ -63,5 +63,5 @@ func (a *App) CombinePDFByGrid(inFile string, outFile string, row int, col int, 
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "fmt"
 
-func (a *App) AddPDFHeaderAndFooter(
+func AddPDFHeaderAndFooter(
 	inFile string,
 	outFile string,
 	header_left string,
@@ -68,10 +68,10 @@ func (a *App) AddPDFHeaderAndFooter(
 	args = append(args, inFile)
 
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) RemovePDFHeaderAndFooter(
+func RemovePDFHeaderAndFooter(
 	inFile string,
 	outFile string,
 	margin_bbox []float32,
@@ -102,5 +102,5 @@ func (a *App) RemovePDFHeaderAndFooter(
 	args = append(args, inFile)
 
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

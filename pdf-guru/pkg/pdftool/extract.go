@@ -1,6 +1,6 @@
-package main
+package backend
 
-func (a *App) ExtractTextFromPDF(inFile string, outFile string, pages string) error {
+func ExtractTextFromPDF(inFile string, outFile string, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, pages: %s\n", inFile, outFile, pages)
 	args := []string{"extract", "--type", "text"}
 	if pages != "" {
@@ -11,10 +11,10 @@ func (a *App) ExtractTextFromPDF(inFile string, outFile string, pages string) er
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) ExtractImageFromPDF(inFile string, outFile string, pages string) error {
+func ExtractImageFromPDF(inFile string, outFile string, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, pages: %s\n", inFile, outFile, pages)
 	args := []string{"extract", "--type", "image"}
 	if pages != "" {
@@ -25,10 +25,10 @@ func (a *App) ExtractImageFromPDF(inFile string, outFile string, pages string) e
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) OCRExtract(inFile string, outFile string, pages string, extractType string) error {
+func OCRExtract(inFile string, outFile string, pages string, extractType string) error {
 	logger.Printf("inFile: %s, outFile: %s, pages: %s, extractType: %s\n", inFile, outFile, pages, extractType)
 	args := []string{"ocr", "extract"}
 	if extractType != "" {
@@ -42,5 +42,5 @@ func (a *App) OCRExtract(inFile string, outFile string, pages string, extractTyp
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "python")
+	return cmdRunner(args, "python")
 }

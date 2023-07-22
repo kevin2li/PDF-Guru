@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "fmt"
 
-func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages string, posType string, outFile string) error {
+func InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages string, posType string, outFile string) error {
 	logger.Printf("inFile1: %s, inFile2: %s, insertPos: %d, dstPages: %s, posType: %s, outFile: %s\n", inFile1, inFile2, insertPos, dstPages, posType, outFile)
 	args := []string{"insert"}
 	if insertPos != 0 {
@@ -21,10 +21,10 @@ func (a *App) InsertPDF(inFile1 string, inFile2 string, insertPos int, dstPages 
 	args = append(args, inFile2)
 	logger.Println(args)
 
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) InsertBlankPDF(inFile string, outFile string, insertPos int, posType string, paper_size string, orientation string, count int) error {
+func InsertBlankPDF(inFile string, outFile string, insertPos int, posType string, paper_size string, orientation string, count int) error {
 	logger.Printf("inFile: %s, outFile: %s, insertPos: %d, posType: %s, paper_size: %s, orientation: %s, count: %d\n", inFile, outFile, insertPos, posType, paper_size, orientation, count)
 	args := []string{"insert", "--method", "blank"}
 	args = append(args, "--insert_pos", fmt.Sprintf("%d", insertPos))
@@ -44,10 +44,10 @@ func (a *App) InsertBlankPDF(inFile string, outFile string, insertPos int, posTy
 	args = append(args, inFile, "placeholder.pdf")
 	logger.Println(args)
 
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) ReplacePDF(inFile1 string, inFile2 string, srcPages string, dstPages string, outFile string) error {
+func ReplacePDF(inFile1 string, inFile2 string, srcPages string, dstPages string, outFile string) error {
 	logger.Printf("inFile1: %s, inFile2: %s, srcPages: %s, dstPages: %s, outFile: %s\n", inFile1, inFile2, srcPages, dstPages, outFile)
 	args := []string{"replace"}
 	if srcPages != "" {
@@ -63,5 +63,5 @@ func (a *App) ReplacePDF(inFile1 string, inFile2 string, srcPages string, dstPag
 	args = append(args, inFile2)
 	logger.Println(args)
 
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

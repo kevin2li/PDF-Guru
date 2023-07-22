@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "github.com/pkg/errors"
 
-func (a *App) MergePDF(inFiles []string, outFile string, sortMethod string, sortDirection string) error {
+func MergePDF(inFiles []string, outFile string, sortMethod string, sortDirection string) error {
 	if len(inFiles) == 0 {
 		return errors.New("no input files")
 	}
@@ -19,5 +19,5 @@ func (a *App) MergePDF(inFiles []string, outFile string, sortMethod string, sort
 	args = append(args, inFiles...)
 	logger.Println(args)
 
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

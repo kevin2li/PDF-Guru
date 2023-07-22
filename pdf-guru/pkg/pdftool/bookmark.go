@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func (a *App) ExtractBookmark(inFile string, outFile string, format string) error {
+func ExtractBookmark(inFile string, outFile string, format string) error {
 	logger.Printf("inFile: %s, outFile: %s, format: %s\n", inFile, outFile, format)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
@@ -21,10 +21,10 @@ func (a *App) ExtractBookmark(inFile string, outFile string, format string) erro
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) WriteBookmarkByFile(inFile string, outFile string, tocFile string, offset int) error {
+func WriteBookmarkByFile(inFile string, outFile string, tocFile string, offset int) error {
 	logger.Printf("inFile: %s, outFile: %s, tocFile: %s, offset: %d\n", inFile, outFile, tocFile, offset)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
@@ -46,10 +46,10 @@ func (a *App) WriteBookmarkByFile(inFile string, outFile string, tocFile string,
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format string, startNumber int, pages string) error {
+func WriteBookmarkByGap(inFile string, outFile string, gap int, format string, startNumber int, pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, gap: %d\n", inFile, outFile, gap)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
@@ -69,10 +69,10 @@ func (a *App) WriteBookmarkByGap(inFile string, outFile string, gap int, format 
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) TransformBookmark(inFile string, outFile string, addOffset int, levelDict []string, deleteLevelBelow int, defaultLevel int, isRemoveBlankLines bool) error {
+func TransformBookmark(inFile string, outFile string, addOffset int, levelDict []string, deleteLevelBelow int, defaultLevel int, isRemoveBlankLines bool) error {
 	logger.Printf("inFile: %s, outFile: %s, addOffset: %d, levelDict: %v, deleteLevelBelow: %d\n", inFile, outFile, addOffset, levelDict, deleteLevelBelow)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
@@ -95,10 +95,10 @@ func (a *App) TransformBookmark(inFile string, outFile string, addOffset int, le
 	}
 	args = append(args, "--toc", inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) DetectBookmarkByFont(
+func DetectBookmarkByFont(
 	inFile string,
 	outFile string,
 	pages string) error {
@@ -112,10 +112,10 @@ func (a *App) DetectBookmarkByFont(
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) OCR(inFile string, outFile string, pages string, lang string, doubleColumn bool) error {
+func OCR(inFile string, outFile string, pages string, lang string, doubleColumn bool) error {
 	logger.Printf("inFile: %s, outFile: %s, pages: %s, lang: %s, doubleColumn: %v\n", inFile, outFile, pages, lang, doubleColumn)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
@@ -143,10 +143,10 @@ func (a *App) OCR(inFile string, outFile string, pages string, lang string, doub
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "python")
+	return cmdRunner(args, "python")
 }
 
-func (a *App) OCRPDFBookmark(inFile string, outFile string, pages string, lang string, doubleColumn bool) error {
+func OCRPDFBookmark(inFile string, outFile string, pages string, lang string, doubleColumn bool) error {
 	logger.Printf("inFile: %s, outFile: %s, pages: %s, lang: %s, doubleColumn: %v\n", inFile, outFile, pages, lang, doubleColumn)
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
@@ -174,5 +174,5 @@ func (a *App) OCRPDFBookmark(inFile string, outFile string, pages string, lang s
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "python")
+	return cmdRunner(args, "python")
 }

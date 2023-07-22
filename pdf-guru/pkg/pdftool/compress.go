@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"os"
@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (a *App) CompressPDF(inFile string, outFile string) error {
+func CompressPDF(inFile string, outFile string) error {
 	if _, err := os.Stat(inFile); os.IsNotExist(err) {
 		logger.Errorln(err)
 		return err

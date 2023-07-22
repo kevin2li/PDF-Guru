@@ -1,6 +1,6 @@
-package main
+package backend
 
-func (a *App) SignImage(inFile string, outFile string) error {
+func SignImage(inFile string, outFile string) error {
 	logger.Printf("inFile: %s, outFile: %s\n", inFile, outFile)
 	args := []string{"sign"}
 	if outFile != "" {
@@ -8,5 +8,5 @@ func (a *App) SignImage(inFile string, outFile string) error {
 	}
 	args = append(args, inFile)
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }

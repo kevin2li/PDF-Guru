@@ -1,8 +1,8 @@
-package main
+package backend
 
 import "fmt"
 
-func (a *App) AddPDFPageNumber(
+func AddPDFPageNumber(
 	inFile string,
 	outFile string,
 	pos string,
@@ -60,10 +60,10 @@ func (a *App) AddPDFPageNumber(
 	args = append(args, inFile)
 
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
 
-func (a *App) RemovePDFPageNumber(
+func RemovePDFPageNumber(
 	inFile string,
 	outFile string,
 	margin_bbox []float32,
@@ -93,5 +93,5 @@ func (a *App) RemovePDFPageNumber(
 	args = append(args, inFile)
 
 	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
+	return cmdRunner(args, "pdf")
 }
