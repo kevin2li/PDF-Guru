@@ -64,6 +64,7 @@ func (a *App) CreateCardByRectAnnots(
 	a_mask_color string,
 	dpi int,
 	tags []string,
+	imageMode bool,
 	pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, address: %s, parentDeck: %s, mode: %v, createSubDeck: %v, level: %d, q_mask_color: %s, a_mask_color: %s, dpi: %d, tags: %v, pages: %s\n", inFile, outFile, address, parentDeck, mode, createSubDeck, level, q_mask_color, a_mask_color, dpi, tags, pages)
 	args := []string{"anki"}
@@ -79,8 +80,34 @@ func (a *App) CreateCardByRectAnnots(
 	args = append(args, "--q-mask-color", q_mask_color)
 	args = append(args, "--a-mask-color", a_mask_color)
 	args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
-	args = append(args, "--tags")
-	args = append(args, tags...)
+	if len(tags) > 0 {
+		args = append(args, "--tags")
+		args = append(args, tags...)
+	}
+	if imageMode {
+		args = append(args, "--image-mode")
+	}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
+	args = append(args, inFile)
+	logger.Println(args)
+	return a.cmdRunner(args, "pdf")
+}
+
+func (a *App) CreateCardByFontStyle(
+	inFile string,
+	outFile string,
+	matches []string,
+	pages string) error {
+	logger.Printf("inFile: %s, outFile: %s, matches: %v, pages: %s\n", inFile, outFile, matches, pages)
+	args := []string{"anki"}
+	args = append(args, "--type", "font_style")
+	args = append(args, "--matches")
+	args = append(args, matches...)
 	if pages != "" {
 		args = append(args, "--page_range", pages)
 	}

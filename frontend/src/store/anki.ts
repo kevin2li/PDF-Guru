@@ -5,7 +5,7 @@ export const useAnkiState = defineStore("AnkiState", {
     state: (): AnkiState => ({
         input: "",
         output: "",
-        op: "font",
+        op: "annot",
         page: "",
         address: "http://localhost:8765",
         is_create_sub_deck: true,
@@ -16,6 +16,9 @@ export const useAnkiState = defineStore("AnkiState", {
         a_mask_color: "#ffeba2",
         dpi: 300,
         tags: [],
+        card_size: "1",
+        is_image: false,
+        matches: ['same_font', 'same_size', 'same_color'],
     }),
     getters: {
 
@@ -36,6 +39,9 @@ export const useAnkiState = defineStore("AnkiState", {
                 a_mask_color: "#ffeba2",
                 dpi: 300,
                 tags: [],
+                card_size: "1",
+                is_image: false,
+                matches: ['same_font', 'same_size', 'same_color'],
             })
         },
     }

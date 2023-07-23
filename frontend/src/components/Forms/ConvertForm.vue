@@ -107,6 +107,61 @@
                 </a-form-item>
             </div>
             <div v-else-if="store.type === 'png2pdf' || store.type === 'svg2pdf'">
+                <a-form-item label="纸张大小">
+                    <a-select v-model:value="store.paper_size" style="width: 200px">
+                        <a-select-option value="same">与图片相同</a-select-option>
+                        <a-select-option value="a0">A0</a-select-option>
+                        <a-select-option value="a1">A1</a-select-option>
+                        <a-select-option value="a2">A2</a-select-option>
+                        <a-select-option value="a3">A3</a-select-option>
+                        <a-select-option value="a4">A4</a-select-option>
+                        <a-select-option value="a5">A5</a-select-option>
+                        <a-select-option value="a6">A6</a-select-option>
+                        <a-select-option value="a7">A7</a-select-option>
+                        <a-select-option value="a8">A8</a-select-option>
+                        <a-select-option value="a9">A9</a-select-option>
+                        <a-select-option value="a10">A10</a-select-option>
+                        <a-select-option value="b0">B0</a-select-option>
+                        <a-select-option value="b1">B1</a-select-option>
+                        <a-select-option value="b2">B2</a-select-option>
+                        <a-select-option value="b3">B3</a-select-option>
+                        <a-select-option value="b4">B4</a-select-option>
+                        <a-select-option value="b5">B5</a-select-option>
+                        <a-select-option value="b6">B6</a-select-option>
+                        <a-select-option value="b7">B7</a-select-option>
+                        <a-select-option value="b8">B8</a-select-option>
+                        <a-select-option value="b9">B9</a-select-option>
+                        <a-select-option value="b10">B10</a-select-option>
+                        <a-select-option value="c0">C0</a-select-option>
+                        <a-select-option value="c1">C1</a-select-option>
+                        <a-select-option value="c2">C2</a-select-option>
+                        <a-select-option value="c3">C3</a-select-option>
+                        <a-select-option value="c4">C4</a-select-option>
+                        <a-select-option value="c5">C5</a-select-option>
+                        <a-select-option value="c6">C6</a-select-option>
+                        <a-select-option value="c7">C7</a-select-option>
+                        <a-select-option value="c8">C8</a-select-option>
+                        <a-select-option value="c9">C9</a-select-option>
+                        <a-select-option value="c10">C10</a-select-option>
+                        <a-select-option value="card-4x6">card-4x6</a-select-option>
+                        <a-select-option value="card-5x7">card-5x7</a-select-option>
+                        <a-select-option value="commercial">commercial</a-select-option>
+                        <a-select-option value="executive">executive</a-select-option>
+                        <a-select-option value="invoice">invoice</a-select-option>
+                        <a-select-option value="ledger">ledger</a-select-option>
+                        <a-select-option value="legal">legal</a-select-option>
+                        <a-select-option value="legal-13">legal-13</a-select-option>
+                        <a-select-option value="letter">letter</a-select-option>
+                        <a-select-option value="monarch">monarch</a-select-option>
+                        <a-select-option value="tabloid-extra">tabloid-extra</a-select-option>
+                    </a-select>
+                </a-form-item>
+                <a-form-item label="纸张方向">
+                    <a-radio-group v-model:value="store.orientation">
+                        <a-radio value="portrait">纵向</a-radio>
+                        <a-radio value="landscape">横向</a-radio>
+                    </a-radio-group>
+                </a-form-item>
                 <a-form-item name="is_merge" label="是否合并">
                     <a-checkbox v-model:checked="store.is_merge"></a-checkbox>
                 </a-form-item>
@@ -366,6 +421,8 @@ export default defineComponent({
                         store.sort_direction,
                         "pdf",
                         "png",
+                        store.paper_size,
+                        store.orientation,
                         store.page,
                     ])
                     break;
@@ -380,6 +437,8 @@ export default defineComponent({
                         store.sort_direction,
                         "pdf",
                         "svg",
+                        store.paper_size,
+                        store.orientation,
                         store.page,
                     ])
                     break;
@@ -401,6 +460,8 @@ export default defineComponent({
                         store.sort_direction,
                         "pdf",
                         "image-pdf",
+                        store.paper_size,
+                        store.orientation,
                         store.page,
                     ])
                     break;
@@ -419,6 +480,8 @@ export default defineComponent({
                         store.sort_direction,
                         "png",
                         "pdf",
+                        store.paper_size,
+                        store.orientation,
                         store.page,
                     ])
                     break;
@@ -437,6 +500,8 @@ export default defineComponent({
                         store.sort_direction,
                         "svg",
                         "pdf",
+                        store.paper_size,
+                        store.orientation,
                         store.page,
                     ])
                     break;
@@ -451,6 +516,8 @@ export default defineComponent({
                         store.sort_direction,
                         "epub",
                         "pdf",
+                        store.paper_size,
+                        store.orientation,
                         store.page,
                     ])
                     break;
@@ -465,6 +532,8 @@ export default defineComponent({
                         store.sort_direction,
                         "mobi",
                         "pdf",
+                        store.paper_size,
+                        store.orientation,
                         store.page,
                     ])
                     break;

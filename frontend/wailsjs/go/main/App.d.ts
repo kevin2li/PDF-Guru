@@ -28,7 +28,9 @@ export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertPDF2Docx(arg1:string,arg2:string):Promise<void>;
 
-export function CreateCardByRectAnnots(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>,arg6:boolean,arg7:number,arg8:string,arg9:string,arg10:number,arg11:Array<string>,arg12:string):Promise<void>;
+export function CreateCardByFontStyle(arg1:string,arg2:string,arg3:Array<string>,arg4:string):Promise<void>;
+
+export function CreateCardByRectAnnots(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>,arg6:boolean,arg7:number,arg8:string,arg9:string,arg10:number,arg11:Array<string>,arg12:boolean,arg13:string):Promise<void>;
 
 export function CropPDFByBBOX(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
 
@@ -82,7 +84,7 @@ export function OCRPDFBookmark(arg1:string,arg2:string,arg3:string,arg4:string,a
 
 export function OpenUrl(arg1:string):Promise<void>;
 
-export function PDFConversion(arg1:Array<string>,arg2:string,arg3:number,arg4:boolean,arg5:string,arg6:string,arg7:string,arg8:string,arg9:string):Promise<void>;
+export function PDFConversion(arg1:Array<string>,arg2:string,arg3:number,arg4:boolean,arg5:string,arg6:string,arg7:string,arg8:string,arg9:string,arg10:string,arg11:string):Promise<void>;
 
 export function PandocConvert(arg1:string,arg2:string,arg3:string):Promise<void>;
 

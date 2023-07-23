@@ -54,8 +54,12 @@ export function ConvertPDF2Docx(arg1, arg2) {
   return window['go']['main']['App']['ConvertPDF2Docx'](arg1, arg2);
 }
 
-export function CreateCardByRectAnnots(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12) {
-  return window['go']['main']['App']['CreateCardByRectAnnots'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+export function CreateCardByFontStyle(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['CreateCardByFontStyle'](arg1, arg2, arg3, arg4);
+}
+
+export function CreateCardByRectAnnots(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13) {
+  return window['go']['main']['App']['CreateCardByRectAnnots'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
 }
 
 export function CropPDFByBBOX(arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -162,8 +166,8 @@ export function OpenUrl(arg1) {
   return window['go']['main']['App']['OpenUrl'](arg1);
 }
 
-export function PDFConversion(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
-  return window['go']['main']['App']['PDFConversion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+export function PDFConversion(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
+  return window['go']['main']['App']['PDFConversion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 }
 
 export function PandocConvert(arg1, arg2, arg3) {

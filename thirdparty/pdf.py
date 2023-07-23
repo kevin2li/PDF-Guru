@@ -10,13 +10,13 @@ import re
 import shutil
 import subprocess
 import traceback
-import urllib.request
 from pathlib import Path
 from typing import List, Tuple, Union
 from uuid import uuid4
-import requests
+
 import fitz
 import numpy as np
+import requests
 from loguru import logger
 from PIL import Image, ImageDraw
 from reportlab.pdfbase import pdfmetrics
@@ -2052,7 +2052,14 @@ def convert_pdf2svg(doc_path: str, dpi: int = 300, page_range: str = "all", outp
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, sort_method: str = 'name', sort_direction: str = 'asc', output_path: str = None):
+def convert_svg2pdf(
+        input_path: Union[str, List[str]],
+        is_merge: bool = True,
+        sort_method: str = 'name',
+        sort_direction: str = 'asc',
+        paper_size: str = "a4",
+        orientation: str = "portrait",
+        output_path: str = None):
     try:
         path_list = []
         if isinstance(input_path, str):
@@ -2066,7 +2073,7 @@ def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, so
                     path_list.extend(glob.glob(p))
                 else:
                     path_list.append(p)
-
+        
         if is_merge:
             if output_path is None:
                 p = Path(path_list[0])
@@ -2105,11 +2112,15 @@ def convert_svg2pdf(input_path: Union[str, List[str]], is_merge: bool = True, so
             for path in new_path_list:
                 with open(path, 'r') as f:
                     img = fitz.open(path)
+                    if paper_size == "same":
+                        w, h = img[0].rect.width, img[0].rect.height
+                    else:
+                        fmt = fitz.paper_rect(f"{paper_size}-l") if orientation == "landscape" else fitz.paper_rect(paper_size)
+                        w, h = fmt.width, fmt.height
                     pdfbytes = img.convert_to_pdf()
                     pdf = fitz.open('pdf', pdfbytes)
-                    rect = img[0].rect
-                    page = writer.new_page(width=rect.width, height=rect.height)
-                    page.show_pdf_page(rect, pdf, 0)
+                    page = writer.new_page(width=w, height=h)
+                    page.show_pdf_page(img[0].rect, pdf, 0)
 
             writer.save(output_path, garbage=3, deflate=True)
         else:
@@ -2547,6 +2558,162 @@ def get_deck_names(address: str = "http://localhost:8765"):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
+def anki_card_by_image_mask(
+        doc_path: str,
+        address: str = "http://127.0.0.1:8765",
+        parent_deck: str = "",
+        mode: List[str] = ["hide_one_guess_one", "hide_all_guess_one", "hide_all_guess_all"],
+        q_mask_color: str = "#ff5656",
+        a_mask_color: str = "#ffeba2",
+        dpi: int = 300,
+        tags: List[str] = [],
+        page_range: str = "all",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        media_dir = Path(invoke(address=address, action="getMediaDirPath"))
+        if output_path is None:
+            output_dir = media_dir
+        RECT_ANNOT_FLAG = False
+        cards = []
+        fields = ["ID (hidden)", "Header", "Image", "Question Mask", "Footer", "Remarks", "Sources", "Extra 1", "Extra 2", "Answer Mask", "Original Mask"]
+        for page_index in roi_indices:
+            page = doc[page_index]
+            annot_objs = []
+            for annot in page.annots():
+                if annot.type[0] == 4: # Square
+                    RECT_ANNOT_FLAG = True
+                    obj = {
+                        "rect": annot.rect,
+                        "page": page_index,
+                    }
+                    # rect_list.append(annot.rect)
+                    annot_objs.append(obj)
+                page.delete_annot(annot)
+            if not annot_objs:
+                continue
+            card = {k: "" for k in fields}
+            origin_img = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72), alpha=False)
+            new_w, new_h = origin_img.width, origin_img.height
+            factor = new_w / page.rect.width
+            origin_mask_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(origin_mask_img)
+
+            for i, obj in enumerate(annot_objs):
+                rect = obj['rect']
+                bbox = [v*factor for i, v in enumerate(rect)]
+                draw.rectangle(bbox, fill=q_mask_color)
+            uid = uuid4()
+            origin_img_path = str(output_dir / f"{uid}_pdfguru-origin_img.png")
+            origin_mask_img_path = str(output_dir / f"{uid}_pdfguru-origin_mask_img.png")
+            origin_img.save(origin_img_path)
+            origin_mask_img.save(str(output_dir / f"{uid}_pdfguru-origin_mask_img.png"))
+
+            # 遮全猜全
+            if "hide_all_guess_all" in mode:
+                a_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                a_mask_path = str(output_dir / f"{uid}_pdfguru_all_answer_mask_img.png")
+                a_img.save(a_mask_path)
+                card.update({
+                    "ID (hidden)": str(uid)+f"-all",
+                    "Image": f'<img src="{str(Path(origin_img_path).relative_to(media_dir))}" />',
+                    "Question Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
+                    "Answer Mask": f'<img src="{str(Path(a_mask_path).relative_to(media_dir))}" />',
+                    "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
+                })
+                cards.append(card.copy())
+
+            # 遮一猜一
+            if "hide_one_guess_one" in mode:
+                a_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                a_mask_path = str(output_dir / f"{uid}_pdfguru_single_answer_mask_img.png")
+                a_img.save(a_mask_path)
+                for i, obj in enumerate(annot_objs):
+                    rect = obj['rect']
+                    q_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                    q_draw = ImageDraw.Draw(q_img)
+                    bbox = [v*factor for i, v in enumerate(rect)]
+                    q_draw.rectangle(bbox, fill=q_mask_color)
+                    q_mask_path = str(output_dir / f"{uid}_pdfguru_single_question_mask_img_{i}.png")
+                    q_img.save(q_mask_path)
+                    card.update({
+                        "ID (hidden)": str(uid)+f"-single-{i}",
+                        "Image": f'<img src="{str(Path(origin_img_path).relative_to(media_dir))}" />',
+                        "Question Mask": f'<img src="{str(Path(q_mask_path).relative_to(media_dir))}" />',
+                        "Answer Mask": f'<img src="{str(Path(a_mask_path).relative_to(media_dir))}" />',
+                        "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
+                    })
+
+                    cards.append(card.copy())
+            
+            # 遮全猜一
+            if "hide_all_guess_one" in mode:
+                for i, obj in enumerate(annot_objs):
+                    rect = obj['rect']
+                    q_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                    a_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                    q_draw = ImageDraw.Draw(q_img)
+                    a_draw = ImageDraw.Draw(a_img)
+                    for j in range(len(annot_objs)):
+                        bbox = [v*factor for idx, v in enumerate(annot_objs[j]['rect'])]
+                        if j != i:
+                            q_draw.rectangle(bbox, fill=a_mask_color)
+                            a_draw.rectangle(bbox, fill=a_mask_color)
+                        else:
+                            q_draw.rectangle(bbox, fill=q_mask_color)
+                    q_mask_path = str(output_dir / f"{uid}_pdfguru_multi_question_mask_img_{i}.png")
+                    q_img.save(q_mask_path)
+                    a_mask_path = str(output_dir / f"{uid}_pdfguru_multi_answer_mask_img_{i}.png")
+                    a_img.save(a_mask_path)
+                    card.update({
+                        "ID (hidden)": str(uid)+f"-multi-{i}",
+                        "Image": f'<img src="{str(Path(origin_img_path).relative_to(media_dir))}" />',
+                        "Question Mask": f'<img src="{str(Path(q_mask_path).relative_to(media_dir))}" />',
+                        "Answer Mask": f'<img src="{str(Path(a_mask_path).relative_to(media_dir))}" />',
+                        "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
+                    })
+                    cards.append(card.copy())
+        # logger.debug(cards)
+        if not RECT_ANNOT_FLAG:
+            logger.error("没有发现矩形注释！")
+            dump_json(cmd_output_path, {"status": "error", "message": "没有发现矩形注释！"})
+            return
+        if not cards:
+            logger.error("没有发现卡片！")
+            dump_json(cmd_output_path, {"status": "error", "message": "没有发现卡片！"})
+            return
+
+        if not parent_deck:
+            parent_deck = Path(doc_path).stem
+            try:
+                res = invoke(address=address, action="createDeck", deck=parent_deck)
+                logger.debug(f"createDeck: {parent_deck} res: {res}")
+            except:
+                dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+                return
+        notes = []
+        for i, card in enumerate(cards):
+            item = {
+                "deckName": parent_deck,
+                "modelName": "Image Occlusion Enhanced",
+                "fields": card,
+                "tags": tags,
+                "options": {
+                    "allowDuplicate": False,
+                    "duplicateScope": "deck",
+                },
+            }
+            notes.append(item)
+        res = invoke(address=address, action="addNotes", notes=notes)
+        logger.debug(res)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+
 def anki_card_by_rect_annots(
         doc_path: str,
         address: str = "http://127.0.0.1:8765",
@@ -2572,9 +2739,9 @@ def anki_card_by_rect_annots(
         cards = []
         decks = []
         fields = ["ID (hidden)", "Header", "Image", "Question Mask", "Footer", "Remarks", "Sources", "Extra 1", "Extra 2", "Answer Mask", "Original Mask"]
-        annot_objs = []
         for page_index in roi_indices:
             page = doc[page_index]
+            annot_objs = []
             for annot in page.annots():
                 if annot.type[0] == 4: # Square
                     RECT_ANNOT_FLAG = True
@@ -2587,12 +2754,10 @@ def anki_card_by_rect_annots(
                 page.delete_annot(annot)
             if not annot_objs:
                 continue
-            logger.debug(annot_objs)
             while annot_objs:
                 card = {k: "" for k in fields}
                 deck = parent_deck
-                # find most top and left rect
-                annot_objs.sort(key=lambda x: (x['rect'][1], x['rect'][0]))
+                annot_objs.sort(key=lambda x: (x['rect'][1], x['rect'][0])) # find most top and left rect
                 used = [False] * len(annot_objs)
                 used[0] = True
                 max_rect = annot_objs[0]['rect']
@@ -2616,8 +2781,8 @@ def anki_card_by_rect_annots(
                     continue
                 uid = uuid4()
                 origin_img_path = str(output_dir / f"{uid}_pdfguru-origin_img.png")
-                origin_img.save(origin_img_path)
                 origin_mask_img_path = str(output_dir / f"{uid}_pdfguru-origin_mask_img.png")
+                origin_img.save(origin_img_path)
                 origin_mask_img.save(str(output_dir / f"{uid}_pdfguru-origin_mask_img.png"))
                 
                 # 获取当前书签标题
@@ -2759,6 +2924,132 @@ def anki_card_by_rect_annots(
             dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
             return
         dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+
+def anki_card_by_font_style(
+        doc_path: str,
+        matches: List[str] = ["same_font", "same_size", "same_color"],
+        page_range: str = "all",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indicies = parse_range(page_range, doc.page_count)
+
+        annot_list = []
+        for page_index in range(doc.page_count):
+            page = doc[page_index]
+            for annot in page.annots():
+                if annot.type[0] == 4: # Square
+                    annot_list.append({
+                        "page": page_index,
+                        "rect": annot.rect,
+                    })
+                    page.delete_annot(annot)
+        logger.debug(annot_list)
+        if not annot_list:
+            logger.error("没有发现矩形注释！")
+            dump_json(cmd_output_path, {"status": "error", "message": "没有发现矩形注释！"})
+            return
+        for i, item in enumerate(annot_list):
+            page = doc[item['page']]
+            blocks = page.get_text("dict", flags=11)['blocks']
+            words = page.get_text("words") # (x0, y0, x1, y1, "string", blocknumber, linenumber, wordnumber)
+            rect = item['rect']
+            roi_words = {
+                "words": [],
+                "properties": [],
+            }
+            for word in words:
+                *word_rect, text, blocknumber, linenumber, wordnumber = word
+                if contains_rect(rect, word_rect):
+                    roi_words['words'].append(text)
+                    lines = blocks[blocknumber]['lines'][linenumber]
+                    for span in lines['spans']:
+                        if contains_rect(span['bbox'], word_rect):
+                            properties = {}
+                            if "same_font" in matches:
+                                properties['font'] = span['font']
+                            if "same_size" in matches:
+                                properties['size'] = span['size']
+                            if "same_color" in matches:
+                                properties['color'] = span['color']
+                            if "same_flags" in matches:
+                                properties['flags'] = span['flags']
+                            properties_str = json.dumps(properties)
+                            roi_words['properties'].append(properties_str)
+                            break
+        logger.debug(roi_words)
+        mask_styles = list(set(roi_words['properties']))
+        logger.debug(mask_styles)
+        if not mask_styles:
+            dump_json(cmd_output_path, {"status": "error", "message": "没有识别到样式！"})
+            return
+        for page_index in roi_indicies:
+            page = doc[page_index]
+            blocks = page.get_text("dict", flags=11)['blocks']
+            words = page.get_text("words") # (x0, y0, x1, y1, "string", blocknumber, linenumber, wordnumber)
+            begin_bbox = []
+            end_bbox = []
+            FOUND_BEGIN_FLAG = False
+            FOUND_END_FLAG = False
+            last_word_rect = None
+            for idx, word in enumerate(words):
+                *word_rect, text, blocknumber, linenumber, wordnumber = word
+                line = blocks[blocknumber]['lines'][linenumber]
+                for span in line['spans']:
+                    if contains_rect(span['bbox'], word_rect):
+                        properties = {}
+                        if "same_font" in matches:
+                            properties['font'] = span['font']
+                        if "same_size" in matches:
+                            properties['size'] = span['size']
+                        if "same_color" in matches:
+                            properties['color'] = span['color']
+                        if "same_flags" in matches:
+                            properties['flags'] = span['flags']
+                        properties_str = json.dumps(properties)
+                        if properties_str in mask_styles:
+                            logger.debug(word)
+                            if not FOUND_BEGIN_FLAG:
+                                begin_bbox = word_rect
+                                FOUND_BEGIN_FLAG = True
+                                logger.debug("begin")
+                            if idx == len(words) - 1:
+                                FOUND_END_FLAG = True
+                                end_bbox = word_rect
+                                logger.debug("end")
+                            else:
+                                *next_word_rect, next_text, next_blocknumber, next_linenumber, next_wordnumber = words[idx+1]
+                                logger.debug(f"block_number: {blocknumber} {next_blocknumber} linenumber: {linenumber} {next_linenumber} next_text: {next_text}")
+                                if next_blocknumber != blocknumber or next_linenumber != linenumber:
+                                    end_bbox = word_rect
+                                    FOUND_END_FLAG = True
+                                    logger.debug("end")
+                        else:
+                            if FOUND_BEGIN_FLAG:
+                                end_bbox = last_word_rect
+                                FOUND_END_FLAG = True
+                                logger.debug("end")
+                        break
+                if FOUND_END_FLAG:
+                    mask_rect = [*begin_bbox[:2], *end_bbox[2:]]
+                    logger.debug(f"page: {page_index+1}")
+                    logger.debug(f"mask_rect: {mask_rect}")
+                    try:
+                        annot = page.add_rect_annot(fitz.Rect(*mask_rect))
+                    except:
+                        traceback.print_exc()
+                    FOUND_BEGIN_FLAG = False
+                    FOUND_END_FLAG = False
+                last_word_rect = word_rect
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = p.parent / f"{p.stem}-anki.pdf"
+        doc.save(output_path, garbage=4, deflate=True, clean=True)
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -3013,6 +3304,8 @@ def main():
     convert_parser.add_argument("--source-type", type=str, default="pdf", help="源类型")
     convert_parser.add_argument("--target-type", type=str, default="png", help="目标类型")
     convert_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
+    convert_parser.add_argument("--paper_size", type=str, default="A4", help="纸张大小")
+    convert_parser.add_argument("--orientation", type=str, choices=['portrait', 'landscape'], default="portrait", help="纸张方向")
     convert_parser.add_argument("--is_merge", action="store_true", help="是否合并")
     convert_parser.add_argument("--sort-method", type=str, choices=['custom', 'name', 'name_digit', 'ctime', 'mtime'], default="default", help="排序方式")
     convert_parser.add_argument("--sort-direction", type=str, choices=['asc', 'desc'], default="asc", help="排序方向")
@@ -3117,6 +3410,8 @@ def main():
     anki_parser.add_argument("--q-mask-color", type=str, default="#FF5656", help="问题遮罩颜色")
     anki_parser.add_argument("--a-mask-color", type=str, default="#FFEBA2", help="答案遮罩颜色")
     anki_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
+    anki_parser.add_argument("--matches", type=str, nargs="+", help="匹配条件")
+    anki_parser.add_argument("--image-mode", action="store_true", help="开启图片模式")
     anki_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
     anki_parser.add_argument("--output", type=str, help="输出文件路径")
 
@@ -3212,9 +3507,9 @@ def main():
                 convert_to_image_pdf(doc_path=args.input_path, dpi=args.dpi, page_range=args.page_range,output_path=args.output)
         elif args.target_type == "pdf":
             if args.source_type == "png":
-                convert_png2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, output_path=args.output)
+                convert_png2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, paper_size=args.paper_size, orientation=args.orientation, output_path=args.output)
             elif args.source_type == "svg":
-                convert_svg2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, output_path=args.output)
+                convert_svg2pdf(input_path=args.input_path, is_merge=args.is_merge, sort_method=args.sort_method, sort_direction=args.sort_direction, paper_size=args.paper_size, orientation=args.orientation, output_path=args.output)
             elif args.source_type == "mobi":
                 convert_anydoc2pdf(input_path=args.input_path, output_path=args.output)
             elif args.source_type == "epub":
@@ -3269,25 +3564,41 @@ def main():
         if args.type == "deck_names":
             get_deck_names()
         elif args.type == "rect_annots":
-            anki_card_by_rect_annots(
+            if not args.image_mode:
+                anki_card_by_rect_annots(
+                    doc_path=args.input_path,
+                    address=args.address,
+                    parent_deck=args.parent_deck,
+                    is_create_sub_deck=args.create_sub_deck,
+                    level=args.level,
+                    mode=args.mode,
+                    q_mask_color=args.q_mask_color,
+                    a_mask_color=args.a_mask_color,
+                    dpi=args.dpi,
+                    tags=args.tags,
+                    page_range=args.page_range,
+                    output_path=args.output
+                )
+            else:
+                anki_card_by_image_mask(
+                    doc_path=args.input_path,
+                    address=args.address,
+                    parent_deck=args.parent_deck,
+                    mode=args.mode,
+                    q_mask_color=args.q_mask_color,
+                    a_mask_color=args.a_mask_color,
+                    dpi=args.dpi,
+                    tags=args.tags,
+                    page_range=args.page_range,
+                    output_path=args.output
+                )
+        elif args.type == "font_style":
+            anki_card_by_font_style(
                 doc_path=args.input_path,
-                address=args.address,
-                parent_deck=args.parent_deck,
-                is_create_sub_deck=args.create_sub_deck,
-                level=args.level,
-                mode=args.mode,
-                q_mask_color=args.q_mask_color,
-                a_mask_color=args.a_mask_color,
-                dpi=args.dpi,
-                tags=args.tags,
+                matches=args.matches,
                 page_range=args.page_range,
                 output_path=args.output
             )
 
 if __name__ == "__main__":
-    # main()
-    # anki_card_by_rect_annots(doc_path=r"C:\Users\kevin\Downloads\2023考研英语一真题-去水印版.pdf", parent_deck="PDF制卡测试")
-    anki_card_by_rect_annots(doc_path=r"C:\Users\kevin\Downloads\中学教育知识与能力应试版23下.pdf", parent_deck="PDF制卡测试")
-    # res = invoke(address="http://127.0.0.1:8765", action="getMediaDirPath")
-    # res = invoke(address="http://127.0.0.1:8765", action="createDeck", deck="bbbb")
-    # logger.debug(res)
+    main()

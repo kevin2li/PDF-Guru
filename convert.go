@@ -18,6 +18,8 @@ func (a *App) PDFConversion(
 	sortDirection string,
 	srcType string,
 	dstType string,
+	paperSize string,
+	orientation string,
 	pages string) error {
 	logger.Printf("inFileList: %v, outFile: %s, dpi: %d, isMerge: %v, sortMethod: %s, sortDirection: %s, srcType: %s, dstType: %s, pages: %s\n", inFileList, outFile, dpi, isMerge, sortMethod, sortDirection, srcType, dstType, pages)
 	args := []string{"convert", "--source-type", srcType, "--target-type", dstType}
@@ -35,6 +37,12 @@ func (a *App) PDFConversion(
 	}
 	if sortDirection != "" {
 		args = append(args, "--sort-direction", sortDirection)
+	}
+	if paperSize != "" {
+		args = append(args, "--paper-size", paperSize)
+	}
+	if orientation != "" {
+		args = append(args, "--orientation", orientation)
 	}
 	if outFile != "" {
 		args = append(args, "-o", outFile)

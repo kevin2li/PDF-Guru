@@ -126,6 +126,8 @@ interface ConvertState {
     sort_method: string;
     sort_direction: string;
     input_list: string[];
+    paper_size: string;
+    orientation: string;
 }
 interface CompressState {
     input: string;
@@ -330,6 +332,9 @@ interface AnkiState {
     a_mask_color: string;
     dpi: number,
     tags: string[];
+    card_size: string;
+    is_image: false;
+    matches: string[];
 }
 
 
