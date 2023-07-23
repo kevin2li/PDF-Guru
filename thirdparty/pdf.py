@@ -2762,7 +2762,7 @@ def anki_card_by_rect_annots(
                 used[0] = True
                 max_rect = annot_objs[0]['rect']
                 w, h = int(max_rect[2]-max_rect[0]), int(max_rect[3]-max_rect[1])
-
+                logger.debug(f"max_rect: {max_rect}")
                 origin_img = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72), clip=max_rect, alpha=False)
                 new_w, new_h = origin_img.width, origin_img.height
                 factor = new_w / w
@@ -2776,6 +2776,7 @@ def anki_card_by_rect_annots(
                         draw.rectangle(bbox, fill=q_mask_color)
                         used[i] = True
                         inner_rect_list.append(rect)
+                logger.debug(f"inner_rect_list: {inner_rect_list}")
                 if sum(used) == 1: # 不含有小矩形
                     annot_objs = [rect for i, rect in enumerate(annot_objs) if not used[i]]
                     continue
@@ -2817,7 +2818,6 @@ def anki_card_by_rect_annots(
                     else:
                         if FLAG:
                             break
-                decks.append(deck)
                 deck = parent_deck
 
                 # 遮全猜全
@@ -2833,6 +2833,7 @@ def anki_card_by_rect_annots(
                         "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
                     })
                     cards.append(card.copy())
+                    decks.append(deck)
 
                 # 遮一猜一
                 if "hide_one_guess_one" in mode:
@@ -2853,8 +2854,8 @@ def anki_card_by_rect_annots(
                             "Answer Mask": f'<img src="{str(Path(a_mask_path).relative_to(media_dir))}" />',
                             "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
                         })
-
                         cards.append(card.copy())
+                        decks.append(deck)
 
                 # 遮全猜一
                 if "hide_all_guess_one" in mode:
@@ -2882,6 +2883,7 @@ def anki_card_by_rect_annots(
                             "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
                         })
                         cards.append(card.copy())
+                        decks.append(deck)
                 annot_objs = [rect for i, rect in enumerate(annot_objs) if not used[i]]
 
         if not RECT_ANNOT_FLAG:
@@ -2891,8 +2893,8 @@ def anki_card_by_rect_annots(
         dump_json(output_dir / "cards.json", cards)
         if not parent_deck:
             parent_deck = Path(doc_path).stem
-        logger.debug(parent_deck)
-
+        logger.debug(f"parent_deck: {parent_deck}")
+        logger.debug(f"cards len: {len(cards)}")
         notes = []
         logger.debug(decks)
         for i, (card, deck) in enumerate(zip(cards, decks)):

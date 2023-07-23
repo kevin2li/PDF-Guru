@@ -109,10 +109,7 @@
                         placeholder="输入卡片标签,可留空"></a-select>
                 </a-form-item>
                 <a-form-item label="分辨率(dpi)">
-                    <a-tooltip>
-                        <template #title>会影响图片清晰度</template>
-                        <a-input-number v-model:value="store.dpi" :min="100" :max="1200" :step="100"></a-input-number>
-                    </a-tooltip>
+                    <a-input-number v-model:value="store.dpi" :min="100" :max="1200" :step="100"></a-input-number>
                 </a-form-item>
             </div>
             <div v-if="store.op === 'font'">

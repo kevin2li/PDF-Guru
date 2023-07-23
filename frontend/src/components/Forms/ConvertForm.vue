@@ -445,7 +445,7 @@ export default defineComponent({
                 }
                 case "pdf2docx": {
                     await handleOps(ConvertPDF2Docx, [
-                        [store.input],
+                        store.input,
                         store.output,
                     ])
                     break;
