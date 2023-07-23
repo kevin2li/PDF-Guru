@@ -10,13 +10,15 @@ import re
 import shutil
 import subprocess
 import traceback
+import urllib.request
 from pathlib import Path
 from typing import List, Tuple, Union
-
+from uuid import uuid4
+import requests
 import fitz
 import numpy as np
 from loguru import logger
-from PIL import Image
+from PIL import Image, ImageDraw
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
@@ -2501,6 +2503,266 @@ def sign_img(img_path: str, offset: int = 5, output_path: str = None):
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
+# Anki Related
+# Document: https://foosoft.net/projects/anki-connect/
+
+def request(action, **params):
+    return {'action': action, 'params': params, 'version': 6}
+
+# def invoke(address: str = "http://localhost:8765", action: str = "deckNames", **params):
+#     requestJson = json.dumps(request(action, **params)).encode('utf-8')
+#     response = json.load(urllib.request.urlopen(urllib.request.Request(address, requestJson)))
+#     logger.debug(response)
+#     if len(response) != 2:
+#         raise Exception('response has an unexpected number of fields')
+#     if 'error' not in response:
+#         raise Exception('response is missing required error field')
+#     if 'result' not in response:
+#         raise Exception('response is missing required result field')
+#     if response['error'] is not None:
+#         raise Exception(response['error'])
+#     return response['result']
+
+def invoke(address, action, **params):
+    data = {
+        "action": action,
+        "version": 6,
+        "params": params
+    }
+    resp = requests.post(address, json=data)
+    if resp.status_code != 200:
+        raise Exception(f"Anki Connect Error: {resp.status_code}")
+    else:
+        resp_json = resp.json()
+        if resp_json['error'] is not None:
+            raise Exception(resp_json['error'])
+        else:
+            return resp_json['result']
+
+def get_deck_names(address: str = "http://localhost:8765"):
+    try:
+        res = invoke(address=address, action="deckNames")
+        dump_json(cmd_output_path, {"status": "success", "message": "", "data": res})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+def anki_card_by_rect_annots(
+        doc_path: str,
+        address: str = "http://127.0.0.1:8765",
+        parent_deck: str = "",
+        is_create_sub_deck: bool = True,
+        level: int = 2,
+        mode: List[str] = ["hide_one_guess_one", "hide_all_guess_one", "hide_all_guess_all"],
+        q_mask_color: str = "#ff5656",
+        a_mask_color: str = "#ffeba2",
+        dpi: int = 300,
+        tags: List[str] = [],
+        page_range: str = "all",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        media_dir = Path(invoke(address=address, action="getMediaDirPath"))
+        if output_path is None:
+            output_dir = media_dir
+        toc = doc.get_toc(simple=True)
+        RECT_ANNOT_FLAG = False
+        cards = []
+        decks = []
+        fields = ["ID (hidden)", "Header", "Image", "Question Mask", "Footer", "Remarks", "Sources", "Extra 1", "Extra 2", "Answer Mask", "Original Mask"]
+        annot_objs = []
+        for page_index in roi_indices:
+            page = doc[page_index]
+            for annot in page.annots():
+                if annot.type[0] == 4: # Square
+                    RECT_ANNOT_FLAG = True
+                    obj = {
+                        "rect": annot.rect,
+                        "page": page_index,
+                    }
+                    # rect_list.append(annot.rect)
+                    annot_objs.append(obj)
+                page.delete_annot(annot)
+            if not annot_objs:
+                continue
+            logger.debug(annot_objs)
+            while annot_objs:
+                card = {k: "" for k in fields}
+                deck = parent_deck
+                # find most top and left rect
+                annot_objs.sort(key=lambda x: (x['rect'][1], x['rect'][0]))
+                used = [False] * len(annot_objs)
+                used[0] = True
+                max_rect = annot_objs[0]['rect']
+                w, h = int(max_rect[2]-max_rect[0]), int(max_rect[3]-max_rect[1])
+
+                origin_img = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72), clip=max_rect, alpha=False)
+                new_w, new_h = origin_img.width, origin_img.height
+                factor = new_w / w
+                origin_mask_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                draw = ImageDraw.Draw(origin_mask_img)
+                inner_rect_list = []
+                for i, obj in enumerate(annot_objs):
+                    rect = obj['rect']
+                    if not used[i] and contains_rect(max_rect, rect):
+                        bbox = [(v-max_rect[i%2])*factor for i, v in enumerate(rect)]
+                        draw.rectangle(bbox, fill=q_mask_color)
+                        used[i] = True
+                        inner_rect_list.append(rect)
+                if sum(used) == 1: # 不含有小矩形
+                    annot_objs = [rect for i, rect in enumerate(annot_objs) if not used[i]]
+                    continue
+                uid = uuid4()
+                origin_img_path = str(output_dir / f"{uid}_pdfguru-origin_img.png")
+                origin_img.save(origin_img_path)
+                origin_mask_img_path = str(output_dir / f"{uid}_pdfguru-origin_mask_img.png")
+                origin_mask_img.save(str(output_dir / f"{uid}_pdfguru-origin_mask_img.png"))
+                
+                # 获取当前书签标题
+                cur_level_title_list = [""] * 3
+                FLAG = False
+                for i, item in enumerate(toc):
+                    cur_level, title, pno = item
+                    if cur_level == 1:
+                        cur_level_title_list[0] = title
+                        cur_level_title_list[1] = ""
+                        cur_level_title_list[2] = ""
+                    elif cur_level == 2:
+                        cur_level_title_list[1] = title
+                        cur_level_title_list[2] = ""
+                    elif cur_level == 3:
+                        cur_level_title_list[2] = title
+
+                    if (page_index+1) >= pno:
+                        FLAG = True
+                        if level == 1:
+                            deck = f"{parent_deck}::{cur_level_title_list[0]}"
+                        elif level == 2:
+                            deck = f"{parent_deck}::{cur_level_title_list[0]}"
+                            if cur_level_title_list[1]:
+                                deck = f"{deck}::{cur_level_title_list[1]}"
+                        elif level == 3:
+                            deck = f"{parent_deck}::{cur_level_title_list[0]}"
+                            if cur_level_title_list[1]:
+                                deck = f"{deck}::{cur_level_title_list[1]}"
+                                if cur_level_title_list[2]:
+                                    deck = f"{deck}::{cur_level_title_list[2]}"
+                    else:
+                        if FLAG:
+                            break
+                decks.append(deck)
+                deck = parent_deck
+
+                # 遮全猜全
+                if "hide_all_guess_all" in mode:
+                    a_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                    a_mask_path = str(output_dir / f"{uid}_pdfguru_all_answer_mask_img.png")
+                    a_img.save(a_mask_path)
+                    card.update({
+                        "ID (hidden)": str(uid)+f"-all",
+                        "Image": f'<img src="{str(Path(origin_img_path).relative_to(media_dir))}" />',
+                        "Question Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
+                        "Answer Mask": f'<img src="{str(Path(a_mask_path).relative_to(media_dir))}" />',
+                        "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
+                    })
+                    cards.append(card.copy())
+
+                # 遮一猜一
+                if "hide_one_guess_one" in mode:
+                    a_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                    a_mask_path = str(output_dir / f"{uid}_pdfguru_single_answer_mask_img.png")
+                    a_img.save(a_mask_path)
+                    for i, rect in enumerate(inner_rect_list):
+                        q_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                        q_draw = ImageDraw.Draw(q_img)
+                        bbox = [(v-max_rect[i%2])*factor for i, v in enumerate(rect)]
+                        q_draw.rectangle(bbox, fill=q_mask_color)
+                        q_mask_path = str(output_dir / f"{uid}_pdfguru_single_question_mask_img_{i}.png")
+                        q_img.save(q_mask_path)
+                        card.update({
+                            "ID (hidden)": str(uid)+f"-single-{i}",
+                            "Image": f'<img src="{str(Path(origin_img_path).relative_to(media_dir))}" />',
+                            "Question Mask": f'<img src="{str(Path(q_mask_path).relative_to(media_dir))}" />',
+                            "Answer Mask": f'<img src="{str(Path(a_mask_path).relative_to(media_dir))}" />',
+                            "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
+                        })
+
+                        cards.append(card.copy())
+
+                # 遮全猜一
+                if "hide_all_guess_one" in mode:
+                    for i, rect in enumerate(inner_rect_list):
+                        q_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                        a_img = Image.new('RGBA', (new_w, new_h), (0, 0, 0, 0))
+                        q_draw = ImageDraw.Draw(q_img)
+                        a_draw = ImageDraw.Draw(a_img)
+                        for j in range(len(inner_rect_list)):
+                            bbox = [(v-max_rect[idx%2])*factor for idx, v in enumerate(inner_rect_list[j])]
+                            if j != i:
+                                q_draw.rectangle(bbox, fill=a_mask_color)
+                                a_draw.rectangle(bbox, fill=a_mask_color)
+                            else:
+                                q_draw.rectangle(bbox, fill=q_mask_color)
+                        q_mask_path = str(output_dir / f"{uid}_pdfguru_multi_question_mask_img_{i}.png")
+                        q_img.save(q_mask_path)
+                        a_mask_path = str(output_dir / f"{uid}_pdfguru_multi_answer_mask_img_{i}.png")
+                        a_img.save(a_mask_path)
+                        card.update({
+                            "ID (hidden)": str(uid)+f"-multi-{i}",
+                            "Image": f'<img src="{str(Path(origin_img_path).relative_to(media_dir))}" />',
+                            "Question Mask": f'<img src="{str(Path(q_mask_path).relative_to(media_dir))}" />',
+                            "Answer Mask": f'<img src="{str(Path(a_mask_path).relative_to(media_dir))}" />',
+                            "Original Mask": f'<img src="{str(Path(origin_mask_img_path).relative_to(media_dir))}" />',
+                        })
+                        cards.append(card.copy())
+                annot_objs = [rect for i, rect in enumerate(annot_objs) if not used[i]]
+
+        if not RECT_ANNOT_FLAG:
+            logger.error("没有发现矩形注释！")
+            dump_json(cmd_output_path, {"status": "error", "message": "没有发现矩形注释！"})
+            return
+        dump_json(output_dir / "cards.json", cards)
+        if not parent_deck:
+            parent_deck = Path(doc_path).stem
+        logger.debug(parent_deck)
+
+        notes = []
+        logger.debug(decks)
+        for i, (card, deck) in enumerate(zip(cards, decks)):
+            if is_create_sub_deck:
+                deckname = deck
+            else:
+                deckname = parent_deck
+            try:
+                res = invoke(address="http://127.0.0.1:8765", action="createDeck", deck=deckname)
+                logger.debug(f"createDeck: {deckname} res: {res}")
+            except:
+                dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+                return
+            item = {
+                "deckName": deckname,
+                "modelName": "Image Occlusion Enhanced",
+                "fields": card,
+                "tags": tags,
+                "options": {
+                    "allowDuplicate": False,
+                    "duplicateScope": "deck",
+                },
+            }
+            notes.append(item)
+        try:
+            res = invoke(address=address, action="addNotes", notes=notes)
+            logger.debug(res)
+        except:
+            dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+            return
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
 def main():
     parser = argparse.ArgumentParser()
     sub_parsers = parser.add_subparsers()
@@ -2840,6 +3102,24 @@ def main():
     sign_parser.add_argument("input_path", type=str, help="输入图片路径")
     sign_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
+
+    # Anki子命令
+    anki_parser = sub_parsers.add_parser("anki", help="Anki", description="生成Anki卡片")
+    anki_parser.set_defaults(which="anki")
+    anki_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    anki_parser.add_argument("--type", type=str, help="操作")
+    anki_parser.add_argument("--address", type=str, default="http://localhost:8765")
+    anki_parser.add_argument("--parent-deck", type=str, help="父卡组")
+    anki_parser.add_argument("--mode", type=str, nargs="+", help="模式")
+    anki_parser.add_argument("--create-sub-deck", action="store_true", help="创建子卡组")
+    anki_parser.add_argument("--level", type=int, default=2, help="标题层级")
+    anki_parser.add_argument("--tags", type=str, nargs="+", help="标签")
+    anki_parser.add_argument("--q-mask-color", type=str, default="#FF5656", help="问题遮罩颜色")
+    anki_parser.add_argument("--a-mask-color", type=str, default="#FFEBA2", help="答案遮罩颜色")
+    anki_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
+    anki_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    anki_parser.add_argument("--output", type=str, help="输出文件路径")
+
     # 参数解析
     args = parser.parse_args()
     logger.debug(args)
@@ -2985,6 +3265,29 @@ def main():
             raise ValueError("不支持的文件类型!")
     elif args.which == "sign":
         sign_img(img_path=args.input_path, output_path=args.output)
+    elif args.which == "anki":
+        if args.type == "deck_names":
+            get_deck_names()
+        elif args.type == "rect_annots":
+            anki_card_by_rect_annots(
+                doc_path=args.input_path,
+                address=args.address,
+                parent_deck=args.parent_deck,
+                is_create_sub_deck=args.create_sub_deck,
+                level=args.level,
+                mode=args.mode,
+                q_mask_color=args.q_mask_color,
+                a_mask_color=args.a_mask_color,
+                dpi=args.dpi,
+                tags=args.tags,
+                page_range=args.page_range,
+                output_path=args.output
+            )
 
 if __name__ == "__main__":
-    main()
+    # main()
+    # anki_card_by_rect_annots(doc_path=r"C:\Users\kevin\Downloads\2023考研英语一真题-去水印版.pdf", parent_deck="PDF制卡测试")
+    anki_card_by_rect_annots(doc_path=r"C:\Users\kevin\Downloads\中学教育知识与能力应试版23下.pdf", parent_deck="PDF制卡测试")
+    # res = invoke(address="http://127.0.0.1:8765", action="getMediaDirPath")
+    # res = invoke(address="http://127.0.0.1:8765", action="createDeck", deck="bbbb")
+    # logger.debug(res)

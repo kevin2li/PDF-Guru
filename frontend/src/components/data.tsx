@@ -319,7 +319,17 @@ interface SignState {
 interface AnkiState {
     input: string;
     output: string;
+    op: string;
     page: string;
+    address: string;
+    parent_deckname: string;
+    is_create_sub_deck: boolean;
+    level: number;
+    mode: string[];
+    q_mask_color: string;
+    a_mask_color: string;
+    dpi: number,
+    tags: string[];
 }
 
 
@@ -379,7 +389,7 @@ const menuDesc: Record<string, string> = {
     "crack": "密码破解",
     "sign": "电子签名制作",
     "settings": "对软件功能进行配置",
-    "anki": "Anki卡片制作，支持图片挖空制卡、PDF切图制卡等",
+    "anki": "Anki图片挖空卡片制作，支持图片挖空制卡(需先转成pdf)、PDF切图制卡等",
     "debug": "调试",
 }
 

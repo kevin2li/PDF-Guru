@@ -3,12 +3,88 @@
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
             @finishFailed="onFinishFailed">
-            <a-form-item name="rotate" label="旋转角度">
-                <!-- <a-radio-group v-model:value="store.degree">
-                    <a-radio :value="90">顺时针90</a-radio>
-                    <a-radio :value="180">顺时针180</a-radio>
-                    <a-radio :value="270">逆时针90</a-radio>
-                </a-radio-group> -->
+            <a-form-item name="rotate" label="操作类型">
+                <a-radio-group button-style="solid" v-model:value="store.op">
+                    <a-radio-button value="font">根据字体属性</a-radio-button>
+                    <a-radio-button value="annot">根据矩形注释</a-radio-button>
+                </a-radio-group>
+            </a-form-item>
+            <a-form-item label="连接地址">
+                <a-input v-model:value="store.address"></a-input>
+            </a-form-item>
+            <a-form-item label="父牌组">
+                <a-select v-model:value="store.parent_deckname" placeholder="选择父牌组" allow-clear :options="deckNames"
+                    :loading="select_loding">
+                </a-select>
+            </a-form-item>
+            <a-form-item label="创建子牌组">
+                <a-tooltip>
+                    <template #title>是否根据目录自动创建子牌组</template>
+                    <a-switch v-model:checked="store.is_create_sub_deck"></a-switch>
+                </a-tooltip>
+            </a-form-item>
+            <a-form-item label="标题层级" v-if="store.is_create_sub_deck">
+                <a-input-number v-model:value="store.level" :min="1" :max="3" :step="1"></a-input-number>
+            </a-form-item>
+            <a-form-item label="制卡模式">
+                <a-checkbox-group v-model:value="store.mode">
+                    <a-checkbox value="hide_one_guess_one">
+                        <span>藏一猜一</span>
+                    </a-checkbox>
+                    <a-checkbox value="hide_all_guess_one">
+                        <span>藏全猜一</span>
+                    </a-checkbox>
+                    <a-checkbox value="hide_all_guess_all">
+                        <span>藏全猜全</span>
+                    </a-checkbox>
+                </a-checkbox-group>
+            </a-form-item>
+            <a-form-item label="遮罩颜色">
+                <div>
+                    <a-row :gutter="8">
+                        <a-col>
+                            <a-space>
+                                <a-tooltip>
+                                    <template #title>问题mask颜色</template>
+                                    <a-input v-model:value="store.q_mask_color" placeholder="问题遮罩颜色"
+                                        :defaultValue="store.q_mask_color" allow-clear>
+                                        <template #prefix>
+                                            <font-colors-outlined />
+                                        </template>
+                                    </a-input>
+                                </a-tooltip>
+                                <color-picker v-model:pureColor="pureColorQMask" v-model:gradientColor="gradientColor"
+                                    shape="square" use-type="pure" format="hex6"
+                                    @pureColorChange="handleColorChangeQMask" />
+                            </a-space>
+                        </a-col>
+                        <a-col>
+                            <a-space>
+                                <a-tooltip>
+                                    <template #title>答案mask颜色</template>
+                                    <a-input v-model:value="store.a_mask_color" placeholder="答案遮罩颜色"
+                                        :defaultValue="store.a_mask_color" allow-clear>
+                                        <template #prefix>
+                                            <font-colors-outlined />
+                                        </template>
+                                    </a-input>
+                                </a-tooltip>
+                                <color-picker v-model:pureColor="pureColorAMask" v-model:gradientColor="gradientColor"
+                                    shape="square" use-type="pure" format="hex6"
+                                    @pureColorChange="handleColorChangeAMask" />
+                            </a-space>
+                        </a-col>
+                    </a-row>
+                </div>
+            </a-form-item>
+            <a-form-item label="卡片标签">
+                <a-select v-model:value="store.tags" mode="tags" style="width: 100%" placeholder="输入卡片标签,可留空"></a-select>
+            </a-form-item>
+            <a-form-item label="dpi">
+                <a-tooltip>
+                    <template #title>图片分辨率，会影响图片清晰度</template>
+                    <a-input-number v-model:value="store.dpi" :min="100" :max="1200" :step="100"></a-input-number>
+                </a-tooltip>
             </a-form-item>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
@@ -53,28 +129,60 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, watch, ref } from 'vue';
+import { defineComponent, reactive, onMounted, ref, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
     SelectFile,
     SaveFile,
     CheckFileExists,
     CheckRangeFormat,
-    RotatePDF
+    GetDeckNames,
+    CreateCardByRectAnnots,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { handleOps } from "../data";
 import { useAnkiState } from '../../store/anki';
+import type { SelectProps } from 'ant-design-vue';
+import { ColorPicker } from "vue3-colorpicker";
+import "vue3-colorpicker/style.css";
+// @ts-ignore
+import { ColorInputWithoutInstance } from "tinycolor2";
 
 export default defineComponent({
     components: {
-        EllipsisOutlined
+        EllipsisOutlined,
+        ColorPicker
     },
     setup() {
         const formRef = ref<FormInstance>();
         const store = useAnkiState();
+        const deckNames = ref<SelectProps['options']>([
+        ]);
+
+        const select_loding = ref(false);
+        const load_names = async () => {
+            select_loding.value = true;
+            await GetDeckNames().then((res: string[]) => {
+                console.log({ res });
+                deckNames.value = res.map((name) => {
+                    return {
+                        label: name,
+                        value: name,
+                    }
+                });
+                store.parent_deckname = res[0];
+                select_loding.value = false;
+            }).catch((err: any) => {
+                console.log({ err });
+                message.error("获取牌组名称失败!");
+                select_loding.value = false;
+            });
+        }
+        onMounted(async () => {
+            await load_names();
+        });
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -150,6 +258,20 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
+            await handleOps(CreateCardByRectAnnots, [
+                store.input,
+                store.output,
+                store.address,
+                store.parent_deckname,
+                store.mode,
+                store.is_create_sub_deck,
+                store.level,
+                store.q_mask_color,
+                store.a_mask_color,
+                store.dpi,
+                store.tags,
+                store.page
+            ])
             // await handleOps(RotatePDF, [store.input, store.output, store.degree, store.page]);
             confirmLoading.value = false;
         }
@@ -190,6 +312,26 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+
+        const pureColorQMask = ref<ColorInputWithoutInstance>(store.q_mask_color);
+        const pureColorAMask = ref<ColorInputWithoutInstance>(store.a_mask_color);
+        const gradientColor = ref("linear-gradient(0deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 100%)");
+        const handleColorChangeQMask = (color: ColorInputWithoutInstance) => {
+            console.log({ color });
+            store.q_mask_color = color;
+        };
+        const handleColorChangeAMask = (color: ColorInputWithoutInstance) => {
+            console.log({ color });
+            store.a_mask_color = color;
+        };
+        watch(() => store.q_mask_color, (newVal, oldVal) => {
+            console.log({ newVal, oldVal });
+            pureColorQMask.value = newVal;
+        })
+        watch(() => store.a_mask_color, (newVal, oldVal) => {
+            console.log({ newVal, oldVal });
+            pureColorAMask.value = newVal;
+        })
         return {
             selectFile,
             saveFile,
@@ -201,7 +343,14 @@ export default defineComponent({
             confirmLoading,
             resetFields,
             onFinish,
-            onFinishFailed
+            onFinishFailed,
+            deckNames,
+            select_loding,
+            gradientColor,
+            pureColorQMask,
+            handleColorChangeQMask,
+            pureColorAMask,
+            handleColorChangeAMask,
         };
     }
 })

@@ -54,6 +54,10 @@ export function ConvertPDF2Docx(arg1, arg2) {
   return window['go']['main']['App']['ConvertPDF2Docx'](arg1, arg2);
 }
 
+export function CreateCardByRectAnnots(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12) {
+  return window['go']['main']['App']['CreateCardByRectAnnots'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+}
+
 export function CropPDFByBBOX(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['CropPDFByBBOX'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
@@ -108,6 +112,10 @@ export function ExtractTextFromPDF(arg1, arg2, arg3) {
 
 export function GetClipboard() {
   return window['go']['main']['App']['GetClipboard']();
+}
+
+export function GetDeckNames() {
+  return window['go']['main']['App']['GetDeckNames']();
 }
 
 export function InsertBlankPDF(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "ant-design-vue": "^3.2.20",
+    "axios": "^1.4.0",
     "lightvue": "^1.5.1",
     "pinia": "^2.1.4",
     "tinycolor2": "^1.6.0",

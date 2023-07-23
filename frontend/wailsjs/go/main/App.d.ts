@@ -28,6 +28,8 @@ export function CompressPDF(arg1:string,arg2:string):Promise<void>;
 
 export function ConvertPDF2Docx(arg1:string,arg2:string):Promise<void>;
 
+export function CreateCardByRectAnnots(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>,arg6:boolean,arg7:number,arg8:string,arg9:string,arg10:number,arg11:Array<string>,arg12:string):Promise<void>;
+
 export function CropPDFByBBOX(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
 
 export function CropPDFByMargin(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
@@ -55,6 +57,8 @@ export function ExtractImageFromPDF(arg1:string,arg2:string,arg3:string):Promise
 export function ExtractTextFromPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function GetClipboard():Promise<string>;
+
+export function GetDeckNames():Promise<Array<string>>;
 
 export function InsertBlankPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:string,arg7:number):Promise<void>;
 

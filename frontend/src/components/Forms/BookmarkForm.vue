@@ -28,7 +28,19 @@
                 </a-form-item>
                 <a-form-item name="bookmark_file" label="书签文件" hasFeedback :validateStatus="validateStatus.bookmark_file"
                     :help="validateHelp.bookmark_file" v-if="store.write_type == 'file'">
-                    <a-input v-model:value="store.bookmark_file" placeholder="书签文件路径" allow-clear />
+                    <div>
+                        <a-row>
+                            <a-col :span="22">
+                                <a-input v-model:value="store.bookmark_file" placeholder="书签文件路径" allow-clear />
+                            </a-col>
+                            <a-col :span="1" style="margin-left: 1vw;">
+                                <a-tooltip>
+                                    <template #title>选择文件</template>
+                                    <a-button @click="selectFile('bookmark_file')"><ellipsis-outlined /></a-button>
+                                </a-tooltip>
+                            </a-col>
+                        </a-row>
+                    </div>
                 </a-form-item>
                 <a-form-item name="write_offset" label="页码偏移量" v-if="store.write_type == 'file'">
                     <a-input-number v-model:value="store.write_offset" />
@@ -305,12 +317,12 @@ export default defineComponent({
                 validateHelp[_rule.field] = err;
                 return Promise.reject("文件不存在");
             });
-            const legal_suffix = [".pdf"];
-            if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
-                validateStatus["input"] = 'error';
-                validateHelp["input"] = "仅支持pdf格式的文件";
-                return Promise.reject();
-            }
+            // const legal_suffix = [".pdf"];
+            // if (!legal_suffix.some((suffix) => value.trim().toLocaleLowerCase().endsWith(suffix))) {
+            //     validateStatus["input"] = 'error';
+            //     validateHelp["input"] = "仅支持pdf格式的文件";
+            //     return Promise.reject();
+            // }
         };
         const validateRange = async (_rule: Rule, value: string) => {
             validateStatus["page"] = 'validating';
