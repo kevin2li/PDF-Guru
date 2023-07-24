@@ -1386,7 +1386,6 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
 def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path: str = None):
     try:
         doc: fitz.Document = fitz.open(doc_path)
-        writer: fitz.Document = fitz.open()
         roi_indices = parse_range(page_range, doc.page_count)
         WATERMARK_FLAG = False
         for page_index in range(doc.page_count):
@@ -1405,7 +1404,6 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
                             i2 = stream.find(b"EMC", i1)  # end of definition
                             stream[i1 : i2+3] = b""  # remove the full definition source "/Artifact ... EMC"
                         doc.update_stream(xref, stream, compress=True)
-            writer.insert_pdf(doc, from_page=page_index, to_page=page_index)
         if not WATERMARK_FLAG:
             logger.error("该文件没有找到水印!")
             dump_json(cmd_output_path, {"status": "error", "message": "该文件没有找到水印!"})
@@ -1413,7 +1411,7 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-        writer.ez_save(output_path)
+        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -2742,8 +2740,9 @@ def anki_card_by_rect_annots(
         for page_index in roi_indices:
             page = doc[page_index]
             annot_objs = []
+            highlight_objs = []
             for annot in page.annots():
-                if annot.type[0] == 4: # Square
+                if annot.type[0] == fitz.PDF_ANNOT_SQUARE: # Square
                     RECT_ANNOT_FLAG = True
                     obj = {
                         "rect": annot.rect,
@@ -2751,6 +2750,8 @@ def anki_card_by_rect_annots(
                     }
                     # rect_list.append(annot.rect)
                     annot_objs.append(obj)
+                elif annot.type[0] == fitz.PDF_ANNOT_HIGHLIGHT:
+                    pass
                 page.delete_annot(annot)
             if not annot_objs:
                 continue

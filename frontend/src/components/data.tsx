@@ -332,6 +332,7 @@ interface AnkiState {
     a_mask_color: string;
     dpi: number,
     tags: string[];
+    card_type: string;
     card_size: string;
     is_image: false;
     matches: string[];

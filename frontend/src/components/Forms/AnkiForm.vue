@@ -3,13 +3,19 @@
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
             @finishFailed="onFinishFailed">
-            <a-form-item name="rotate" label="操作类型">
-                <a-radio-group button-style="solid" v-model:value="store.op">
-                    <a-radio-button value="annot">根据矩形注释</a-radio-button>
-                    <a-radio-button value="font">根据字体属性</a-radio-button>
+            <a-form-item name="card_type" label="卡片类型">
+                <a-radio-group button-style="solid" v-model:value="store.card_type">
+                    <a-radio-button value="mask">图片挖空</a-radio-button>
+                    <a-radio-button value="qa">问答题</a-radio-button>
                 </a-radio-group>
             </a-form-item>
             <a-divider></a-divider>
+            <a-form-item name="rotate" label="操作类型">
+                <a-radio-group v-model:value="store.op">
+                    <a-radio value="annot">根据矩形注释</a-radio>
+                    <a-radio value="font">根据字体属性</a-radio>
+                </a-radio-group>
+            </a-form-item>
             <div v-if="store.op === 'annot'">
                 <a-form-item label="连接地址">
                     <a-input v-model:value="store.address"></a-input>
