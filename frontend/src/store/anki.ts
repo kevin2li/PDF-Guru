@@ -28,7 +28,7 @@ export const useAnkiState = defineStore("AnkiState", {
             this.$patch({
                 input: "",
                 output: "",
-                op: "font",
+                op: "annot",
                 page: "",
                 address: "http://localhost:8765",
                 is_create_sub_deck: true,

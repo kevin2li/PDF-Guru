@@ -68,6 +68,7 @@ func (a *App) CreateCardByRectAnnots(
 	pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, address: %s, parentDeck: %s, mode: %v, createSubDeck: %v, level: %d, q_mask_color: %s, a_mask_color: %s, dpi: %d, tags: %v, pages: %s\n", inFile, outFile, address, parentDeck, mode, createSubDeck, level, q_mask_color, a_mask_color, dpi, tags, pages)
 	args := []string{"anki"}
+	args = append(args, inFile)
 	args = append(args, "--type", "rect_annots")
 	args = append(args, "--address", address)
 	args = append(args, "--parent-deck", parentDeck)
@@ -93,7 +94,6 @@ func (a *App) CreateCardByRectAnnots(
 	if outFile != "" {
 		args = append(args, "-o", outFile)
 	}
-	args = append(args, inFile)
 	logger.Println(args)
 	return a.cmdRunner(args, "pdf")
 }

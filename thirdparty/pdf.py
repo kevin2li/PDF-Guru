@@ -2818,7 +2818,6 @@ def anki_card_by_rect_annots(
                     else:
                         if FLAG:
                             break
-                deck = parent_deck
 
                 # 遮全猜全
                 if "hide_all_guess_all" in mode:
@@ -3306,7 +3305,7 @@ def main():
     convert_parser.add_argument("--source-type", type=str, default="pdf", help="源类型")
     convert_parser.add_argument("--target-type", type=str, default="png", help="目标类型")
     convert_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
-    convert_parser.add_argument("--paper_size", type=str, default="A4", help="纸张大小")
+    convert_parser.add_argument("--paper-size", type=str, default="A4", help="纸张大小")
     convert_parser.add_argument("--orientation", type=str, choices=['portrait', 'landscape'], default="portrait", help="纸张方向")
     convert_parser.add_argument("--is_merge", action="store_true", help="是否合并")
     convert_parser.add_argument("--sort-method", type=str, choices=['custom', 'name', 'name_digit', 'ctime', 'mtime'], default="default", help="排序方式")
