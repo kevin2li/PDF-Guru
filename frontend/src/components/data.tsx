@@ -325,6 +325,7 @@ interface AnkiState {
     page: string;
     address: string;
     parent_deckname: string;
+    modelname: string;
     is_create_sub_deck: boolean;
     level: number;
     mode: string[];
@@ -336,6 +337,10 @@ interface AnkiState {
     card_size: string;
     is_image: false;
     matches: string[];
+    front_field: string | undefined;
+    back_field: string | undefined;
+    mask_types: string[];
+    all_tags: string[];
 }
 
 

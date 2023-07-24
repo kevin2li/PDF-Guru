@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import traceback
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 from uuid import uuid4
 
 import fitz
@@ -2581,7 +2581,7 @@ def anki_card_by_image_mask(
             page = doc[page_index]
             annot_objs = []
             for annot in page.annots():
-                if annot.type[0] == 4: # Square
+                if annot.type[0] == fitz.PDF_ANNOT_SQUARE or annot.type[0] == fitz.PDF_ANNOT_HIGHLIGHT: # Square
                     RECT_ANNOT_FLAG = True
                     obj = {
                         "rect": annot.rect,
@@ -2723,6 +2723,7 @@ def anki_card_by_rect_annots(
         a_mask_color: str = "#ffeba2",
         dpi: int = 300,
         tags: List[str] = [],
+        mask_types: List[str] = ["highlight", "underline", "squiggly", "strikeout"],
         page_range: str = "all",
         output_path: str = None
     ):
@@ -2741,8 +2742,12 @@ def anki_card_by_rect_annots(
             page = doc[page_index]
             annot_objs = []
             highlight_objs = []
+            underline_objs = []
+            squiggly_objs = []
+            strokeout_objs = []
             for annot in page.annots():
-                if annot.type[0] == fitz.PDF_ANNOT_SQUARE: # Square
+                logger.debug(annot)
+                if annot.type[0] == fitz.PDF_ANNOT_SQUARE:
                     RECT_ANNOT_FLAG = True
                     obj = {
                         "rect": annot.rect,
@@ -2751,7 +2756,29 @@ def anki_card_by_rect_annots(
                     # rect_list.append(annot.rect)
                     annot_objs.append(obj)
                 elif annot.type[0] == fitz.PDF_ANNOT_HIGHLIGHT:
-                    pass
+                    obj = {
+                        "rect": annot.rect,
+                        "page": page_index,
+                    }
+                    highlight_objs.append(obj)
+                elif annot.type[0] == fitz.PDF_ANNOT_UNDERLINE:
+                    obj = {
+                        "rect": annot.rect,
+                        "page": page_index,
+                    }
+                    underline_objs.append(obj)
+                elif annot.type[0] == fitz.PDF_ANNOT_SQUIGGLY:
+                    obj = {
+                        "rect": annot.rect,
+                        "page": page_index,
+                    }
+                    squiggly_objs.append(obj)
+                elif annot.type[0] == fitz.PDF_ANNOT_STRIKE_OUT:
+                    obj = {
+                        "rect": annot.rect,
+                        "page": page_index,
+                    }
+                    strokeout_objs.append(obj)
                 page.delete_annot(annot)
             if not annot_objs:
                 continue
@@ -2777,8 +2804,24 @@ def anki_card_by_rect_annots(
                         draw.rectangle(bbox, fill=q_mask_color)
                         used[i] = True
                         inner_rect_list.append(rect)
+                other_objs = []
+                if 'highlight' in mask_types:
+                    other_objs += highlight_objs
+                if 'underline' in mask_types:
+                    other_objs += underline_objs
+                if 'squiggly' in mask_types:
+                    other_objs += squiggly_objs
+                if 'strikeout' in mask_types:
+                    other_objs += strokeout_objs
+                for i, obj in enumerate(other_objs):
+                    rect = obj['rect']
+                    if contains_rect(max_rect, rect):
+                        bbox = [(v-max_rect[i%2])*factor for i, v in enumerate(rect)]
+                        draw.rectangle(bbox, fill=q_mask_color)
+                        inner_rect_list.append(rect)
+
                 logger.debug(f"inner_rect_list: {inner_rect_list}")
-                if sum(used) == 1: # 不含有小矩形
+                if not len(inner_rect_list): # 内部不含有小矩形或高亮
                     annot_objs = [rect for i, rect in enumerate(annot_objs) if not used[i]]
                     continue
                 uid = uuid4()
@@ -2890,7 +2933,7 @@ def anki_card_by_rect_annots(
             logger.error("没有发现矩形注释！")
             dump_json(cmd_output_path, {"status": "error", "message": "没有发现矩形注释！"})
             return
-        dump_json(output_dir / "cards.json", cards)
+        # dump_json(output_dir / "cards.json", cards)
         if not parent_deck:
             parent_deck = Path(doc_path).stem
         logger.debug(f"parent_deck: {parent_deck}")
@@ -2903,7 +2946,7 @@ def anki_card_by_rect_annots(
             else:
                 deckname = parent_deck
             try:
-                res = invoke(address="http://127.0.0.1:8765", action="createDeck", deck=deckname)
+                res = invoke(address=address, action="createDeck", deck=deckname)
                 logger.debug(f"createDeck: {deckname} res: {res}")
             except:
                 dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -3052,6 +3095,145 @@ def anki_card_by_font_style(
             p = Path(doc_path)
             output_path = p.parent / f"{p.stem}-anki.pdf"
         doc.save(output_path, garbage=4, deflate=True, clean=True)
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
+
+def anki_qa_card(
+        doc_path: str,
+        address: str = "http://127.0.0.1:8765",
+        parent_deck: str = "",
+        model_name: str = None,
+        field_mappings: Dict[str, str] = {"question": "question", 'answer': 'answer'},
+        is_create_sub_deck: bool = True,
+        level: int = 2,
+        dpi: int = 300,
+        tags: List[str] = [],
+        page_range: str = "all",
+        output_path: str = None
+    ):
+    try:
+        doc: fitz.Document = fitz.open(doc_path)
+        roi_indices = parse_range(page_range, doc.page_count)
+        media_dir = Path(invoke(address=address, action="getMediaDirPath"))
+        if output_path is None:
+            output_dir = media_dir
+        toc = doc.get_toc(simple=True)
+        cards = []
+        decks = []
+        annot_objs = []
+        for page_index in roi_indices:
+            page = doc[page_index]
+            for annot in page.annots():
+                if annot.type[0] in [fitz.PDF_ANNOT_SQUARE, fitz.PDF_ANNOT_HIGHLIGHT]:
+                    obj = {
+                        "rect": annot.rect,
+                        "type": annot.type[0],
+                        "page": page_index,
+                    }
+                    annot_objs.append(obj)
+                    page.delete_annot(annot)
+        annot_objs.sort(key=lambda x: (x['page'], x['rect'][1], x['rect'][0])) # find most top and left rect
+        card = {"question": [], "answer": []}
+        uid = uuid4()
+        deck = parent_deck
+        for i, obj in enumerate(annot_objs):
+            if obj['type'] == fitz.PDF_ANNOT_SQUARE:
+                # 获取当前书签标题
+                page_index = obj['page']
+                cur_level_title_list = [""] * 3
+                FLAG = False
+                for i, item in enumerate(toc):
+                    cur_level, title, pno = item
+                    if cur_level == 1:
+                        cur_level_title_list[0] = title
+                        cur_level_title_list[1] = ""
+                        cur_level_title_list[2] = ""
+                    elif cur_level == 2:
+                        cur_level_title_list[1] = title
+                        cur_level_title_list[2] = ""
+                    elif cur_level == 3:
+                        cur_level_title_list[2] = title
+                    if (page_index+1) >= pno:
+                        FLAG = True
+                        if level == 1:
+                            deck = f"{parent_deck}::{cur_level_title_list[0]}"
+                        elif level == 2:
+                            deck = f"{parent_deck}::{cur_level_title_list[0]}"
+                            if cur_level_title_list[1]:
+                                deck = f"{deck}::{cur_level_title_list[1]}"
+                        elif level == 3:
+                            deck = f"{parent_deck}::{cur_level_title_list[0]}"
+                            if cur_level_title_list[1]:
+                                deck = f"{deck}::{cur_level_title_list[1]}"
+                                if cur_level_title_list[2]:
+                                    deck = f"{deck}::{cur_level_title_list[2]}"
+                    else:
+                        if FLAG:
+                            break
+                if card['question'] and card["answer"]:
+                    card = {"question": "<br />".join(card['question']), "answer": "<br />".join(card['answer'])}
+                    cards.append(card.copy())
+                    decks.append(deck)
+                    card = {"question": [], "answer": []}
+                    uid = uuid4()
+                page = doc[obj['page']]
+                question_img = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72), clip=obj['rect'], alpha=False)
+                question_img_path = str(output_dir / f"{uid}_pdfguru-question_img-{len(card['question'])+1}.png")
+                question_img.save(question_img_path)
+                card['question'].append(f'<img src="{str(Path(question_img_path).relative_to(media_dir))}" />')
+            elif obj['type'] == fitz.PDF_ANNOT_HIGHLIGHT:
+                page = doc[obj['page']]
+                answer_img = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72), clip=obj['rect'], alpha=False)
+                answer_img_path = str(output_dir / f"{uid}_pdfguru-answer_img-{len(card['answer'])+1}.png")
+                answer_img.save(answer_img_path)
+                card['answer'].append(f'<img src="{str(Path(answer_img_path).relative_to(media_dir))}" />')
+                if i == len(annot_objs) - 1:
+                    card = {"question": "<br />".join(card['question']), "answer": "<br />".join(card['answer'])}
+                    cards.append(card.copy())
+                    decks.append(deck)
+        if not cards:
+            logger.error("没有发现卡片！")
+            dump_json(cmd_output_path, {"status": "error", "message": "没有发现卡片！"})
+            return
+        cards = [dict(zip(field_mappings.values(), item.values())) for item in cards]
+        dump_json(output_dir / "cards.json", cards)
+        if not parent_deck:
+            parent_deck = Path(doc_path).stem
+        logger.debug(f"parent_deck: {parent_deck}")
+        logger.debug(f"cards len: {len(cards)}")
+        notes = []
+        logger.debug(decks)
+        for i, (card, deck) in enumerate(zip(cards, decks)):
+            if is_create_sub_deck:
+                deckname = deck
+            else:
+                deckname = parent_deck
+            try:
+                res = invoke(address=address, action="createDeck", deck=deckname)
+                logger.debug(f"createDeck: {deckname} res: {res}")
+            except:
+                dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+                return
+            item = {
+                "deckName": deckname,
+                "modelName": model_name,
+                "fields": card,
+                "tags": tags,
+                "options": {
+                    "allowDuplicate": False,
+                    "duplicateScope": "deck",
+                },
+            }
+            notes.append(item)
+        try:
+            res = invoke(address=address, action="addNotes", notes=notes)
+            logger.debug(res)
+        except:
+            dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+            return
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -3405,6 +3587,8 @@ def main():
     anki_parser.add_argument("--type", type=str, help="操作")
     anki_parser.add_argument("--address", type=str, default="http://localhost:8765")
     anki_parser.add_argument("--parent-deck", type=str, help="父卡组")
+    anki_parser.add_argument("--model", type=str, help='模板名称')
+    anki_parser.add_argument("--field-mapping", type=str, help="字段映射")
     anki_parser.add_argument("--mode", type=str, nargs="+", help="模式")
     anki_parser.add_argument("--create-sub-deck", action="store_true", help="创建子卡组")
     anki_parser.add_argument("--level", type=int, default=2, help="标题层级")
@@ -3413,6 +3597,7 @@ def main():
     anki_parser.add_argument("--a-mask-color", type=str, default="#FFEBA2", help="答案遮罩颜色")
     anki_parser.add_argument("--dpi", type=int, default=300, help="分辨率")
     anki_parser.add_argument("--matches", type=str, nargs="+", help="匹配条件")
+    anki_parser.add_argument("--mask-types", type=str, nargs="+", default=['highlight', 'strikeout', 'underline', 'squiggly'], help="遮罩类型")
     anki_parser.add_argument("--image-mode", action="store_true", help="开启图片模式")
     anki_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
     anki_parser.add_argument("--output", type=str, help="输出文件路径")
@@ -3563,9 +3748,7 @@ def main():
     elif args.which == "sign":
         sign_img(img_path=args.input_path, output_path=args.output)
     elif args.which == "anki":
-        if args.type == "deck_names":
-            get_deck_names()
-        elif args.type == "rect_annots":
+        if args.type == "rect_annots":
             if not args.image_mode:
                 anki_card_by_rect_annots(
                     doc_path=args.input_path,
@@ -3578,6 +3761,7 @@ def main():
                     a_mask_color=args.a_mask_color,
                     dpi=args.dpi,
                     tags=args.tags,
+                    mask_types=args.mask_types,
                     page_range=args.page_range,
                     output_path=args.output
                 )
@@ -3601,6 +3785,23 @@ def main():
                 page_range=args.page_range,
                 output_path=args.output
             )
+        elif args.type == "qa_card":
+            field_mapping = eval(args.field_mapping)
+            anki_qa_card(
+                doc_path=args.input_path,
+                address=args.address,
+                parent_deck=args.parent_deck,
+                model_name=args.model,
+                field_mappings=field_mapping,
+                is_create_sub_deck=args.create_sub_deck,
+                level=args.level,
+                dpi=args.dpi,
+                tags=args.tags,
+                page_range=args.page_range,
+                output_path=args.output
+            )
 
 if __name__ == "__main__":
     main()
+    # out = invoke(address="http://127.0.0.1:8765", action="modelNames")
+    # print(out)

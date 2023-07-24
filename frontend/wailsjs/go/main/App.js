@@ -58,8 +58,12 @@ export function CreateCardByFontStyle(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['CreateCardByFontStyle'](arg1, arg2, arg3, arg4);
 }
 
-export function CreateCardByRectAnnots(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13) {
-  return window['go']['main']['App']['CreateCardByRectAnnots'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+export function CreateCardByRectAnnots(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14) {
+  return window['go']['main']['App']['CreateCardByRectAnnots'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
+}
+
+export function CreateQACard(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
+  return window['go']['main']['App']['CreateQACard'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 }
 
 export function CropPDFByBBOX(arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -118,8 +122,20 @@ export function GetClipboard() {
   return window['go']['main']['App']['GetClipboard']();
 }
 
-export function GetDeckNames() {
-  return window['go']['main']['App']['GetDeckNames']();
+export function GetDeckNames(arg1) {
+  return window['go']['main']['App']['GetDeckNames'](arg1);
+}
+
+export function GetModelFieldNames(arg1, arg2) {
+  return window['go']['main']['App']['GetModelFieldNames'](arg1, arg2);
+}
+
+export function GetModelNames(arg1) {
+  return window['go']['main']['App']['GetModelNames'](arg1);
+}
+
+export function GetTags(arg1) {
+  return window['go']['main']['App']['GetTags'](arg1);
 }
 
 export function InsertBlankPDF(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {

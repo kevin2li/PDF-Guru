@@ -10,13 +10,161 @@
                 </a-radio-group>
             </a-form-item>
             <a-divider></a-divider>
-            <a-form-item name="rotate" label="操作类型">
-                <a-radio-group v-model:value="store.op">
-                    <a-radio value="annot">根据矩形注释</a-radio>
-                    <a-radio value="font">根据字体属性</a-radio>
-                </a-radio-group>
-            </a-form-item>
-            <div v-if="store.op === 'annot'">
+            <div v-if="store.card_type === 'mask'">
+                <a-form-item name="rotate" label="操作类型">
+                    <a-radio-group v-model:value="store.op">
+                        <a-radio value="annot">根据矩形注释</a-radio>
+                        <a-radio value="font">根据字体属性</a-radio>
+                    </a-radio-group>
+                </a-form-item>
+                <div v-if="store.op === 'annot'">
+                    <a-form-item label="连接地址">
+                        <a-input v-model:value="store.address"></a-input>
+                    </a-form-item>
+                    <a-form-item label="父牌组">
+                        <a-select v-model:value="store.parent_deckname" placeholder="选择父牌组" allow-clear :options="deckNames"
+                            :loading="select_loding">
+                        </a-select>
+                    </a-form-item>
+                    <div v-if="!store.is_image">
+                        <a-form-item label="创建子牌组">
+                            <div>
+                                <a-row :gutter="30">
+                                    <a-col :span="1">
+                                        <a-tooltip>
+                                            <template #title>是否根据目录自动创建子牌组</template>
+                                            <a-checkbox v-model:checked="store.is_create_sub_deck"></a-checkbox>
+                                        </a-tooltip>
+                                    </a-col>
+                                    <a-col :span="6" v-if="store.is_create_sub_deck">
+                                        <a-select v-model:value="store.level">
+                                            <a-select-option :value="1">一级标题</a-select-option>
+                                            <a-select-option :value="2">二级标题</a-select-option>
+                                            <a-select-option :value="3">三级标题</a-select-option>
+                                        </a-select>
+                                    </a-col>
+                                </a-row>
+                            </div>
+                        </a-form-item>
+                    </div>
+                    <a-form-item label="图片挖空">
+                        <a-tooltip>
+                            <template #title>开启后将整页当作图片，无需提供卡片外边框</template>
+                            <a-checkbox v-model:checked="store.is_image"></a-checkbox>
+                        </a-tooltip>
+                    </a-form-item>
+                    <a-divider></a-divider>
+                    <a-form-item label="制卡模式">
+                        <a-checkbox-group v-model:value="store.mode">
+                            <a-checkbox value="hide_one_guess_one">
+                                <span>遮一猜一</span>
+                            </a-checkbox>
+                            <a-checkbox value="hide_all_guess_one">
+                                <span>遮全猜一</span>
+                            </a-checkbox>
+                            <a-checkbox value="hide_all_guess_all">
+                                <span>遮全猜全</span>
+                            </a-checkbox>
+                        </a-checkbox-group>
+                    </a-form-item>
+                    <a-form-item label="遮罩类型">
+                        <a-checkbox-group v-model:value="store.mask_types">
+                            <!-- <a-checkbox value="rect" disabled>
+                                <span>矩形注释</span>
+                            </a-checkbox> -->
+                            <a-checkbox value="highlight">
+                                <span>高亮</span>
+                            </a-checkbox>
+                            <a-checkbox value="underline">
+                                <span>下划线</span>
+                            </a-checkbox>
+                            <a-checkbox value="squiggly">
+                                <span>波浪线</span>
+                            </a-checkbox>
+                            <a-checkbox value="strikeout">
+                                <span>删除线</span>
+                            </a-checkbox>
+                        </a-checkbox-group>
+                    </a-form-item>
+                    <a-form-item label="遮罩颜色">
+                        <div>
+                            <a-row :gutter="3">
+                                <a-col>
+                                    <a-space>
+                                        <a-tooltip>
+                                            <template #title>问题mask颜色</template>
+                                            <a-input v-model:value="store.q_mask_color" placeholder="问题遮罩颜色"
+                                                :defaultValue="store.q_mask_color" allow-clear>
+                                                <template #addonBefore>
+                                                    Q
+                                                </template>
+                                                <template #prefix>
+                                                    <font-colors-outlined />
+                                                </template>
+                                            </a-input>
+                                        </a-tooltip>
+                                        <color-picker v-model:pureColor="pureColorQMask"
+                                            v-model:gradientColor="gradientColor" shape="square" use-type="pure"
+                                            format="hex6" @pureColorChange="handleColorChangeQMask" />
+                                    </a-space>
+                                </a-col>
+                                <a-col>
+                                    <a-space>
+                                        <a-tooltip>
+                                            <template #title>答案mask颜色</template>
+                                            <a-input v-model:value="store.a_mask_color" placeholder="答案遮罩颜色"
+                                                :defaultValue="store.a_mask_color" allow-clear>
+                                                <template #addonBefore>
+                                                    A
+                                                </template>
+                                                <template #prefix>
+                                                    <font-colors-outlined />
+                                                </template>
+                                            </a-input>
+                                        </a-tooltip>
+                                        <color-picker v-model:pureColor="pureColorAMask"
+                                            v-model:gradientColor="gradientColor" shape="square" use-type="pure"
+                                            format="hex6" @pureColorChange="handleColorChangeAMask" />
+                                    </a-space>
+                                </a-col>
+                            </a-row>
+                        </div>
+                    </a-form-item>
+                    <a-form-item label="卡片标签">
+                        <a-select v-model:value="store.tags" mode="tags" style="width: 100%" :options="tag_names"
+                            placeholder="输入卡片标签,可留空"></a-select>
+                    </a-form-item>
+                    <a-form-item label="分辨率(dpi)">
+                        <a-input-number v-model:value="store.dpi" :min="100" :max="1200" :step="100"></a-input-number>
+                    </a-form-item>
+                </div>
+                <div v-if="store.op === 'font'">
+                    <a-form-item label="匹配条件">
+                        <a-checkbox-group v-model:value="store.matches">
+                            <a-checkbox value="same_font">
+                                <span>同字体</span>
+                            </a-checkbox>
+                            <a-checkbox value="same_size">
+                                <span>同大小</span>
+                            </a-checkbox>
+                            <a-checkbox value="same_color">
+                                <span>同颜色</span>
+                            </a-checkbox>
+                            <a-checkbox value="same_flags">
+                                <span>同外形(粗体、斜体、下划线等)</span>
+                            </a-checkbox>
+                        </a-checkbox-group>
+                    </a-form-item>
+                    <!-- <a-form-item label="卡片大小">
+                    <a-select v-model:value="store.card_size">
+                        <a-select-option value="1">一空一卡</a-select-option>
+                        <a-select-option value="2">一段一卡</a-select-option>
+                        <a-select-option value="3">一页一卡</a-select-option>
+                    </a-select>
+                </a-form-item> -->
+                </div>
+            </div>
+            <div v-if="store.card_type === 'qa'">
                 <a-form-item label="连接地址">
                     <a-input v-model:value="store.address"></a-input>
                 </a-form-item>
@@ -25,123 +173,55 @@
                         :loading="select_loding">
                     </a-select>
                 </a-form-item>
-                <a-form-item label="图片挖空">
-                    <a-tooltip>
-                        <template #title>开启后将整页当作图片，无需提供卡片外边框</template>
-                        <a-checkbox v-model:checked="store.is_image"></a-checkbox>
-                    </a-tooltip>
+                <a-form-item label="模板">
+                    <a-select v-model:value="store.modelname" placeholder="选择模板" allow-clear :options="modelNames"
+                        :loading="select_loding" @change="handModelChange">
+                    </a-select>
                 </a-form-item>
-                <div v-if="!store.is_image">
+                <div>
                     <a-form-item label="创建子牌组">
                         <div>
                             <a-row :gutter="30">
-                                <a-col>
+                                <a-col :span="1">
                                     <a-tooltip>
                                         <template #title>是否根据目录自动创建子牌组</template>
                                         <a-checkbox v-model:checked="store.is_create_sub_deck"></a-checkbox>
                                     </a-tooltip>
                                 </a-col>
-                                <a-col v-if="store.is_create_sub_deck">
-                                    <a-input-number v-model:value="store.level" :min="1" :max="3" :step="1">
-                                        <template #addonBefore>
-                                            <span>标题层级</span>
-                                        </template></a-input-number>
+                                <a-col :span="6" v-if="store.is_create_sub_deck">
+                                    <a-select v-model:value="store.level">
+                                        <a-select-option :value="1">一级标题</a-select-option>
+                                        <a-select-option :value="2">二级标题</a-select-option>
+                                        <a-select-option :value="3">三级标题</a-select-option>
+                                    </a-select>
                                 </a-col>
                             </a-row>
                         </div>
                     </a-form-item>
-
                 </div>
-                <a-divider></a-divider>
-                <a-form-item label="制卡模式">
-                    <a-checkbox-group v-model:value="store.mode">
-                        <a-checkbox value="hide_one_guess_one">
-                            <span>遮一猜一</span>
-                        </a-checkbox>
-                        <a-checkbox value="hide_all_guess_one">
-                            <span>遮全猜一</span>
-                        </a-checkbox>
-                        <a-checkbox value="hide_all_guess_all">
-                            <span>遮全猜全</span>
-                        </a-checkbox>
-                    </a-checkbox-group>
-                </a-form-item>
-                <a-form-item label="遮罩颜色">
+                <a-form-item label="字段映射">
                     <div>
-                        <a-row :gutter="3">
-                            <a-col>
-                                <a-space>
-                                    <a-tooltip>
-                                        <template #title>问题mask颜色</template>
-                                        <a-input v-model:value="store.q_mask_color" placeholder="问题遮罩颜色"
-                                            :defaultValue="store.q_mask_color" allow-clear>
-                                            <template #addonBefore>
-                                                Q
-                                            </template>
-                                            <template #prefix>
-                                                <font-colors-outlined />
-                                            </template>
-                                        </a-input>
-                                    </a-tooltip>
-                                    <color-picker v-model:pureColor="pureColorQMask" v-model:gradientColor="gradientColor"
-                                        shape="square" use-type="pure" format="hex6"
-                                        @pureColorChange="handleColorChangeQMask" />
-                                </a-space>
+                        <a-row :gutter="8">
+                            <a-col :span="12">
+                                <a-select v-model:value="store.front_field" placeholder="正面" label-in-value allow-clear
+                                    :options="field_names" :loading="select_loding">
+                                </a-select>
                             </a-col>
-                            <a-col>
-                                <a-space>
-                                    <a-tooltip>
-                                        <template #title>答案mask颜色</template>
-                                        <a-input v-model:value="store.a_mask_color" placeholder="答案遮罩颜色"
-                                            :defaultValue="store.a_mask_color" allow-clear>
-                                            <template #addonBefore>
-                                                A
-                                            </template>
-                                            <template #prefix>
-                                                <font-colors-outlined />
-                                            </template>
-                                        </a-input>
-                                    </a-tooltip>
-                                    <color-picker v-model:pureColor="pureColorAMask" v-model:gradientColor="gradientColor"
-                                        shape="square" use-type="pure" format="hex6"
-                                        @pureColorChange="handleColorChangeAMask" />
-                                </a-space>
+                            <a-col :span="12">
+                                <a-select v-model:value="store.back_field" placeholder="背面" label-in-value allow-clear
+                                    :options="field_names" :loading="select_loding">
+                                </a-select>
                             </a-col>
                         </a-row>
                     </div>
                 </a-form-item>
                 <a-form-item label="卡片标签">
-                    <a-select v-model:value="store.tags" mode="tags" style="width: 100%"
+                    <a-select v-model:value="store.tags" mode="tags" style="width: 100%" :options="tag_names"
                         placeholder="输入卡片标签,可留空"></a-select>
                 </a-form-item>
                 <a-form-item label="分辨率(dpi)">
                     <a-input-number v-model:value="store.dpi" :min="100" :max="1200" :step="100"></a-input-number>
                 </a-form-item>
-            </div>
-            <div v-if="store.op === 'font'">
-                <a-form-item label="匹配条件">
-                    <a-checkbox-group v-model:value="store.matches">
-                        <a-checkbox value="same_font">
-                            <span>同字体</span>
-                        </a-checkbox>
-                        <a-checkbox value="same_size">
-                            <span>同大小</span>
-                        </a-checkbox>
-                        <a-checkbox value="same_color">
-                            <span>同颜色</span>
-                        </a-checkbox>
-                        <a-checkbox value="same_flags">
-                            <span>同外形(粗体、斜体、下划线等)</span>
-                        </a-checkbox>
-                    </a-checkbox-group>
-                </a-form-item>
-                <!-- <a-form-item label="卡片大小">
-                    <a-select v-model:value="store.card_size">
-                        <a-select-option value="1">一空一卡</a-select-option>
-                        <a-select-option value="2">一段一卡</a-select-option>
-                        <a-select-option value="3">一页一卡</a-select-option>
-                    </a-select>
-                </a-form-item> -->
             </div>
             <a-divider></a-divider>
 
@@ -190,7 +270,7 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, onMounted, ref, watch } from 'vue';
+import { defineComponent, reactive, onMounted, ref, watch, toRaw } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
     SelectFile,
@@ -198,8 +278,12 @@ import {
     CheckFileExists,
     CheckRangeFormat,
     GetDeckNames,
+    GetModelNames,
+    GetModelFieldNames,
+    GetTags,
     CreateCardByRectAnnots,
     CreateCardByFontStyle,
+    CreateQACard,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import { EllipsisOutlined, FontColorsOutlined } from '@ant-design/icons-vue';
@@ -223,11 +307,16 @@ export default defineComponent({
         const store = useAnkiState();
         const deckNames = ref<SelectProps['options']>([
         ]);
-
+        const modelNames = ref<SelectProps['options']>([
+        ]);
+        const field_names = ref<SelectProps['options']>([
+        ]);
+        const tag_names = ref<SelectProps['options']>([
+        ]);
         const select_loding = ref(false);
         const load_names = async () => {
             select_loding.value = true;
-            await GetDeckNames().then((res: string[]) => {
+            await GetDeckNames(store.address).then((res: string[]) => {
                 console.log({ res });
                 deckNames.value = res.map((name) => {
                     return {
@@ -236,16 +325,70 @@ export default defineComponent({
                     }
                 });
                 store.parent_deckname = res[0];
-                select_loding.value = false;
             }).catch((err: any) => {
                 console.log({ err });
                 message.error("获取牌组名称失败!");
-                select_loding.value = false;
             });
+            await GetModelNames(store.address).then((res: string[]) => {
+                console.log({ res });
+                modelNames.value = res.map((name) => {
+                    return {
+                        label: name,
+                        value: name,
+                    }
+                });
+                store.modelname = res[0];
+            }).catch((err: any) => {
+                console.log({ err });
+                message.error("获取模板名称失败!");
+            });
+            await GetModelFieldNames(store.address, store.modelname).then((res: string[]) => {
+                console.log({ res });
+                field_names.value = res.map((name) => {
+                    return {
+                        label: name,
+                        value: name,
+                    }
+                });
+            }).catch((err: any) => {
+                console.log({ err });
+                message.error("获取模板字段名称失败!");
+            });
+            await GetTags(store.address).then((res: string[]) => {
+                console.log({ res });
+                tag_names.value = res.map((name) => {
+                    return {
+                        label: name,
+                        value: name,
+                    }
+                });
+            }).catch((err: any) => {
+                console.log({ err });
+                message.error("获取模板字段名称失败!");
+            });
+
+            select_loding.value = false;
         }
         onMounted(async () => {
             await load_names();
         });
+
+        const handModelChange = async () => {
+            await GetModelFieldNames(store.address, store.modelname).then((res: string[]) => {
+                console.log({ res });
+                store.front_field = undefined;
+                store.back_field = undefined;
+                field_names.value = res.map((name) => {
+                    return {
+                        label: name,
+                        value: name,
+                    }
+                });
+            }).catch((err: any) => {
+                console.log({ err });
+                message.error("获取模板字段名称失败!");
+            });
+        }
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -321,31 +464,55 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            switch (store.op) {
-                case "annot": {
-                    await handleOps(CreateCardByRectAnnots, [
+            switch (store.card_type) {
+                case "mask": {
+                    switch (store.op) {
+                        case "annot": {
+                            await handleOps(CreateCardByRectAnnots, [
+                                store.input,
+                                store.output,
+                                store.address,
+                                store.parent_deckname,
+                                store.mode,
+                                store.is_create_sub_deck,
+                                store.level,
+                                store.q_mask_color,
+                                store.a_mask_color,
+                                store.dpi,
+                                store.tags,
+                                store.is_image,
+                                store.mask_types,
+                                store.page
+                            ])
+                            break;
+                        }
+                        case "font": {
+                            await handleOps(CreateCardByFontStyle, [
+                                store.input,
+                                store.output,
+                                store.matches,
+                                // store.card_size,
+                                store.page
+                            ]);
+                            break;
+                        }
+                    }
+                }
+                case "qa": {
+                    // @ts-ignore
+                    let field_mappings = `{"question": "${toRaw(store.front_field)['value']}", "answer": "${toRaw(store.back_field)['value']}"}`
+                    console.log({ field_mappings });
+                    await handleOps(CreateQACard, [
                         store.input,
                         store.output,
                         store.address,
                         store.parent_deckname,
-                        store.mode,
+                        store.modelname,
+                        field_mappings,
                         store.is_create_sub_deck,
                         store.level,
-                        store.q_mask_color,
-                        store.a_mask_color,
                         store.dpi,
                         store.tags,
-                        store.is_image,
-                        store.page
-                    ])
-                    break;
-                }
-                case "font": {
-                    await handleOps(CreateCardByFontStyle, [
-                        store.input,
-                        store.output,
-                        store.matches,
-                        // store.card_size,
                         store.page
                     ]);
                     break;
@@ -413,24 +580,28 @@ export default defineComponent({
             pureColorAMask.value = newVal;
         })
         return {
-            selectFile,
-            saveFile,
-            store,
-            rules,
-            formRef,
-            validateStatus,
-            validateHelp,
             confirmLoading,
-            resetFields,
+            deckNames,
+            modelNames,
+            field_names,
+            tag_names,
+            formRef,
+            gradientColor,
+            handleColorChangeAMask,
+            handleColorChangeQMask,
+            handModelChange,
             onFinish,
             onFinishFailed,
-            deckNames,
-            select_loding,
-            gradientColor,
-            pureColorQMask,
-            handleColorChangeQMask,
             pureColorAMask,
-            handleColorChangeAMask,
+            pureColorQMask,
+            resetFields,
+            rules,
+            saveFile,
+            select_loding,
+            selectFile,
+            store,
+            validateHelp,
+            validateStatus,
         };
     }
 })

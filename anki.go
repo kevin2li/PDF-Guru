@@ -1,55 +1,84 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
-	"path/filepath"
-
-	"github.com/pkg/errors"
+	"net/http"
 )
 
-type DeckNames struct {
-	Names   []string `json:"data"`
-	Status  string   `json:"status"`
-	Message string   `json:"message"`
+type AnkiResponse struct {
+	Result []string `json:"result"`
+	Error  any      `json:"error"`
 }
 
-func (a *App) GetDeckNames() ([]string, error) {
-	args := []string{"anki", "--type", "deck_names", "placeholder"}
-	logger.Println(args)
-	config, err := a.LoadConfig()
+func (a *App) invoke(address, action string, params map[string]string) ([]string, error) {
+	var data map[string]interface{}
+	if params == nil {
+		data = map[string]interface{}{
+			"action":  action,
+			"version": 6,
+		}
+	} else {
+		data = map[string]interface{}{
+			"action":  action,
+			"version": 6,
+			"params":  params,
+		}
+	}
+	bytesData, err := json.Marshal(data)
 	if err != nil {
-		err = errors.Wrap(err, "")
 		return nil, err
 	}
-	cmd := exec.Command(config.PdfPath, args...)
-	out, err := cmd.CombinedOutput()
+	resp, err := http.Post(address, "application/json", bytes.NewBuffer(bytesData))
 	if err != nil {
-		err = errors.Wrap(err, "命令执行失败!"+string(out))
-		logger.Errorln("Error:", err)
 		return nil, err
 	}
-	logger.Println(string(out))
-	ret_path := filepath.Join(logdir, "cmd_output.json")
-	var ret DeckNames
-	data, err := os.ReadFile(ret_path)
-	if err != nil {
-		err = errors.Wrap(err, "read cmd output file error")
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("anki Connect Error: %d", resp.StatusCode)
+	}
+	var result AnkiResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(data, &ret)
-	if err != nil {
-		err = errors.Wrap(err, "json umarshal error")
-		return nil, err
+	if result.Error != nil {
+		return nil, fmt.Errorf("%v", result.Error)
 	}
+	return result.Result, nil
+}
 
-	if ret.Status != "success" {
-		logger.Errorf("Error: %v\n", ret.Message)
-		return nil, errors.New(ret.Message)
+func (a *App) GetDeckNames(address string) ([]string, error) {
+	res, err := a.invoke(address, "deckNames", nil)
+	if err != nil {
+		return nil, err
 	}
-	return ret.Names, nil
+	return res, nil
+}
+
+func (a *App) GetModelNames(address string) ([]string, error) {
+	res, err := a.invoke(address, "modelNames", nil)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (a *App) GetModelFieldNames(address string, model string) ([]string, error) {
+	params := map[string]string{"modelName": model}
+	res, err := a.invoke(address, "modelFieldNames", params)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (a *App) GetTags(address string) ([]string, error) {
+	res, err := a.invoke(address, "getTags", nil)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (a *App) CreateCardByRectAnnots(
@@ -65,6 +94,7 @@ func (a *App) CreateCardByRectAnnots(
 	dpi int,
 	tags []string,
 	imageMode bool,
+	maskTypes []string,
 	pages string) error {
 	logger.Printf("inFile: %s, outFile: %s, address: %s, parentDeck: %s, mode: %v, createSubDeck: %v, level: %d, q_mask_color: %s, a_mask_color: %s, dpi: %d, tags: %v, pages: %s\n", inFile, outFile, address, parentDeck, mode, createSubDeck, level, q_mask_color, a_mask_color, dpi, tags, pages)
 	args := []string{"anki"}
@@ -84,6 +114,10 @@ func (a *App) CreateCardByRectAnnots(
 	if len(tags) > 0 {
 		args = append(args, "--tags")
 		args = append(args, tags...)
+	}
+	if len(maskTypes) > 0 {
+		args = append(args, "--mask-types")
+		args = append(args, maskTypes...)
 	}
 	if imageMode {
 		args = append(args, "--image-mode")
@@ -115,6 +149,47 @@ func (a *App) CreateCardByFontStyle(
 		args = append(args, "-o", outFile)
 	}
 	args = append(args, inFile)
+	logger.Println(args)
+	return a.cmdRunner(args, "pdf")
+}
+
+func (a *App) CreateQACard(
+	inFile string,
+	outFile string,
+	address string,
+	parentDeck string,
+	modelName string,
+	fieldMapping string,
+	createSubDeck bool,
+	level int,
+	dpi int,
+	tags []string,
+	pages string) error {
+	logger.Printf("inFile: %s, outFile: %s, address: %s, parentDeck: %s, modelName: %s, fieldMapping: %s, createSubDeck: %v, level: %d, dpi: %d, tags: %v, pages: %s\n", inFile, outFile, address, parentDeck, modelName, fieldMapping, createSubDeck, level, dpi, tags, pages)
+	args := []string{"anki"}
+	args = append(args, inFile)
+	args = append(args, "--type", "qa_card")
+	args = append(args, "--address", address)
+	args = append(args, "--parent-deck", parentDeck)
+	args = append(args, "--model", modelName)
+	if createSubDeck {
+		args = append(args, "--create-sub-deck")
+	}
+	args = append(args, "--level", fmt.Sprintf("%d", level))
+	args = append(args, "--dpi", fmt.Sprintf("%d", dpi))
+	if fieldMapping != ""{
+		args = append(args, "--field-mapping", fieldMapping)
+	}
+	if len(tags) > 0 {
+		args = append(args, "--tags")
+		args = append(args, tags...)
+	}
+	if pages != "" {
+		args = append(args, "--page_range", pages)
+	}
+	if outFile != "" {
+		args = append(args, "-o", outFile)
+	}
 	logger.Println(args)
 	return a.cmdRunner(args, "pdf")
 }

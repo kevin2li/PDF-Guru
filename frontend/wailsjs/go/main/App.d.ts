@@ -30,7 +30,9 @@ export function ConvertPDF2Docx(arg1:string,arg2:string):Promise<void>;
 
 export function CreateCardByFontStyle(arg1:string,arg2:string,arg3:Array<string>,arg4:string):Promise<void>;
 
-export function CreateCardByRectAnnots(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>,arg6:boolean,arg7:number,arg8:string,arg9:string,arg10:number,arg11:Array<string>,arg12:boolean,arg13:string):Promise<void>;
+export function CreateCardByRectAnnots(arg1:string,arg2:string,arg3:string,arg4:string,arg5:Array<string>,arg6:boolean,arg7:number,arg8:string,arg9:string,arg10:number,arg11:Array<string>,arg12:boolean,arg13:Array<string>,arg14:string):Promise<void>;
+
+export function CreateQACard(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:boolean,arg8:number,arg9:number,arg10:Array<string>,arg11:string):Promise<void>;
 
 export function CropPDFByBBOX(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:boolean,arg6:string):Promise<void>;
 
@@ -60,7 +62,13 @@ export function ExtractTextFromPDF(arg1:string,arg2:string,arg3:string):Promise<
 
 export function GetClipboard():Promise<string>;
 
-export function GetDeckNames():Promise<Array<string>>;
+export function GetDeckNames(arg1:string):Promise<Array<string>>;
+
+export function GetModelFieldNames(arg1:string,arg2:string):Promise<Array<string>>;
+
+export function GetModelNames(arg1:string):Promise<Array<string>>;
+
+export function GetTags(arg1:string):Promise<Array<string>>;
 
 export function InsertBlankPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:string,arg7:number):Promise<void>;
 
