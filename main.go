@@ -24,10 +24,9 @@ var assets embed.FS
 // var thirdpartyAsset embed.FS
 
 var (
-	log    *logrus.Logger
-	logger *logrus.Entry
-	logdir string
-	// tmpDir string
+	log     *logrus.Logger
+	logger  *logrus.Entry
+	logdir  string
 )
 
 func main() {
@@ -36,6 +35,7 @@ func main() {
 			fmt.Println("Error:", err)
 		}
 	}()
+
 	// init logger
 	log = logrus.New()
 	if runtime.GOOS == "windows" {
@@ -68,30 +68,6 @@ func main() {
 		"service": "pdf-guru",
 	})
 	logger.Info("starting pdf-guru")
-
-	// init tmp directory
-	// tmpDir = filepath.Join(os.TempDir(), "pdf-guru")
-	// logger.Info("tmpDir: ", tmpDir)
-	// err = os.MkdirAll(tmpDir, 0755)
-	// if err != nil {
-	// 	err = errors.Wrap(err, "failed to create tmp directory")
-	// 	logger.Fatal(err)
-	// }
-
-	// filenames := []string{"ocr.py", "convert.py", "pdf.exe"}
-	// for _, filename := range filenames {
-	// 	content, err := thirdpartyAsset.ReadFile("thirdparty/" + filename)
-	// 	if err != nil {
-	// 		err = errors.Wrap(err, "failed to read "+filename)
-	// 		logger.Fatal(err)
-	// 	}
-	// 	err = os.WriteFile(filepath.Join(tmpDir, filename), content, 0755)
-	// 	if err != nil {
-	// 		err = errors.Wrap(err, "failed to write "+filename)
-	// 		logger.Fatal(err)
-	// 	}
-	// 	defer os.Remove(filepath.Join(tmpDir, filename))
-	// }
 
 	// Create an instance of the app structure
 	app := NewApp()

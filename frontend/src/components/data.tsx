@@ -343,6 +343,11 @@ interface AnkiState {
     all_tags: string[];
 }
 
+interface IndexState{
+    trial_flag: boolean;
+    max_try_times: number;
+    trial_set: boolean;
+}
 
 const menuRecord: Record<string, string> = {
     "index": "首页",
@@ -400,7 +405,7 @@ const menuDesc: Record<string, string> = {
     "crack": "密码破解",
     "sign": "电子签名制作",
     "settings": "对软件功能进行配置",
-    "anki": "Anki图片挖空卡片制作，支持图片挖空制卡(需先转成pdf)、PDF切图制卡等",
+    "anki": "Anki 【PDF/图片】挖空卡片、【PDF/图片】问答题卡片制作，(图片制卡需要先转换成PDF)",
     "debug": "调试",
 }
 
@@ -473,6 +478,7 @@ export type {
     CrackState,
     SignState,
     AnkiState,
+    IndexState,
 };
 
 export {

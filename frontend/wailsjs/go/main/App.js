@@ -42,6 +42,10 @@ export function CheckRangeFormat(arg1) {
   return window['go']['main']['App']['CheckRangeFormat'](arg1);
 }
 
+export function CheckTrialCount() {
+  return window['go']['main']['App']['CheckTrialCount']();
+}
+
 export function CombinePDFByGrid(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['CombinePDFByGrid'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
