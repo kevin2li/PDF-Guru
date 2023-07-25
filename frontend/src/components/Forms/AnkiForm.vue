@@ -203,12 +203,12 @@
                     <div>
                         <a-row :gutter="8">
                             <a-col :span="12">
-                                <a-select v-model:value="store.front_field" placeholder="正面" label-in-value allow-clear
+                                <a-select v-model:value="store.front_field" placeholder="选择正面字段" label-in-value allow-clear
                                     :options="field_names" :loading="select_loding">
                                 </a-select>
                             </a-col>
                             <a-col :span="12">
-                                <a-select v-model:value="store.back_field" placeholder="背面" label-in-value allow-clear
+                                <a-select v-model:value="store.back_field" placeholder="选择背面字段" label-in-value allow-clear
                                     :options="field_names" :loading="select_loding">
                                 </a-select>
                             </a-col>
@@ -463,9 +463,9 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         async function submit() {
-            confirmLoading.value = true;
             switch (store.card_type) {
                 case "mask": {
+                    confirmLoading.value = true;
                     switch (store.op) {
                         case "annot": {
                             await handleOps(CreateCardByRectAnnots, [
@@ -497,8 +497,19 @@ export default defineComponent({
                             break;
                         }
                     }
+                    break;
                 }
                 case "qa": {
+                    if (store.front_field === undefined || store.back_field === undefined) {
+                        message.error("请选择字段映射");
+                        return;
+                    }
+                    // @ts-ignore
+                    if (toRaw(store.front_field)['value'] === toRaw(store.back_field)['value']) {
+                        message.error("正面字段和背面字段不能相同");
+                        return;
+                    }
+                    confirmLoading.value = true;
                     // @ts-ignore
                     let field_mappings = `{"question": "${toRaw(store.front_field)['value']}", "answer": "${toRaw(store.back_field)['value']}"}`
                     console.log({ field_mappings });
@@ -518,7 +529,6 @@ export default defineComponent({
                     break;
                 }
             }
-
             // await handleOps(RotatePDF, [store.input, store.output, store.degree, store.page]);
             confirmLoading.value = false;
         }

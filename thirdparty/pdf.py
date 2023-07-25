@@ -3229,6 +3229,9 @@ def anki_qa_card(
             notes.append(item)
         try:
             res = invoke(address=address, action="addNotes", notes=notes)
+            if not all(res):
+                logger.error(res, "添加卡片失败！")
+                dump_json(cmd_output_path, {"status": "error", "message": "添加卡片失败！"})
             logger.debug(res)
         except:
             dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
