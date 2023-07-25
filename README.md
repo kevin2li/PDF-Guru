@@ -406,6 +406,11 @@ chmod +x "${PWD}/PDF Guru.app/Contents/MacOS/PDF Guru"
 
 ![](https://minio.kevin2li.top/image-bed/blog/20230715195747.png)
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=kevin2li/PDF-Guru&type=Date)](https://star-history.com/#kevin2li/PDF-Guru&Date)
+
+
 ## Authors
 
 [@Kevin2li](https://github.com/kevin2li)
