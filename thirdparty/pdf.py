@@ -3135,6 +3135,7 @@ def anki_qa_card(
                     annot_objs.append(obj)
                     page.delete_annot(annot)
         annot_objs.sort(key=lambda x: (x['page'], x['rect'][1], x['rect'][0])) # find most top and left rect
+        logger.debug(annot_objs)
         card = {"question": [], "answer": []}
         uid = uuid4()
         deck = parent_deck

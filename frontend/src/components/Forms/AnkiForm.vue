@@ -324,7 +324,7 @@ export default defineComponent({
                         value: name,
                     }
                 });
-                store.parent_deckname = res[0];
+                store.parent_deckname = undefined;
             }).catch((err: any) => {
                 console.log({ err });
                 message.error("获取牌组名称失败!");
@@ -337,23 +337,24 @@ export default defineComponent({
                         value: name,
                     }
                 });
-                store.modelname = res[0];
+                store.modelname = undefined;
             }).catch((err: any) => {
                 console.log({ err });
                 message.error("获取模板名称失败!");
             });
-            await GetModelFieldNames(store.address, store.modelname).then((res: string[]) => {
-                console.log({ res });
-                field_names.value = res.map((name) => {
-                    return {
-                        label: name,
-                        value: name,
-                    }
-                });
-            }).catch((err: any) => {
-                console.log({ err });
-                message.error("获取模板字段名称失败!");
-            });
+            // @ts-ignore
+            // await GetModelFieldNames(store.address, store.modelname).then((res: string[]) => {
+            //     console.log({ res });
+            //     field_names.value = res.map((name) => {
+            //         return {
+            //             label: name,
+            //             value: name,
+            //         }
+            //     });
+            // }).catch((err: any) => {
+            //     console.log({ err });
+            //     message.error("获取模板字段名称失败!");
+            // });
             await GetTags(store.address).then((res: string[]) => {
                 console.log({ res });
                 tag_names.value = res.map((name) => {
@@ -364,16 +365,18 @@ export default defineComponent({
                 });
             }).catch((err: any) => {
                 console.log({ err });
-                message.error("获取模板字段名称失败!");
+                message.error("获取标签名称失败!");
             });
-
             select_loding.value = false;
+            store.front_field = undefined;
+            store.back_field = undefined;
         }
         onMounted(async () => {
             await load_names();
         });
 
         const handModelChange = async () => {
+            // @ts-ignore
             await GetModelFieldNames(store.address, store.modelname).then((res: string[]) => {
                 console.log({ res });
                 store.front_field = undefined;
@@ -463,6 +466,14 @@ export default defineComponent({
         // 提交表单
         const confirmLoading = ref<boolean>(false);
         async function submit() {
+            if(store.parent_deckname === undefined){
+                message.error("请选择父牌组");
+                return;
+            }
+            if(store.modelname === undefined){
+                message.error("请选择模板");
+                return;
+            }
             switch (store.card_type) {
                 case "mask": {
                     confirmLoading.value = true;
@@ -529,8 +540,8 @@ export default defineComponent({
                     break;
                 }
             }
-            // await handleOps(RotatePDF, [store.input, store.output, store.degree, store.page]);
             confirmLoading.value = false;
+            await load_names();
         }
         const onFinish = async () => {
             await submit();

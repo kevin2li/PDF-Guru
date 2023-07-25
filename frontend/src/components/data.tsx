@@ -324,8 +324,8 @@ interface AnkiState {
     op: string;
     page: string;
     address: string;
-    parent_deckname: string;
-    modelname: string;
+    parent_deckname: string | undefined;
+    modelname: string | undefined;
     is_create_sub_deck: boolean;
     level: number;
     mode: string[];
