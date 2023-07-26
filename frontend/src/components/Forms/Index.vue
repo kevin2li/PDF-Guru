@@ -577,12 +577,14 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, watch, ref } from 'vue';
+import { defineComponent, onMounted } from 'vue';
 import {
     EllipsisOutlined,
     MergeCellsOutlined,
 } from '@ant-design/icons-vue';
-
+import {
+    CheckTrialCount,
+} from '../../../wailsjs/go/main/App';
 import { useMenuState } from '../../store/menu';
 import { useInsertState } from '../../store/insert';
 import { useCutState } from '../../store/cut';
@@ -592,6 +594,8 @@ import { useExtractState } from '../../store/extract';
 import { useConvertState } from '../../store/convert';
 import { useEncryptState } from '../../store/encrypt';
 import { useSignState } from '../../store/sign';
+import {useIndexState} from '../../store/index';
+import { message, Modal } from 'ant-design-vue';
 
 export default defineComponent({
     components: {
@@ -599,7 +603,8 @@ export default defineComponent({
         MergeCellsOutlined
     },
     setup() {
-        const store = useMenuState();
+        const indexStore = useIndexState();
+        const menuStore = useMenuState();
         const insertStore = useInsertState();
         const cutStore = useCutState();
         const watermarkStore = useWatermarkState();
@@ -609,99 +614,136 @@ export default defineComponent({
         const encryptStore = useEncryptState();
         const signStore = useSignState();
 
+        // 软件试用
+        onMounted(async () => {
+            if(!indexStore.trial_flag) return;
+            if(indexStore.trial_set) return;
+            await CheckTrialCount().then((res: any) => {
+                console.log(res);
+                if (res <= indexStore.max_try_times) {
+                    indexStore.trial_set = true;
+                    Modal.info({
+                        title: '温馨提示',
+                        content: `软件试用次数共${indexStore.max_try_times}次，当前是第${res}次，请不要轻易关闭软件！`,
+                        maskClosable: false,
+                    });
+                } else {
+                    Modal.error({
+                        title: '错误',
+                        content: '软件试用次数已用完，请购买后使用！',
+                        maskClosable: false,
+                        okButtonProps: {
+                            disabled: true,
+                        }
+                    });
+                }
+            }).catch((err: any) => {
+                console.log(err);
+                Modal.error({
+                    title: '错误',
+                    content: '软件试用失败，请联系管理员',
+                    maskClosable: false,
+                });
+            });
+        });
+
         const switchMenu = (key: string, op: string) => {
-            store.selectedKeys = [key];
+            menuStore.selectedKeys = [key];
             switch (key) {
                 case "insert": {
                     insertStore.op = op;
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "merge": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "split": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "rotate": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "delete": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "reorder": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "crop": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "scale": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "cut": {
                     cutStore.op = op;
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "header": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "page_number": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "background": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "watermark": {
                     watermarkStore.op = op;
-                    store.openKeys = ['protect'];
+                    menuStore.openKeys = ['protect'];
                     break;
                 }
                 case "encrypt": {
                     encryptStore.op = op;
-                    store.openKeys = ['protect'];
+                    menuStore.openKeys = ['protect'];
                     break;
                 }
                 case "sign": {
                     signStore.op = op;
-                    store.openKeys = ['protect'];
+                    menuStore.openKeys = ['protect'];
                     break;
                 }
                 case "bookmark": {
                     bookmarkStore.op = op;
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "extract": {
                     extractStore.op = op;
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "compress": {
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "convert": {
                     convertStore.type = op;
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "ocr": {
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "dual": {
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
+                    break;
+                }
+                case "anki": {
+                    menuStore.openKeys = ['other'];
                     break;
                 }
             }

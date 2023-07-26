@@ -264,6 +264,7 @@ import {
     ToolOutlined,
     HomeOutlined,
     EditOutlined,
+    StarOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
@@ -340,6 +341,7 @@ export default defineComponent({
         ToolOutlined,
         HomeOutlined,
         EditOutlined,
+        StarOutlined,
         IconFont,
         // form
         // 合并

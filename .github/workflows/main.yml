@@ -44,7 +44,7 @@ jobs:
           pip install -r requirements.txt
           pyinstaller -F -w pdf.py
           cp dist/pdf ${ROOT}/build/bin/
-          cp ocr.py convert.py ${ROOT}/build/bin/
+          cp ocr.py convert_external.py ${ROOT}/build/bin/
           
           cd $ROOT
           brew install upx
@@ -94,7 +94,7 @@ jobs:
           pyinstaller -F -w pdf.py
           cp dist/pdf.exe ${ROOT}\build\bin\
           cp ocr.py ${ROOT}\build\bin\
-          cp convert.py ${ROOT}\build\bin\
+          cp convert_external.py ${ROOT}\build\bin\
           
           cd $ROOT
           choco install -y upx
@@ -152,7 +152,7 @@ jobs:
           pip install -r requirements.txt
           pyinstaller -F -w pdf.py
           cp dist/pdf ${ROOT}/build/bin/
-          cp ocr.py convert.py ${ROOT}/build/bin/
+          cp ocr.py convert_external.py ${ROOT}/build/bin/
           
           cd $ROOT
           sudo apt-get update

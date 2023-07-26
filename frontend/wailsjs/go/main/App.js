@@ -42,6 +42,10 @@ export function CheckRangeFormat(arg1) {
   return window['go']['main']['App']['CheckRangeFormat'](arg1);
 }
 
+export function CheckTrialCount() {
+  return window['go']['main']['App']['CheckTrialCount']();
+}
+
 export function CombinePDFByGrid(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['CombinePDFByGrid'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -154,8 +158,8 @@ export function OpenUrl(arg1) {
   return window['go']['main']['App']['OpenUrl'](arg1);
 }
 
-export function PDFConversion(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
-  return window['go']['main']['App']['PDFConversion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+export function PDFConversion(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
+  return window['go']['main']['App']['PDFConversion'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 }
 
 export function PandocConvert(arg1, arg2, arg3) {
