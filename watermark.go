@@ -105,9 +105,18 @@ func (a *App) WatermarkPDFByPDF(inFile string, outFile string, wmPath string, la
 	return a.cmdRunner(args, "pdf")
 }
 
-func (a *App) RemoveWatermarkByType(inFile string, outFile string, pages string) error {
-	logger.Printf("inFile: %s, outFile: %s, pages: %s\n", inFile, outFile, pages)
-	args := []string{"watermark", "remove", "--method", "type"}
+func (a *App) RemoveWatermark(inFile string, outFile string, method string, wm_index []int, wm_text string, pages string) error {
+	logger.Printf("inFile: %s, outFile: %s, method: %s, wm_index: %d, wm_text: %s, pages: %s\n", inFile, outFile, method, wm_index, wm_text, pages)
+	args := []string{"watermark", "remove", "--method", method}
+	if len(wm_index) > 0 {
+		args = append(args, "--wm_index")
+		for _, v := range wm_index {
+			args = append(args, fmt.Sprintf("%d", v))
+		}
+	}
+	if wm_text != "" {
+		args = append(args, "--wm_text", wm_text)
+	}
 	if pages != "" {
 		args = append(args, "--page_range", pages)
 	}
@@ -119,24 +128,6 @@ func (a *App) RemoveWatermarkByType(inFile string, outFile string, pages string)
 	return a.cmdRunner(args, "pdf")
 }
 
-func (a *App) RemoveWatermarkByIndex(inFile string, outFile string, wmIndex []int, pages string) error {
-	logger.Printf("inFile: %s, outFile: %s, wmIndex: %v, pages: %s\n", inFile, outFile, wmIndex, pages)
-	args := []string{"watermark", "remove"}
-	args = append(args, inFile)
-	args = append(args, "--method", "index")
-	if pages != "" {
-		args = append(args, "--page_range", pages)
-	}
-	args = append(args, "--wm_index")
-	for _, v := range wmIndex {
-		args = append(args, fmt.Sprintf("%d", v))
-	}
-	if outFile != "" {
-		args = append(args, "-o", outFile)
-	}
-	logger.Println(args)
-	return a.cmdRunner(args, "pdf")
-}
 
 func (a *App) DetectWatermarkByIndex(inFile string, outFile string, wmIndex int) error {
 	logger.Printf("inFile: %s, outFile: %s, wmIndex: %d\n", inFile, outFile, wmIndex)

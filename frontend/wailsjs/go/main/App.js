@@ -202,12 +202,8 @@ export function RemovePDFPageNumber(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['RemovePDFPageNumber'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
-export function RemoveWatermarkByIndex(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['RemoveWatermarkByIndex'](arg1, arg2, arg3, arg4);
-}
-
-export function RemoveWatermarkByType(arg1, arg2, arg3) {
-  return window['go']['main']['App']['RemoveWatermarkByType'](arg1, arg2, arg3);
+export function RemoveWatermark(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['RemoveWatermark'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function ReorderPDF(arg1, arg2, arg3) {

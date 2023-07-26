@@ -19,6 +19,7 @@
     - [安装](#安装)
     - [使用](#使用)
   - [FAQ](#faq)
+  - [Star History](#star-history)
   - [Authors](#authors)
   - [License](#license)
   - [Acknowledgments](#acknowledgments)
@@ -405,6 +406,11 @@ chmod +x "${PWD}/PDF Guru.app/Contents/MacOS/PDF Guru"
 添加程序安装目录为排除项
 
 ![](https://minio.kevin2li.top/image-bed/blog/20230715195747.png)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=kevin2li/PDF-Guru&type=Date)](https://star-history.com/#kevin2li/PDF-Guru&Date)
+
 
 ## Authors
 

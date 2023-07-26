@@ -470,9 +470,11 @@ export default defineComponent({
                 message.error("请选择父牌组");
                 return;
             }
-            if(store.modelname === undefined){
-                message.error("请选择模板");
-                return;
+            if(store.card_type === "qa"){
+                if(store.modelname === undefined){
+                    message.error("请选择模板");
+                    return;
+                }
             }
             switch (store.card_type) {
                 case "mask": {

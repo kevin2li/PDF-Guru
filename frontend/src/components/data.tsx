@@ -104,6 +104,7 @@ interface WatermarkState {
     remove_method: string;
     step: string;
     wm_index: string;
+    wm_text: string;
     wm_path: string;
     scale: number;
     mask_type: string;
@@ -318,6 +319,13 @@ interface SignState {
     font_color: string;
 }
 
+interface AnnotState {
+    input: string;
+    output: string;
+    op: string;
+    types: string[];
+}
+
 interface AnkiState {
     input: string;
     output: string;
@@ -477,6 +485,7 @@ export type {
     DualLayerState,
     CrackState,
     SignState,
+    AnnotState,
     AnkiState,
     IndexState,
 };

@@ -102,9 +102,7 @@ export function RemovePDFHeaderAndFooter(arg1:string,arg2:string,arg3:Array<numb
 
 export function RemovePDFPageNumber(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:string,arg6:string):Promise<void>;
 
-export function RemoveWatermarkByIndex(arg1:string,arg2:string,arg3:Array<number>,arg4:string):Promise<void>;
-
-export function RemoveWatermarkByType(arg1:string,arg2:string,arg3:string):Promise<void>;
+export function RemoveWatermark(arg1:string,arg2:string,arg3:string,arg4:Array<number>,arg5:string,arg6:string):Promise<void>;
 
 export function ReorderPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 

@@ -198,6 +198,7 @@
                         <a-radio value="type">类型水印</a-radio>
                         <a-radio value="mask">遮罩水印</a-radio>
                         <a-radio value="index">内容水印</a-radio>
+                        <a-radio value="text">(可编辑)文字水印</a-radio>
                     </a-radio-group>
                 </a-form-item>
                 <div v-if="store.remove_method === 'type'">
@@ -306,6 +307,11 @@
                         <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
                     </a-form-item>
                 </div>
+                <div v-if="store.remove_method === 'text'">
+                    <a-form-item name="wm_text" label="水印文本">
+                        <a-input v-model:value="store.wm_text" placeholder="水印文本内容，支持正则，e.g. 内部资料" allow-clear />
+                    </a-form-item>
+                </div>
             </div>
             <a-form-item name="input" label="输入" :validateStatus="validateStatus.input" :help="validateHelp.input">
                 <div>
@@ -357,8 +363,7 @@ import {
     WatermarkPDFByText,
     WatermarkPDFByImage,
     WatermarkPDFByPDF,
-    RemoveWatermarkByIndex,
-    RemoveWatermarkByType,
+    RemoveWatermark,
     DetectWatermarkByIndex,
     MaskPDFByAnnot,
     MaskPDFByRect
@@ -558,7 +563,14 @@ export default defineComponent({
                 case "remove": {
                     switch (store.remove_method) {
                         case "type": {
-                            await handleOps(RemoveWatermarkByType, [store.input, store.output, store.page]);
+                            await handleOps(RemoveWatermark, [
+                                store.input,
+                                store.output,
+                                "type",
+                                [],
+                                "",
+                                store.page,
+                            ]);
                             break;
                         }
                         case "index": {
@@ -570,7 +582,14 @@ export default defineComponent({
                                 }
                                 case "2": {
                                     let wm_index = store.wm_index.split(",").map((item) => parseInt(item.trim()) - 1);
-                                    await handleOps(RemoveWatermarkByIndex, [store.input, store.output, wm_index, store.page]);
+                                    await handleOps(RemoveWatermark, [
+                                        store.input,
+                                        store.output,
+                                        "index",
+                                        wm_index,
+                                        "",
+                                        store.page
+                                    ]);
                                     break;
                                 }
                             }
@@ -587,6 +606,17 @@ export default defineComponent({
                                     break;
                                 }
                             }
+                            break;
+                        }
+                        case "text": {
+                            await handleOps(RemoveWatermark, [
+                                store.input,
+                                store.output,
+                                "text",
+                                [],
+                                store.wm_text,
+                                store.page,
+                            ]);
                             break;
                         }
                     }
