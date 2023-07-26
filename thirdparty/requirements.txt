@@ -5,3 +5,5 @@ loguru
 pyinstaller
 numpy
 requests
+pdfrw
+defusedxml
