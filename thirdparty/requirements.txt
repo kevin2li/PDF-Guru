@@ -5,5 +5,5 @@ loguru
 pyinstaller
 numpy
 requests
-pdfrw
+pdfrw>=0.4
 defusedxml
