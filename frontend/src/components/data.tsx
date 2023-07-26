@@ -104,6 +104,7 @@ interface WatermarkState {
     remove_method: string;
     step: string;
     wm_index: string;
+    wm_text: string;
     wm_path: string;
     scale: number;
     mask_type: string;
@@ -126,6 +127,8 @@ interface ConvertState {
     sort_method: string;
     sort_direction: string;
     input_list: string[];
+    paper_size: string;
+    orientation: string;
 }
 interface CompressState {
     input: string;
@@ -316,6 +319,44 @@ interface SignState {
     font_color: string;
 }
 
+interface AnnotState {
+    input: string;
+    output: string;
+    op: string;
+    types: string[];
+}
+
+interface AnkiState {
+    input: string;
+    output: string;
+    op: string;
+    page: string;
+    address: string;
+    parent_deckname: string | undefined;
+    modelname: string | undefined;
+    is_create_sub_deck: boolean;
+    level: number;
+    mode: string[];
+    q_mask_color: string;
+    a_mask_color: string;
+    dpi: number,
+    tags: string[];
+    card_type: string;
+    card_size: string;
+    is_image: false;
+    matches: string[];
+    front_field: string | undefined;
+    back_field: string | undefined;
+    mask_types: string[];
+    all_tags: string[];
+}
+
+interface IndexState{
+    trial_flag: boolean;
+    max_try_times: number;
+    trial_set: boolean;
+}
+
 const menuRecord: Record<string, string> = {
     "index": "首页",
     "merge": "PDF合并",
@@ -342,6 +383,7 @@ const menuRecord: Record<string, string> = {
     "crack": "密码破解",
     "sign": "电子签名",
     "settings": "首选项",
+    "anki": "Anki卡片制作",
     "debug": "调试",
 };
 
@@ -371,6 +413,7 @@ const menuDesc: Record<string, string> = {
     "crack": "密码破解",
     "sign": "电子签名制作",
     "settings": "对软件功能进行配置",
+    "anki": "Anki 【PDF/图片】挖空卡片、【PDF/图片】问答题卡片制作，(图片制卡需要先转换成PDF)",
     "debug": "调试",
 }
 
@@ -442,6 +485,9 @@ export type {
     DualLayerState,
     CrackState,
     SignState,
+    AnnotState,
+    AnkiState,
+    IndexState,
 };
 
 export {

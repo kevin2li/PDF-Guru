@@ -11,7 +11,9 @@ export const useConvertState = defineStore("ConvertState", {
         is_merge: false,
         sort_method: 'name',
         sort_direction: 'asc',
-        input_list: []
+        input_list: [],
+        paper_size: "a4",
+        orientation: "portrait",
     }),
     getters: {
 
@@ -27,7 +29,9 @@ export const useConvertState = defineStore("ConvertState", {
                 is_merge: false,
                 sort_method: 'name',
                 sort_direction: 'asc',
-                input_list: []
+                input_list: [],
+                paper_size: "a4",
+                orientation: "portrait",
             })
         },
     }

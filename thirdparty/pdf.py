@@ -12,11 +12,11 @@ import subprocess
 import traceback
 from pathlib import Path
 from typing import List, Tuple, Union
-from uuid import uuid4
 
 import fitz
 import numpy as np
 from loguru import logger
+from PIL import Image
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
@@ -351,7 +351,7 @@ def reorder_pdf(doc_path: str, page_range: str = "all", output_path: str = None)
         writer: fitz.Document = fitz.open()
         for i in roi_indices:
             writer.insert_pdf(doc, from_page=i, to_page=i)
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -388,7 +388,7 @@ def insert_blank_pdf(doc_path: str, pos: int, pos_type: str, count: int, orienta
             writer.new_page(-1, width=fmt.width, height=fmt.height)
         if pos-1 < doc.page_count:
             writer.insert_pdf(doc, from_page=pos-1, to_page=-1)
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -550,7 +550,7 @@ def rotate_pdf(doc_path: str, angle: int, page_range: str = "all", output_path: 
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-旋转.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -577,7 +577,7 @@ def crop_pdf_by_bbox(doc_path: str, bbox: Tuple[int, int, int, int], unit: str =
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -604,7 +604,7 @@ def crop_pdf_by_page_margin(doc_path: str, margin: Tuple[int, int, int, int], un
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-裁剪.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -640,7 +640,7 @@ def crop_pdf_by_rect_annot(doc_path: str,  keep_page_size: bool = True, page_ran
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-注释裁剪.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
@@ -665,7 +665,7 @@ def cut_pdf_by_grid(doc_path: str, n_row: int, n_col: int, page_range: str = "al
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-网格分割.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -700,7 +700,7 @@ def cut_pdf_by_breakpoints(doc_path: str, h_breakpoints: List[float], v_breakpoi
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-自定义分割.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -734,7 +734,7 @@ def combine_pdf_by_grid(doc_path, n_row: int, n_col: int, paper_size: str = "a4"
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-网格组合.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -909,7 +909,10 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
         doc.set_toc(toc)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加书签目录.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        if output_path != doc_path:
+            doc.save(output_path, garbage=3, deflate=True)
+        else:
+            doc.save(doc_path, deflate=True, incremental=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -930,7 +933,7 @@ def add_toc_by_gap(doc_path: str, gap: int = 1, format: str = "第%p页", start_
         doc.set_toc(toc)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-[页码书签版].pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1053,7 +1056,7 @@ def decrypt_pdf(doc_path: str, password: str, output_path: str = None):
             return
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-解密.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1069,7 +1072,7 @@ def change_password_pdf(doc_path: str, upw: str = None, new_upw: str = None, opw
             if doc.isEncrypted:
                 doc.authenticate(opw)
                 perms = doc.permissions
-                doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, owner_pw=new_opw, user_pw=new_upw, permissions=perms, garbage=3, deflate=True, incremental=doc_path==output_path)
+                doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, owner_pw=new_opw, user_pw=new_upw, permissions=perms, garbage=3, deflate=True)
             else:
                 dump_json(cmd_output_path, {"status": "error", "message": "文件没有加密!"})
                 return
@@ -1077,13 +1080,13 @@ def change_password_pdf(doc_path: str, upw: str = None, new_upw: str = None, opw
             if doc.isEncrypted:
                 doc.authenticate(upw)
                 perms = doc.permissions
-                doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, user_pw=new_upw, permissions=perms, garbage=3, deflate=True, incremental=doc_path==output_path)
+                doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, user_pw=new_upw, permissions=perms, garbage=3, deflate=True)
             else:
                 dump_json(cmd_output_path, {"status": "error", "message": "文件没有加密!"})
                 return
         elif opw is not None and new_opw is not None:
             perms = doc.permissions
-            doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, owner_pw=new_opw, permissions=perms, garbage=3, deflate=True, incremental=doc_path==output_path)
+            doc.save(output_path, encryption=fitz.PDF_ENCRYPT_AES_256, owner_pw=new_opw, permissions=perms, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1100,7 +1103,7 @@ def recover_permission_pdf(doc_path: str, output_path: str = None):
         doc.select(range(doc.page_count))
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-权限恢复.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1113,7 +1116,7 @@ def compress_pdf(doc_path: str, output_path: str = None):
         p = Path(doc_path)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-压缩.pdf")
-        doc.save(output_path, garbage=4, deflate=True, incremental=doc_path==output_path, clean=True)
+        doc.save(output_path, garbage=4, deflate=True, clean=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1136,7 +1139,7 @@ def resize_pdf_by_dim(doc_path: str, width: float, height: float, unit: str = "p
         p = Path(doc_path)
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1158,7 +1161,7 @@ def resize_pdf_by_scale(doc_path: str, scale: float, page_range: str = "all", ou
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1184,7 +1187,7 @@ def resize_pdf_by_paper_size(doc_path: str, paper_size: str, page_range: str = "
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-缩放.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1322,7 +1325,7 @@ def watermark_pdf_by_text(doc_path: str, wm_text: str, page_range: str = "all", 
                 page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         wm_doc.close()
         doc.close()
         os.remove(tmp_wm_path)
@@ -1350,7 +1353,7 @@ def watermark_pdf_by_image(doc_path: str, wm_path: str, page_range: str = "all",
             page.clean_contents()
         if output_path is None:
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         wm_doc.close()
         doc.close()
         os.remove(tmp_wm_path)
@@ -1372,7 +1375,7 @@ def watermark_pdf_by_pdf(doc_path: str, wm_doc_path: str, page_range: str = "all
         if output_path is None:
             p = Path(doc_path)
             output_path = p.parent / f"{p.stem}-加水印版.pdf"
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         wm_doc.close()
         doc.close()
         dump_json(cmd_output_path, {"status": "success", "message": ""})
@@ -1409,7 +1412,7 @@ def remove_watermark_by_type(doc_path: str, page_range: str = "all", output_path
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -1471,50 +1474,35 @@ def remove_watermark_by_index(doc_path: str, wm_index: List[int], page_range: st
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
-        writer.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        writer.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
-# def insert_header_and_footer(
-#         doc_path   : str,
-#         content    : str,
-#         is_header  : bool = False,
-#         margin_bbox: List[float] = [1.27, 1.27, 2.54, 2.54],      # [top, bottom, left, right]
-#         font_family: str = "msyh.ttc",
-#         font_size  : float = 11,
-#         font_color : str = "#000000",
-#         opacity    : str = 1,
-#         align      : str = "center",
-#         page_range : str = "all",
-#         unit       : str = "cm",
-#         output_path: str = None
-#     ):
-#     try:
-#         doc: fitz.Document = fitz.open(doc_path)
-#         roi_indices = parse_range(page_range, doc.page_count)
-#         fontpath = str(Path(os.environ['WINDIR']) / "fonts" / font_family)
-#         align = {"left": fitz.TEXT_ALIGN_LEFT, "center": fitz.TEXT_ALIGN_CENTER, "right": fitz.TEXT_ALIGN_RIGHT}[align]
-#         margin_bbox = [convert_length(x, unit, "pt") for x in margin_bbox]
-#         logger.debug(margin_bbox)
-#         font_color = [v/255. for v in hex_to_rgb(font_color)]
-#         logger.debug(font_color)
-#         if is_header:
-#             bbox = [margin_bbox[2], 0, doc[-1].rect.width-margin_bbox[3], margin_bbox[0]]
-#         else:
-#             bbox = [margin_bbox[2], doc[-1].rect.height-margin_bbox[1], doc[-1].rect.width-margin_bbox[3], doc[-1].rect.height]
-#         logger.debug(bbox)
-#         for page_index in range(doc.page_count):
-#             page = doc[page_index]
-#             if page_index in roi_indices:
-#                 page.insert_textbox(bbox, content, fontsize=font_size, fontname=font_family, fontfile=fontpath, color=font_color, fill_opacity=opacity, align=align, rotate=0)
-#         if output_path is None:
-#             p = Path(doc_path)
-#             output_path = str(p.parent / f"{p.stem}-加页眉页脚.pdf")
-#         doc.save(output_path, garbage=3, deflate=True)
-#     except:
-#         raise ValueError(traceback.format_exc())
+# 根据字节流去水印
+@batch_process()
+def remove_watermark_by_text(doc_path: str, wm_text: str, output_path: str = None):
+    try:
+        import pdf_redactor
+        options = pdf_redactor.RedactorOptions()
+        options.content_filters = [
+            # First convert all dash-like characters to dashes.
+            (
+                re.compile(wm_text),
+                lambda m : ""
+            ),
+        ]
+        if output_path is None:
+            p = Path(doc_path)
+            output_path = str(p.parent / f"{p.stem}-去水印版.pdf")
+        options.input_stream = doc_path
+        options.output_stream = output_path
+        pdf_redactor.redactor(options)
+        dump_json(cmd_output_path, {"status": "success", "message": ""})
+    except:
+        logger.error(traceback.format_exc())
+        dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
 
 def create_header_and_footer_mask(
         width       : float,
@@ -1604,7 +1592,7 @@ def insert_header_and_footer(
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加页眉页脚.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         doc.close()
         hf_doc.close()
         os.remove(hf_output_path)
@@ -1701,7 +1689,7 @@ def insert_page_number(
         if output_path is None:
             p = Path(doc_path)
             output_path = str(p.parent / f"{p.stem}-加页码.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         hf_doc.close()
         doc.close()
         os.remove(hf_output_path)
@@ -1740,7 +1728,7 @@ def remove_header_and_footer(doc_path: str,  margin_bbox: List[float], remove_li
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-去页眉页脚.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         doc.close()
         mask_doc.close()
         os.remove(mask_doc_path)
@@ -1796,7 +1784,7 @@ def add_doc_background_by_color(
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加背景.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         doc.close()
         bg_doc.close()
         os.remove(bg_output_path)
@@ -1845,7 +1833,7 @@ def add_doc_background_by_image(
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加背景.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         doc.close()
         bg_doc.close()
         os.remove(bg_output_path)
@@ -1896,7 +1884,7 @@ def mask_pdf_by_rectangle(
                 page.clean_contents()
         if output_path is None:
             output_path = str(p.parent / f"{p.stem}-加遮罩.pdf")
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         doc.close()
         mask_doc.close()
         os.remove(mask_doc_path)
@@ -2069,7 +2057,7 @@ def convert_svg2pdf(
                     path_list.extend(glob.glob(p))
                 else:
                     path_list.append(p)
-
+        
         if is_merge:
             if output_path is None:
                 p = Path(path_list[0])
@@ -2378,7 +2366,7 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
             output_path = str(p.parent / f"{p.stem}-生成目录版.pdf")
         
         doc.set_toc(toc)
-        doc.save(output_path, garbage=3, deflate=True, incremental=doc_path==output_path)
+        doc.save(output_path, garbage=3, deflate=True)
         dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         p = Path(doc_path)
@@ -2509,6 +2497,7 @@ def sign_img(img_path: str, offset: int = 5, output_path: str = None):
     except:
         logger.error(traceback.format_exc())
         dump_json(cmd_output_path, {"status": "error", "message": traceback.format_exc()})
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -2679,9 +2668,10 @@ def main():
     watermark_remove_parser = watermark_subparsers.add_parser("remove", help="删除水印")
     watermark_remove_parser.set_defaults(watermark_which='remove')
     watermark_remove_parser.add_argument("input_path", type=str, help="pdf文件路径")
-    watermark_remove_parser.add_argument("--method", type=str, choices=['type', 'index'], default="type", help="删除方式")
+    watermark_remove_parser.add_argument("--method", type=str, choices=['type', 'index', 'text'], default="type", help="删除方式")
     watermark_remove_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
     watermark_remove_parser.add_argument("--wm_index", type=int, nargs="+", help="水印元素所有索引")
+    watermark_remove_parser.add_argument("--wm_text", type=str, help="水印文本")
     watermark_remove_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     watermark_detect_parser = watermark_subparsers.add_parser("detect", help="检测水印")
@@ -2689,6 +2679,7 @@ def main():
     watermark_detect_parser.add_argument("input_path", type=str, help="pdf文件路径")
     watermark_detect_parser.add_argument("--wm_index", type=int, default=0, help="水印所在页码")
     watermark_detect_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
+
 
     # 压缩子命令
     compress_parser = sub_parsers.add_parser("compress", help="压缩", description="压缩pdf文件")
@@ -2844,13 +2835,11 @@ def main():
     dual_parser.add_argument("--lang", type=str, default="ch", help="识别语言") # ['chi_sim', 'eng']
     dual_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
-
     # 签名子命令
     sign_parser = sub_parsers.add_parser("sign", help="签名", description="生成电子签名")
     sign_parser.set_defaults(which="sign")
     sign_parser.add_argument("input_path", type=str, help="输入图片路径")
     sign_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
-
 
     # 参数解析
     args = parser.parse_args()
@@ -2965,6 +2954,8 @@ def main():
                 remove_watermark_by_type(doc_path=args.input_path, page_range=args.page_range, output_path=args.output)
             elif args.method == "index":
                 remove_watermark_by_index(doc_path=args.input_path, wm_index=args.wm_index, page_range=args.page_range, output_path=args.output)
+            elif args.method == "text":
+                remove_watermark_by_text(doc_path=args.input_path, wm_text=args.wm_text, output_path=args.output)
         elif args.watermark_which == "detect":
             detect_watermark_index_helper(doc_path=args.input_path, wm_page_number=args.wm_index, outpath=args.output)
     elif args.which == "mask":

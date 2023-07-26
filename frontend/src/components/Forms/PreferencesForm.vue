@@ -39,7 +39,7 @@
                     </a-row>
                 </div>
             </a-form-item>
-            <a-form-item name="hashcat_path" label="hashcat路径" :validateStatus="validateStatus.hashcat_path"
+            <!-- <a-form-item name="hashcat_path" label="hashcat路径" :validateStatus="validateStatus.hashcat_path"
                 :help="validateHelp.hashcat_path">
                 <div>
                     <a-row>
@@ -56,7 +56,7 @@
                         </a-col>
                     </a-row>
                 </div>
-            </a-form-item>
+            </a-form-item> -->
             <a-form-item name="pandoc_path" label="pandoc路径" :validateStatus="validateStatus.pandoc_path"
                 :help="validateHelp.pandoc_path">
                 <div>
