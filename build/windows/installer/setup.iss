@@ -38,7 +38,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\..\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\bin\pdf.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\bin\ocr.py"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\bin\convert.py"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\bin\convert_external.py"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
