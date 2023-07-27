@@ -110,9 +110,10 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
                     pno = pno + offset
                     if not title.strip(): # 标题为空跳过
                         continue
-                    res = title_preprocess(title)
+                    res = title_preprocess(title)  
                     level, title = res['level'], res['text']
-                    toc.append([level, title, pno])
+                    # 参考：https://pymupdf.readthedocs.io/en/latest/document.html#Document.get_toc
+                    toc.append([level, title, pno, {"kind":1, "zoom":1, "to": fitz.Point(0, 0)}]) # [level, title, page [, dest]]
         elif toc_path.suffix == ".json":
             with open(toc_path, "r", encoding="utf-8") as f:
                 toc = json.load(f)

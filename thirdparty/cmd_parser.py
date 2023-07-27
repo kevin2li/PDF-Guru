@@ -343,6 +343,14 @@ def getParser():
     sign_parser.add_argument("input_path", type=str, help="输入图片路径")
     sign_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
+    # 批注子命令
+    annot_parser = sub_parsers.add_parser("annot", help="批注", description="批注管理")
+    annot_parser.set_defaults(which="annot")
+    annot_parser.add_argument("--method", type=str, choices=['remove', 'export', 'import'], default="remove", help="操作类型")
+    annot_parser.add_argument("input_path", type=str, help="pdf文件路径")
+    annot_parser.add_argument("--annot-types", type=str, nargs="+", default="highlight", help="批注类型")
+    annot_parser.add_argument("--page_range", type=str, default="all", help="页码范围")
+    annot_parser.add_argument("-o", "--output", type=str, help="输出文件路径")
 
     # Anki子命令
     anki_parser = sub_parsers.add_parser("anki", help="Anki", description="生成Anki卡片")

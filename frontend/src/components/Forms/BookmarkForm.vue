@@ -26,7 +26,7 @@
                         <a-radio value="page">页码书签</a-radio>
                     </a-radio-group>
                 </a-form-item>
-                <a-form-item name="bookmark_file" label="书签文件" hasFeedback :validateStatus="validateStatus.bookmark_file"
+                <a-form-item name="bookmark_file" label="书签文件" :validateStatus="validateStatus.bookmark_file"
                     :help="validateHelp.bookmark_file" v-if="store.write_type == 'file'">
                     <div>
                         <a-row>

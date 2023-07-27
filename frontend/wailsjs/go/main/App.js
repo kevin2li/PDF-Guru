@@ -18,6 +18,10 @@ export function AddPDFPageNumber(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8,
   return window['go']['main']['App']['AddPDFPageNumber'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
 }
 
+export function AnnotParser(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['AnnotParser'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function ChangePasswordPDF(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['ChangePasswordPDF'](arg1, arg2, arg3, arg4, arg5, arg6);
 }

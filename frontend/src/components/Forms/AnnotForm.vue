@@ -5,127 +5,69 @@
             @finishFailed="onFinishFailed">
             <a-form-item name="op" label="操作">
                 <a-radio-group button-style="solid" v-model:value="store.op">
-                    <a-radio-button value="split">分割</a-radio-button>
-                    <a-radio-button value="combine">组合</a-radio-button>
+                    <a-radio-button value="remove">删除批注</a-radio-button>
+                    <a-radio-button value="export" disabled>导出批注</a-radio-button>
+                    <a-radio-button value="import" disabled>导入批注</a-radio-button>
                 </a-radio-group>
             </a-form-item>
-            <div v-if="store.op == 'split'">
-                <a-form-item label="分割类型">
-                    <a-radio-group v-model:value="store.split_type">
-                        <a-radio value="even">均匀分割</a-radio>
-                        <a-radio value="custom">自定义分割</a-radio>
-                    </a-radio-group>
-                </a-form-item>
-                <a-form-item label="网格形状" v-if="store.split_type == 'even'">
-                    <a-space size="large">
-                        <a-input-number v-model:value="store.rows" :min="1">
-                            <template #addonBefore>
-                                行数
-                            </template>
-                        </a-input-number>
-                        <a-input-number v-model:value="store.cols" :min="1">
-                            <template #addonBefore>
-                                列数
-                            </template>
-                        </a-input-number>
-                    </a-space>
-                </a-form-item>
-                <a-form-item :label="index === 0 ? '水平分割线' : ' '" :colon="index === 0 ? true : false"
-                    v-if="store.split_type == 'custom'" v-for="(item, index) in store.split_h_breakpoints" :key="index">
-                    <a-input-number :min="0" :max="1" :step="0.01" v-model:value="store.split_h_breakpoints[index]" />
-                    <MinusCircleOutlined @click="removeHBreakpoint(item)" style="margin-left: 1vw;" />
-                </a-form-item>
-                <a-form-item name="span" :label="store.split_h_breakpoints.length === 0 ? '水平分割线' : ' '"
-                    :colon="store.split_h_breakpoints.length === 0 ? true : false" v-if="store.split_type == 'custom'">
-                    <a-button type="dashed" block @click="addHBreakpoint">
-                        <PlusOutlined />
-                        添加水平分割线
-                    </a-button>
-                </a-form-item>
-                <a-form-item :label="index === 0 ? '垂直分割线' : ' '" :colon="index === 0 ? true : false"
-                    v-if="store.split_type == 'custom'" v-for="(item, index) in  store.split_v_breakpoints " :key="index">
-                    <a-input-number :min="0" :max="1" :step="0.01" v-model:value="store.split_v_breakpoints[index]" />
-                    <MinusCircleOutlined @click=" removeVBreakpoint(item)" style="margin-left: 1vw;" />
-                </a-form-item>
-                <a-form-item name="span" :label="store.split_v_breakpoints.length === 0 ? '垂直分割线' : ' '"
-                    :colon="store.split_v_breakpoints.length === 0 ? true : false" v-if="store.split_type == 'custom'">
-                    <a-button type="dashed" block @click="addVBreakpoint">
-                        <PlusOutlined />
-                        添加垂直分割线
-                    </a-button>
-                </a-form-item>
-            </div>
-            <div v-else>
-                <a-form-item label="网格形状">
-                    <a-space size="large">
-                        <a-input-number v-model:value="store.rows" :min="1">
-                            <template #addonBefore>
-                                行数
-                            </template>
-                        </a-input-number>
-                        <a-input-number v-model:value="store.cols" :min="1">
-                            <template #addonBefore>
-                                列数
-                            </template>
-                        </a-input-number>
-                    </a-space>
-                </a-form-item>
-                <a-form-item name="paper_size" label="纸张大小">
-                    <a-select v-model:value="store.paper_size" style="width: 200px">
-                        <a-select-option value="same">与文档相同</a-select-option>
-                        <a-select-option value="a0">A0</a-select-option>
-                        <a-select-option value="a1">A1</a-select-option>
-                        <a-select-option value="a2">A2</a-select-option>
-                        <a-select-option value="a3">A3</a-select-option>
-                        <a-select-option value="a4">A4</a-select-option>
-                        <a-select-option value="a5">A5</a-select-option>
-                        <a-select-option value="a6">A6</a-select-option>
-                        <a-select-option value="a7">A7</a-select-option>
-                        <a-select-option value="a8">A8</a-select-option>
-                        <a-select-option value="a9">A9</a-select-option>
-                        <a-select-option value="a10">A10</a-select-option>
-                        <a-select-option value="b0">B0</a-select-option>
-                        <a-select-option value="b1">B1</a-select-option>
-                        <a-select-option value="b2">B2</a-select-option>
-                        <a-select-option value="b3">B3</a-select-option>
-                        <a-select-option value="b4">B4</a-select-option>
-                        <a-select-option value="b5">B5</a-select-option>
-                        <a-select-option value="b6">B6</a-select-option>
-                        <a-select-option value="b7">B7</a-select-option>
-                        <a-select-option value="b8">B8</a-select-option>
-                        <a-select-option value="b9">B9</a-select-option>
-                        <a-select-option value="b10">B10</a-select-option>
-                        <a-select-option value="c0">C0</a-select-option>
-                        <a-select-option value="c1">C1</a-select-option>
-                        <a-select-option value="c2">C2</a-select-option>
-                        <a-select-option value="c3">C3</a-select-option>
-                        <a-select-option value="c4">C4</a-select-option>
-                        <a-select-option value="c5">C5</a-select-option>
-                        <a-select-option value="c6">C6</a-select-option>
-                        <a-select-option value="c7">C7</a-select-option>
-                        <a-select-option value="c8">C8</a-select-option>
-                        <a-select-option value="c9">C9</a-select-option>
-                        <a-select-option value="c10">C10</a-select-option>
-                        <a-select-option value="card-4x6">card-4x6</a-select-option>
-                        <a-select-option value="card-5x7">card-5x7</a-select-option>
-                        <a-select-option value="commercial">commercial</a-select-option>
-                        <a-select-option value="executive">executive</a-select-option>
-                        <a-select-option value="invoice">invoice</a-select-option>
-                        <a-select-option value="ledger">ledger</a-select-option>
-                        <a-select-option value="legal">legal</a-select-option>
-                        <a-select-option value="legal-13">legal-13</a-select-option>
-                        <a-select-option value="letter">letter</a-select-option>
-                        <a-select-option value="monarch">monarch</a-select-option>
-                        <a-select-option value="tabloid-extra">tabloid-extra</a-select-option>
-                    </a-select>
-                </a-form-item>
-                <a-form-item label="纸张方向">
-                    <a-radio-group v-model:value="store.orientation">
-                        <a-radio value="portrait">纵向</a-radio>
-                        <a-radio value="landscape">横向</a-radio>
-                    </a-radio-group>
+            <div v-if="store.op == 'remove'">
+                <a-form-item label="删除类型">
+                    <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate"
+                        @change="onCheckAllChange">全选</a-checkbox>
+                    <a-checkbox-group v-model:value="store.annot_types">
+                        <a-divider />
+                        <a-checkbox value="highlight">
+                            <span>高亮</span>
+                        </a-checkbox>
+                        <a-checkbox value="underline">
+                            <span>下划线</span>
+                        </a-checkbox>
+                        <a-checkbox value="squiggly">
+                            <span>波浪线</span>
+                        </a-checkbox>
+                        <a-checkbox value="strikeout">
+                            <span>删除线</span>
+                        </a-checkbox>
+                        <a-checkbox value="caret">
+                            <span>插入/替换符</span>
+                        </a-checkbox>
+                        <a-checkbox value="text">
+                            <span>文字批注</span>
+                        </a-checkbox>
+                        <a-checkbox value="textbox">
+                            <span>文本框</span>
+                        </a-checkbox>
+                        <a-checkbox value="callout">
+                            <span>指示批注</span>
+                        </a-checkbox>
+                        <a-checkbox value="popup">
+                            <span>注解</span>
+                        </a-checkbox>
+                        <a-checkbox value="square">
+                            <span>矩形</span>
+                        </a-checkbox>
+                        <a-checkbox value="oval">
+                            <span>椭圆</span>
+                        </a-checkbox>
+                        <a-checkbox value="polygon">
+                            <span>多边形</span>
+                        </a-checkbox>
+                        <a-checkbox value="cloud">
+                            <span>云朵</span>
+                        </a-checkbox>
+                        <a-checkbox value="line">
+                            <span>直线</span>
+                        </a-checkbox>
+                        <a-checkbox value="arrow">
+                            <span>箭头</span>
+                        </a-checkbox>
+                        <a-checkbox value="polyline">
+                            <span>自定义图形</span>
+                        </a-checkbox>
+                    </a-checkbox-group>
                 </a-form-item>
             </div>
+
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
                 <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
@@ -176,15 +118,13 @@ import {
     SaveFile,
     CheckFileExists,
     CheckRangeFormat,
-    CutPDFByGrid,
-    CutPDFByBreakpoints,
-    CombinePDFByGrid
+    AnnotParser,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { MinusCircleOutlined, PlusOutlined, EllipsisOutlined } from '@ant-design/icons-vue';
 import { handleOps } from "../data";
-import { useCutState } from "../../store/cut";
+import { useAnnotState } from "../../store/annot";
 
 export default defineComponent({
     components: {
@@ -194,7 +134,44 @@ export default defineComponent({
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const store = useCutState();
+        const store = useAnnotState();
+        // 多选框
+        const indeterminate = ref<boolean>(false);
+        const checkAll = ref<boolean>(false);
+        const all_annot_types = [
+            'highlight',
+            'underline',
+            'squiggly',
+            'strikeout',
+            'caret',
+            'redact',
+            'text',
+            'textbox',
+            'callout',
+            'popup',
+            'square',
+            'oval',
+            'polygon',
+            'cloud',
+            'line',
+            'arrow',
+            'polyline',
+            "ink",
+            "fileattachment",
+        ];
+        const onCheckAllChange = (e: any) => {
+            Object.assign(store, {
+                annot_types: e.target.checked ? all_annot_types : [],
+            });
+            indeterminate.value = false;
+        };
+        watch(
+            () => store.annot_types,
+            (val: any) => {
+                indeterminate.value = !!val.length && val.length < all_annot_types.length;
+                checkAll.value = val.length === all_annot_types.length;
+            }
+        )
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -262,25 +239,6 @@ export default defineComponent({
             page: [{ validator: validateRange, trigger: 'change' }],
         };
 
-        // 分割PDF
-        const addHBreakpoint = () => {
-            store.split_h_breakpoints.push(0);
-        }
-        const removeHBreakpoint = (item: number) => {
-            const index = store.split_h_breakpoints.indexOf(item);
-            if (index != -1) {
-                store.split_h_breakpoints.splice(index, 1);
-            }
-        }
-        const addVBreakpoint = () => {
-            store.split_v_breakpoints.push(0);
-        }
-        const removeVBreakpoint = (item: number) => {
-            const index = store.split_v_breakpoints.indexOf(item);
-            if (index != -1) {
-                store.split_v_breakpoints.splice(index, 1);
-            }
-        }
         // 重置表单
         const resetFields = () => {
             formRef.value?.clearValidate();
@@ -291,16 +249,23 @@ export default defineComponent({
         async function submit() {
             confirmLoading.value = true;
             switch (store.op) {
-                case "split": {
-                    if (store.split_type == "even") {
-                        await handleOps(CutPDFByGrid, [store.input.trim(), store.output.trim(), store.rows, store.cols, store.page]);
-                    } else {
-                        await handleOps(CutPDFByBreakpoints, [store.input.trim(), store.output.trim(), store.split_h_breakpoints, store.split_v_breakpoints, store.page]);
+                case "remove": {
+                    if (checkAll.value) {
+                        store.annot_types.push('all');
                     }
+                    await handleOps(AnnotParser, [
+                        store.input,
+                        store.output,
+                        store.op,
+                        store.annot_types,
+                        store.page,
+                    ])
                     break;
                 }
-                case "combine": {
-                    await handleOps(CombinePDFByGrid, [store.input.trim(), store.output.trim(), store.rows, store.cols, store.page, store.paper_size, store.orientation]);
+                case "export": {
+                    break;
+                }
+                case "import": {
                     break;
                 }
             }
@@ -354,13 +319,12 @@ export default defineComponent({
             validateStatus,
             validateHelp,
             confirmLoading,
-            addHBreakpoint,
-            removeHBreakpoint,
-            addVBreakpoint,
-            removeVBreakpoint,
             resetFields,
             onFinish,
-            onFinishFailed
+            onFinishFailed,
+            onCheckAllChange,
+            indeterminate,
+            checkAll,
         };
     }
 })

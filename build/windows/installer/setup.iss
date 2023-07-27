@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "PDF Guru"
-#define MyAppVersion "1.0.11"
+#define MyAppVersion "1.0.12"
 #define MyAppPublisher "Kevin2li"
 #define MyAppURL "https://github.com/kevin2li/PDF-Guru"
 #define MyAppExeName "PDF Guru.exe"

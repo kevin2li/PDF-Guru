@@ -1,4 +1,5 @@
 import utils
+from annot import delete_annot_pdf
 from background import add_doc_background_by_color, add_doc_background_by_image
 from bookmark import (add_toc_by_gap, add_toc_from_file, extract_toc,
                       find_title_by_rect_annot, transform_toc_file)
@@ -183,6 +184,9 @@ def main():
             raise ValueError("不支持的文件类型!")
     elif args.which == "sign":
         sign_img(img_path=args.input_path, output_path=args.output)
+    elif args.which == "annot":
+        if args.method == "remove":
+            delete_annot_pdf(doc_path=args.input_path, annot_types=args.annot_types, page_range=args.page_range, output_path=args.output)
 
 if __name__ == "__main__":
     main()

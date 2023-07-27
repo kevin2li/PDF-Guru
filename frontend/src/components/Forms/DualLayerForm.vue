@@ -11,15 +11,15 @@
             </a-form-item>
             <a-form-item name="dpi" label="DPI">
                 <a-select v-model:value="store.dpi" style="width: 200px">
-                    <a-select-option value="100">100</a-select-option>
-                    <a-select-option value="200">200</a-select-option>
-                    <a-select-option value="300">300</a-select-option>
-                    <a-select-option value="400">400</a-select-option>
-                    <a-select-option value="500">500</a-select-option>
-                    <a-select-option value="600">600</a-select-option>
-                    <a-select-option value="800">800</a-select-option>
-                    <a-select-option value="1000">1000</a-select-option>
-                    <a-select-option value="1200">1200</a-select-option>
+                    <a-select-option :value="100">100</a-select-option>
+                    <a-select-option :value="200">200</a-select-option>
+                    <a-select-option :value="300">300</a-select-option>
+                    <a-select-option :value="400">400</a-select-option>
+                    <a-select-option :value="500">500</a-select-option>
+                    <a-select-option :value="600">600</a-select-option>
+                    <a-select-option :value="800">800</a-select-option>
+                    <a-select-option :value="1000">1000</a-select-option>
+                    <a-select-option :value="1200">1200</a-select-option>
                 </a-select>
             </a-form-item>
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
