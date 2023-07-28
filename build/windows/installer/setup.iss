@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "PDF Guru"
-#define MyAppVersion "1.0.11"
+#define MyAppVersion "1.0.12"
 #define MyAppPublisher "Kevin2li"
 #define MyAppURL "https://github.com/kevin2li/PDF-Guru"
 #define MyAppExeName "PDF Guru.exe"
@@ -38,7 +38,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\..\bin\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\bin\pdf.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\bin\ocr.py"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\bin\convert.py"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\bin\convert_external.py"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

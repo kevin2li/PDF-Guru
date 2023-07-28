@@ -5,7 +5,7 @@ on:
     branches:
       - dev
 env:
-  VERRSION: "1.0.11"
+  VERRSION: "1.0.12"
 jobs:
   deploy-macos:
     runs-on: macos-latest
@@ -44,7 +44,7 @@ jobs:
           pip install -r requirements.txt
           pyinstaller -F -w pdf.py
           cp dist/pdf ${ROOT}/build/bin/
-          cp ocr.py convert.py ${ROOT}/build/bin/
+          cp ocr.py convert_external.py ${ROOT}/build/bin/
           
           cd $ROOT
           brew install upx
@@ -77,7 +77,7 @@ jobs:
       - name: 安装 Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10.11
+          python-version: 3.8.10
 
       - name: 安装依赖 && 编译
         run: |
@@ -94,7 +94,7 @@ jobs:
           pyinstaller -F -w pdf.py
           cp dist/pdf.exe ${ROOT}\build\bin\
           cp ocr.py ${ROOT}\build\bin\
-          cp convert.py ${ROOT}\build\bin\
+          cp convert_external.py ${ROOT}\build\bin\
           
           cd $ROOT
           choco install -y upx
@@ -152,7 +152,7 @@ jobs:
           pip install -r requirements.txt
           pyinstaller -F -w pdf.py
           cp dist/pdf ${ROOT}/build/bin/
-          cp ocr.py convert.py ${ROOT}/build/bin/
+          cp ocr.py convert_external.py ${ROOT}/build/bin/
           
           cd $ROOT
           sudo apt-get update

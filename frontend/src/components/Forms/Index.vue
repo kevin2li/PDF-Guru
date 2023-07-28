@@ -201,6 +201,19 @@
                     <p><b style="font-size: medium;">文档背景</b></p>
                 </div>
             </a-col>
+            <a-col>
+                <div class="mycard" @click="switchMenu('annot', 'remove')">
+                    <div style="margin-top: 10px;">
+                        <svg t="1690350751457" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="4078" width="50" height="50">
+                            <path
+                                d="M832 64 192 64C121.6 64 64 121.6 64 192l0 512c0 70.4 57.6 128 128 128l128 0 132.096 120.448C459.072 957.632 466.88 960 474.432 960 493.824 960 512 944.704 512 922.496L512 832l320 0c70.4 0 128-57.6 128-128L960 192C960 121.6 902.4 64 832 64zM896 704c0 35.328-28.672 64-64 64L512 768c-16.96 0-33.28 6.72-45.248 18.752S448 815.04 448 832l0 30.08-84.864-77.376C351.296 773.952 335.936 768 320 768L192 768c-35.328 0-64-28.672-64-64L128 192c0-35.328 28.672-64 64-64l640 0c35.328 0 64 28.672 64 64L896 704zM736 320l-448 0C270.336 320 256 334.336 256 352S270.336 384 288 384l448 0C753.664 384 768 369.664 768 352S753.664 320 736 320zM736 512l-448 0C270.336 512 256 526.336 256 544S270.336 576 288 576l448 0C753.664 576 768 561.664 768 544S753.664 512 736 512z"
+                                p-id="4079" fill="#1296db"></path>
+                        </svg>
+                    </div>
+                    <p><b style="font-size: medium;">批注管理</b></p>
+                </div>
+            </a-col>
         </a-row>
 
         <a-typography-title :level="4" style="margin-top: 2vh;"> 保护 </a-typography-title>
@@ -577,12 +590,14 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive, watch, ref } from 'vue';
+import { defineComponent, onMounted } from 'vue';
 import {
     EllipsisOutlined,
     MergeCellsOutlined,
 } from '@ant-design/icons-vue';
-
+import {
+    CheckTrialCount,
+} from '../../../wailsjs/go/main/App';
 import { useMenuState } from '../../store/menu';
 import { useInsertState } from '../../store/insert';
 import { useCutState } from '../../store/cut';
@@ -592,6 +607,9 @@ import { useExtractState } from '../../store/extract';
 import { useConvertState } from '../../store/convert';
 import { useEncryptState } from '../../store/encrypt';
 import { useSignState } from '../../store/sign';
+import { useAnnotState } from '../../store/annot';
+import { useIndexState } from '../../store/index';
+import { message, Modal } from 'ant-design-vue';
 
 export default defineComponent({
     components: {
@@ -599,7 +617,8 @@ export default defineComponent({
         MergeCellsOutlined
     },
     setup() {
-        const store = useMenuState();
+        const indexStore = useIndexState();
+        const menuStore = useMenuState();
         const insertStore = useInsertState();
         const cutStore = useCutState();
         const watermarkStore = useWatermarkState();
@@ -608,100 +627,143 @@ export default defineComponent({
         const convertStore = useConvertState();
         const encryptStore = useEncryptState();
         const signStore = useSignState();
+        const annotStore = useAnnotState();
+
+        // 软件试用
+        onMounted(async () => {
+            if (!indexStore.trial_flag) return;
+            if (indexStore.trial_set) return;
+            await CheckTrialCount().then((res: any) => {
+                console.log(res);
+                if (res <= indexStore.max_try_times) {
+                    indexStore.trial_set = true;
+                    Modal.info({
+                        title: '温馨提示',
+                        content: `软件试用次数共${indexStore.max_try_times}次，当前是第${res}次，请不要轻易关闭软件！`,
+                        maskClosable: false,
+                    });
+                } else {
+                    Modal.error({
+                        title: '错误',
+                        content: '软件试用次数已用完，请购买后使用！',
+                        maskClosable: false,
+                        okButtonProps: {
+                            disabled: true,
+                        }
+                    });
+                }
+            }).catch((err: any) => {
+                console.log(err);
+                Modal.error({
+                    title: '错误',
+                    content: '软件试用失败，请联系管理员',
+                    maskClosable: false,
+                });
+            });
+        });
 
         const switchMenu = (key: string, op: string) => {
-            store.selectedKeys = [key];
+            menuStore.selectedKeys = [key];
             switch (key) {
                 case "insert": {
                     insertStore.op = op;
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "merge": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "split": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "rotate": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "delete": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "reorder": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "crop": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "scale": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "cut": {
                     cutStore.op = op;
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "header": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "page_number": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "background": {
-                    store.openKeys = ['page_edit'];
+                    menuStore.openKeys = ['page_edit'];
+                    break;
+                }
+                case "annot": {
+                    annotStore.op = op;
+                    menuStore.openKeys = ['page_edit'];
                     break;
                 }
                 case "watermark": {
                     watermarkStore.op = op;
-                    store.openKeys = ['protect'];
+                    menuStore.openKeys = ['protect'];
                     break;
                 }
                 case "encrypt": {
                     encryptStore.op = op;
-                    store.openKeys = ['protect'];
+                    menuStore.openKeys = ['protect'];
                     break;
                 }
                 case "sign": {
                     signStore.op = op;
-                    store.openKeys = ['protect'];
+                    menuStore.openKeys = ['protect'];
                     break;
                 }
                 case "bookmark": {
                     bookmarkStore.op = op;
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "extract": {
                     extractStore.op = op;
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "compress": {
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "convert": {
                     convertStore.type = op;
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "ocr": {
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
                     break;
                 }
                 case "dual": {
-                    store.openKeys = ['other'];
+                    menuStore.openKeys = ['other'];
+                    break;
+                }
+                case "anki": {
+                    menuStore.openKeys = ['other'];
                     break;
                 }
             }
@@ -727,5 +789,4 @@ export default defineComponent({
 .mycard:hover {
     border: 1px solid #e8e8e8;
     background-color: #f4f4f4;
-}
-</style>
+}</style>

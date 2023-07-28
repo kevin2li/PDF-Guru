@@ -323,7 +323,8 @@ interface AnnotState {
     input: string;
     output: string;
     op: string;
-    types: string[];
+    page: string;
+    annot_types: string[];
 }
 
 interface AnkiState {
@@ -382,6 +383,7 @@ const menuRecord: Record<string, string> = {
     "dual": "双层PDF制作",
     "crack": "密码破解",
     "sign": "电子签名",
+    "annot": "批注管理",
     "settings": "首选项",
     "anki": "Anki卡片制作",
     "debug": "调试",
@@ -412,6 +414,7 @@ const menuDesc: Record<string, string> = {
     "dual": "双层PDF制作，可以为扫描件创建隐藏文字图层，从而支持文字复制、检索等功能",
     "crack": "密码破解",
     "sign": "电子签名制作",
+    "annot": "批注管理",
     "settings": "对软件功能进行配置",
     "anki": "Anki 【PDF/图片】挖空卡片、【PDF/图片】问答题卡片制作，(图片制卡需要先转换成PDF)",
     "debug": "调试",

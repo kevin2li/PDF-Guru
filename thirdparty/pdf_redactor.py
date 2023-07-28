@@ -108,7 +108,7 @@ def redactor(options):
 		apply_updated_text(document, *text_layer)
 
 	# Update annotations.
-	update_annotations(document, options)
+	# update_annotations(document, options)
 
 	# Write the PDF back out.
 	writer = PdfWriter()

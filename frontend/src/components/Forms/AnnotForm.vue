@@ -3,25 +3,71 @@
         <a-form ref="formRef" style="border: 1px solid #dddddd; padding: 10px 0;border-radius: 10px;margin-right: 5vw;"
             :model="store" :label-col="{ span: 3 }" :wrapper-col="{ offset: 1, span: 18 }" :rules="rules" @finish="onFinish"
             @finishFailed="onFinishFailed">
-            <a-form-item label="语言">
-                <a-select v-model:value="store.lang" style="width: 200px">
-                    <a-select-option value="chi_sim">中文简体</a-select-option>
-                    <a-select-option value="eng">英文</a-select-option>
-                </a-select>
+            <a-form-item name="op" label="操作">
+                <a-radio-group button-style="solid" v-model:value="store.op">
+                    <a-radio-button value="remove">删除批注</a-radio-button>
+                    <a-radio-button value="export" disabled>导出批注</a-radio-button>
+                    <a-radio-button value="import" disabled>导入批注</a-radio-button>
+                </a-radio-group>
             </a-form-item>
-            <a-form-item name="dpi" label="DPI">
-                <a-select v-model:value="store.dpi" style="width: 200px">
-                    <a-select-option :value="100">100</a-select-option>
-                    <a-select-option :value="200">200</a-select-option>
-                    <a-select-option :value="300">300</a-select-option>
-                    <a-select-option :value="400">400</a-select-option>
-                    <a-select-option :value="500">500</a-select-option>
-                    <a-select-option :value="600">600</a-select-option>
-                    <a-select-option :value="800">800</a-select-option>
-                    <a-select-option :value="1000">1000</a-select-option>
-                    <a-select-option :value="1200">1200</a-select-option>
-                </a-select>
-            </a-form-item>
+            <div v-if="store.op == 'remove'">
+                <a-form-item label="删除类型">
+                    <a-checkbox v-model:checked="checkAll" :indeterminate="indeterminate"
+                        @change="onCheckAllChange">全选</a-checkbox>
+                    <a-checkbox-group v-model:value="store.annot_types">
+                        <a-divider />
+                        <a-checkbox value="highlight">
+                            <span>高亮</span>
+                        </a-checkbox>
+                        <a-checkbox value="underline">
+                            <span>下划线</span>
+                        </a-checkbox>
+                        <a-checkbox value="squiggly">
+                            <span>波浪线</span>
+                        </a-checkbox>
+                        <a-checkbox value="strikeout">
+                            <span>删除线</span>
+                        </a-checkbox>
+                        <a-checkbox value="caret">
+                            <span>插入/替换符</span>
+                        </a-checkbox>
+                        <a-checkbox value="text">
+                            <span>文字批注</span>
+                        </a-checkbox>
+                        <a-checkbox value="textbox">
+                            <span>文本框</span>
+                        </a-checkbox>
+                        <a-checkbox value="callout">
+                            <span>指示批注</span>
+                        </a-checkbox>
+                        <a-checkbox value="popup">
+                            <span>注解</span>
+                        </a-checkbox>
+                        <a-checkbox value="square">
+                            <span>矩形</span>
+                        </a-checkbox>
+                        <a-checkbox value="oval">
+                            <span>椭圆</span>
+                        </a-checkbox>
+                        <a-checkbox value="polygon">
+                            <span>多边形</span>
+                        </a-checkbox>
+                        <a-checkbox value="cloud">
+                            <span>云朵</span>
+                        </a-checkbox>
+                        <a-checkbox value="line">
+                            <span>直线</span>
+                        </a-checkbox>
+                        <a-checkbox value="arrow">
+                            <span>箭头</span>
+                        </a-checkbox>
+                        <a-checkbox value="polyline">
+                            <span>自定义图形</span>
+                        </a-checkbox>
+                    </a-checkbox-group>
+                </a-form-item>
+            </div>
+
             <a-form-item name="page" hasFeedback :validateStatus="validateStatus.page" :help="validateHelp.page"
                 label="页码范围">
                 <a-input v-model:value="store.page" placeholder="应用的页码范围(留空表示全部), e.g. 1-10" allow-clear />
@@ -46,7 +92,7 @@
                 <div>
                     <a-row>
                         <a-col :span="22">
-                            <a-input v-model:value="store.output" placeholder="输出目录(留空则保存到输入文件同级目录)" allow-clear />
+                            <a-input v-model:value="store.output" placeholder="输出路径(留空则保存到输入文件同级目录)" allow-clear />
                         </a-col>
                         <a-col :span="1" style="margin-left: 1vw;">
                             <a-tooltip>
@@ -62,10 +108,6 @@
                 <a-button style="margin-left: 10px" @click="resetFields">重置</a-button>
             </a-form-item>
         </a-form>
-        <div style="margin-top: 1.2vh;width: 85%;">
-            <a-alert message="本功能需要提前安装好tesseract ocr。 下载地址：https://tesseract-ocr.github.io/tessdoc/#binaries" type="info"
-                show-icon />
-        </div>
     </div>
 </template>
 <script lang="ts">
@@ -76,22 +118,60 @@ import {
     SaveFile,
     CheckFileExists,
     CheckRangeFormat,
-    MakeDualLayerPDF,
-    OpenUrl
+    AnnotParser,
 } from '../../../wailsjs/go/main/App';
 import type { FormInstance } from 'ant-design-vue';
-import { EllipsisOutlined } from '@ant-design/icons-vue';
 import type { Rule } from 'ant-design-vue/es/form';
+import { MinusCircleOutlined, PlusOutlined, EllipsisOutlined } from '@ant-design/icons-vue';
 import { handleOps } from "../data";
-import { useDualLayerState } from '../../store/dual_layer';
+import { useAnnotState } from "../../store/annot";
 
 export default defineComponent({
     components: {
+        MinusCircleOutlined,
+        PlusOutlined,
         EllipsisOutlined
     },
     setup() {
         const formRef = ref<FormInstance>();
-        const store = useDualLayerState();
+        const store = useAnnotState();
+        // 多选框
+        const indeterminate = ref<boolean>(false);
+        const checkAll = ref<boolean>(false);
+        const all_annot_types = [
+            'highlight',
+            'underline',
+            'squiggly',
+            'strikeout',
+            'caret',
+            'redact',
+            'text',
+            'textbox',
+            'callout',
+            'popup',
+            'square',
+            'oval',
+            'polygon',
+            'cloud',
+            'line',
+            'arrow',
+            'polyline',
+            "ink",
+            "fileattachment",
+        ];
+        const onCheckAllChange = (e: any) => {
+            Object.assign(store, {
+                annot_types: e.target.checked ? all_annot_types : [],
+            });
+            indeterminate.value = false;
+        };
+        watch(
+            () => store.annot_types,
+            (val: any) => {
+                indeterminate.value = !!val.length && val.length < all_annot_types.length;
+                checkAll.value = val.length === all_annot_types.length;
+            }
+        )
         const validateStatus = reactive({
             input: "",
             page: "",
@@ -99,7 +179,7 @@ export default defineComponent({
         const validateHelp = reactive({
             input: "",
             page: "",
-        });
+        })
         const validateFileExists = async (_rule: Rule, value: string) => {
             validateStatus["input"] = 'validating';
             if (value === '') {
@@ -123,10 +203,10 @@ export default defineComponent({
                 validateHelp["input"] = err;
                 return Promise.reject();
             });
-            const legal_suffix = [".pdf", ".png", ".jpg", ".jpeg"];
-            if (!legal_suffix.some((suffix) => value.trim().toLowerCase().endsWith(suffix))) {
+            const legal_suffix = [".pdf"];
+            if (!legal_suffix.some((suffix) => value.trim().endsWith(suffix))) {
                 validateStatus["input"] = 'error';
-                validateHelp["input"] = "目前仅支持pdf、png、jpg、jpeg格式的文件";
+                validateHelp["input"] = "仅支持pdf格式的文件";
                 return Promise.reject();
             }
         };
@@ -158,6 +238,7 @@ export default defineComponent({
             input: [{ required: true, validator: validateFileExists, trigger: 'change' }],
             page: [{ validator: validateRange, trigger: 'change' }],
         };
+
         // 重置表单
         const resetFields = () => {
             formRef.value?.clearValidate();
@@ -167,20 +248,34 @@ export default defineComponent({
         const confirmLoading = ref<boolean>(false);
         async function submit() {
             confirmLoading.value = true;
-            await handleOps(MakeDualLayerPDF, [
-                store.input,
-                store.output,
-                store.dpi,
-                store.page,
-                store.lang
-            ]);
+            switch (store.op) {
+                case "remove": {
+                    if (checkAll.value) {
+                        store.annot_types.push('all');
+                    }
+                    await handleOps(AnnotParser, [
+                        store.input,
+                        store.output,
+                        store.op,
+                        store.annot_types,
+                        store.page,
+                    ])
+                    break;
+                }
+                case "export": {
+                    break;
+                }
+                case "import": {
+                    break;
+                }
+            }
             confirmLoading.value = false;
         }
         const onFinish = async () => {
             await submit();
         }
 
-        // @ts-ignore   
+        // @ts-ignore
         const onFinishFailed = async ({ values, errorFields, outOfDate }) => {
             if (errorFields.length > 0) {
                 console.log({ errorFields });
@@ -191,6 +286,7 @@ export default defineComponent({
                 await submit();
             }
         }
+
         const selectFile = async (field: string) => {
             await SelectFile().then((res: string) => {
                 console.log({ res });
@@ -213,6 +309,7 @@ export default defineComponent({
                 console.log({ err });
             });
         }
+
         return {
             selectFile,
             saveFile,
@@ -224,7 +321,10 @@ export default defineComponent({
             confirmLoading,
             resetFields,
             onFinish,
-            onFinishFailed
+            onFinishFailed,
+            onCheckAllChange,
+            indeterminate,
+            checkAll,
         };
     }
 })

@@ -234,7 +234,6 @@ import {
 import type { FormInstance } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { EllipsisOutlined } from '@ant-design/icons-vue';
-import type { InsertState } from "../data";
 import { handleOps } from "../data";
 import { useInsertState } from "../../store/insert";
 

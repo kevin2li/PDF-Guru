@@ -86,6 +86,12 @@
                         </template>
                         {{ menuRecord['background'] }}
                     </a-menu-item>
+                    <a-menu-item key="annot">
+                        <template #icon>
+                            <message-outlined />
+                        </template>
+                        {{ menuRecord['annot'] }}
+                    </a-menu-item>
                 </a-sub-menu>
                 <a-sub-menu key="protect">
                     <template #title>保护</template>
@@ -212,11 +218,12 @@
                     <HeaderAndFooterForm v-if="store.selectedKeys.at(0) === 'header'" />
                     <PageNumberForm v-if="store.selectedKeys.at(0) === 'page_number'" />
                     <BackgroundForm v-if="store.selectedKeys.at(0) === 'background'" />
-                    <!-- <MetaForm v-if="store.selectedKeys.at(0) === 'meta'" /> -->
+                    <MetaForm v-if="store.selectedKeys.at(0) === 'meta'" />
                     <DualLayerForm v-if="store.selectedKeys.at(0) === 'dual'" />
                     <PasswordCrackForm v-if="store.selectedKeys.at(0) === 'crack'" />
-                    <SignForm :width="400" :height="200" v-if="store.selectedKeys.at(0) === 'sign'" />
-                    <Debug :width="400" :height="200" v-if="store.selectedKeys.at(0) === 'debug'" />
+                    <SignForm v-if="store.selectedKeys.at(0) === 'sign'" />
+                    <AnnotForm v-if="store.selectedKeys.at(0) === 'annot'" />
+                    <Debug v-if="store.selectedKeys.at(0) === 'debug'" />
                 </div>
             </div>
         </a-col>
@@ -264,6 +271,8 @@ import {
     ToolOutlined,
     HomeOutlined,
     EditOutlined,
+    StarOutlined,
+    MessageOutlined,
     createFromIconfontCN,
 } from '@ant-design/icons-vue';
 
@@ -293,6 +302,7 @@ import DualLayerForm from "./components/Forms/DualLayerForm.vue";
 import PasswordCrackForm from "./components/Forms/PasswordCrackForm.vue";
 import Index from "./components/Forms/Index.vue";
 import SignForm from "./components/Forms/SignForm.vue";
+import AnnotForm from "./components/Forms/AnnotForm.vue";
 import Debug from "./components/Forms/Debug.vue";
 import { useMenuState } from './store/menu';
 
@@ -340,6 +350,8 @@ export default defineComponent({
         ToolOutlined,
         HomeOutlined,
         EditOutlined,
+        StarOutlined,
+        MessageOutlined,
         IconFont,
         // form
         // 合并
@@ -392,6 +404,8 @@ export default defineComponent({
         Index,
         // 电子签名
         SignForm,
+        // 注释
+        AnnotForm,
         // 调试
         Debug,
     },

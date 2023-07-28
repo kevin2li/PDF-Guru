@@ -10,6 +10,8 @@ export function AddPDFHeaderAndFooter(arg1:string,arg2:string,arg3:string,arg4:s
 
 export function AddPDFPageNumber(arg1:string,arg2:string,arg3:string,arg4:number,arg5:string,arg6:Array<number>,arg7:string,arg8:string,arg9:string,arg10:number,arg11:string,arg12:number,arg13:string):Promise<void>;
 
+export function AnnotParser(arg1:string,arg2:string,arg3:string,arg4:Array<string>,arg5:string):Promise<void>;
+
 export function ChangePasswordPDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string):Promise<void>;
 
 export function CheckFileExists(arg1:string):Promise<void>;
@@ -21,6 +23,8 @@ export function CheckOutputDirExists(arg1:string):Promise<void>;
 export function CheckOutputFileExists(arg1:string):Promise<void>;
 
 export function CheckRangeFormat(arg1:string):Promise<void>;
+
+export function CheckTrialCount():Promise<number>;
 
 export function CombinePDFByGrid(arg1:string,arg2:string,arg3:number,arg4:number,arg5:string,arg6:string,arg7:string):Promise<void>;
 
@@ -78,7 +82,7 @@ export function OCRPDFBookmark(arg1:string,arg2:string,arg3:string,arg4:string,a
 
 export function OpenUrl(arg1:string):Promise<void>;
 
-export function PDFConversion(arg1:Array<string>,arg2:string,arg3:number,arg4:boolean,arg5:string,arg6:string,arg7:string,arg8:string,arg9:string):Promise<void>;
+export function PDFConversion(arg1:Array<string>,arg2:string,arg3:number,arg4:boolean,arg5:string,arg6:string,arg7:string,arg8:string,arg9:string,arg10:string,arg11:string):Promise<void>;
 
 export function PandocConvert(arg1:string,arg2:string,arg3:string):Promise<void>;
 
