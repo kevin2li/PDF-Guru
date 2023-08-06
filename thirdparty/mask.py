@@ -7,7 +7,7 @@ import utils
 from constants import cmd_output_path
 from loguru import logger
 from reportlab.pdfgen import canvas
-
+import os
 
 @utils.batch_process()
 def mask_pdf_by_rectangle(

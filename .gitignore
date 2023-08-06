@@ -6,3 +6,4 @@ frontend/dist
 *log*
 config.json
 cmd_output.json
+.env

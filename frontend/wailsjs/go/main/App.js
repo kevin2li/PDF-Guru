@@ -118,6 +118,10 @@ export function GetClipboard() {
   return window['go']['main']['App']['GetClipboard']();
 }
 
+export function GetPdfPath() {
+  return window['go']['main']['App']['GetPdfPath']();
+}
+
 export function InsertBlankPDF(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['InsertBlankPDF'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -188,6 +192,10 @@ export function ReorderPDF(arg1, arg2, arg3) {
 
 export function ReplacePDF(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['ReplacePDF'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function ResetConfig() {
+  return window['go']['main']['App']['ResetConfig']();
 }
 
 export function RotatePDF(arg1, arg2, arg3, arg4) {

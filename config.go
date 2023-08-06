@@ -32,19 +32,7 @@ func (a *App) SaveConfig(pdfPath string, pythonPath string, tesseractPath string
 		return err
 	}
 	// 获取配置文件路径
-	path, err := os.Executable()
-	if err != nil {
-		err = errors.Wrap(err, "")
-		logger.Errorln("Error:", err)
-		return err
-	}
-
-	configPath := filepath.Join(filepath.Dir(path), "config.json")
-	if runtime.GOOS == "darwin" {
-		configPath = filepath.Join(filepath.Dir(filepath.Dir(filepath.Dir(filepath.Dir(path)))), "config.json")
-	} else if runtime.GOOS == "linux" {
-		configPath = filepath.Join(filepath.Dir(path), "config.json")
-	}
+	configPath := filepath.Join(logdir, "config.json")
 	err = os.WriteFile(configPath, jsonData, 0644)
 	if err != nil {
 		err = errors.Wrap(err, "")
@@ -56,37 +44,10 @@ func (a *App) SaveConfig(pdfPath string, pythonPath string, tesseractPath string
 
 func (a *App) LoadConfig() (MyConfig, error) {
 	var config MyConfig
-
 	// 获取配置文件路径
-	path, err := os.Executable()
-	if err != nil {
-		err = errors.Wrap(err, "")
-		logger.Errorln("Error:", err)
-		return config, err
-	}
-
-	configPath := filepath.Join(filepath.Dir(path), "config.json")
-	if runtime.GOOS == "darwin" {
-		configPath = filepath.Join(filepath.Dir(filepath.Dir(filepath.Dir(filepath.Dir(path)))), "config.json")
-	}
+	configPath := filepath.Join(logdir, "config.json")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		path, err := os.Executable()
-		if err != nil {
-			err = errors.Wrap(err, "")
-			logger.Errorln("Error:", err)
-			return config, err
-		}
-		pdfPath := filepath.Join(filepath.Dir(path), "pdf.exe")
-		if runtime.GOOS == "darwin" {
-			pdfPath = filepath.Join(filepath.Dir(filepath.Dir(filepath.Dir(filepath.Dir(path)))), "pdf")
-		} else if runtime.GOOS == "linux" {
-			pdfPath = filepath.Join(filepath.Dir(path), "pdf")
-		}
-		err = a.SaveConfig(pdfPath, "", "", "", "")
-		if err != nil {
-			err = errors.Wrap(err, "")
-			return config, err
-		}
+		a.ResetConfig()
 	}
 	data, err := os.ReadFile(configPath)
 	if err != nil {
@@ -98,5 +59,48 @@ func (a *App) LoadConfig() (MyConfig, error) {
 		err = errors.Wrap(err, "")
 		return config, err
 	}
+	pdfPath, err := a.GetPdfPath()
+	if err != nil {
+		err = errors.Wrap(err, "")
+		return config, err
+	}
+	if config.PdfPath != pdfPath {
+		config.PdfPath = pdfPath
+		err = a.SaveConfig(pdfPath, config.PythonPath, config.TesseractPath, config.PandocPath, config.HashcatPath)
+		if err != nil {
+			err = errors.Wrap(err, "")
+			return config, err
+		}
+	}
 	return config, nil
+}
+
+func (a *App) GetPdfPath() (string, error) {
+	path, err := os.Executable()
+	if err != nil {
+		err = errors.Wrap(err, "")
+		logger.Errorln("Error:", err)
+		return "", err
+	}
+	pdfPath := filepath.Join(filepath.Dir(path), "pdf.exe")
+	if runtime.GOOS == "darwin" {
+		pdfPath = filepath.Join(filepath.Dir(filepath.Dir(filepath.Dir(filepath.Dir(path)))), "pdf")
+	} else if runtime.GOOS == "linux" {
+		pdfPath = filepath.Join(filepath.Dir(path), "pdf")
+	}
+	return pdfPath, nil
+}
+
+func (a *App) ResetConfig() error {
+	pdfPath, err := a.GetPdfPath()
+	if err != nil {
+		err = errors.Wrap(err, "")
+		return err
+	}
+	err = a.SaveConfig(pdfPath, "", "", "", "")
+	if err != nil {
+		err = errors.Wrap(err, "")
+		return err
+	}
+	return nil
 }

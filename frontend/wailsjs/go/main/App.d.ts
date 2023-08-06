@@ -60,6 +60,8 @@ export function ExtractTextFromPDF(arg1:string,arg2:string,arg3:string):Promise<
 
 export function GetClipboard():Promise<string>;
 
+export function GetPdfPath():Promise<string>;
+
 export function InsertBlankPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:string,arg7:number):Promise<void>;
 
 export function InsertPDF(arg1:string,arg2:string,arg3:number,arg4:string,arg5:string,arg6:string):Promise<void>;
@@ -95,6 +97,8 @@ export function RemoveWatermark(arg1:string,arg2:string,arg3:string,arg4:Array<n
 export function ReorderPDF(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function ReplacePDF(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<void>;
+
+export function ResetConfig():Promise<void>;
 
 export function RotatePDF(arg1:string,arg2:string,arg3:number,arg4:string):Promise<void>;
 

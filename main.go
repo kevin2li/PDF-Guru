@@ -24,9 +24,9 @@ var assets embed.FS
 // var thirdpartyAsset embed.FS
 
 var (
-	log     *logrus.Logger
-	logger  *logrus.Entry
-	logdir  string
+	log    *logrus.Logger
+	logger *logrus.Entry
+	logdir string
 )
 
 func main() {

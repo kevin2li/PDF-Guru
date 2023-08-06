@@ -31,11 +31,15 @@ def merge_pdf(doc_path_list: List[str], sort_method: str = "default", sort_direc
             else:
                 new_path_list.sort(reverse=True)
         elif sort_method == "name_digit":
-            new_path_list = sorted(new_path_list, key=lambda x: int(re.search(r"\d+$", Path(x).stem).group()))
-            if sort_direction == "asc":
-                pass
-            else:
-                new_path_list = new_path_list[::-1]
+            try:
+                new_path_list = sorted(new_path_list, key=lambda x: int(re.search(r"\d+$", Path(x).stem).group()))
+                if sort_direction == "asc":
+                    pass
+                else:
+                    new_path_list = new_path_list[::-1]
+            except:
+                logger.error(traceback.format_exc())
+                utils.dump_json(cmd_output_path, {"status": "error", "message": "文件名格式错误，无法按数字排序!参考格式: test_001.pdf"})
         # create time
         elif sort_method == "ctime":
             if sort_direction == "asc":

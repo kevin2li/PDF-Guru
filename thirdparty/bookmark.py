@@ -93,10 +93,12 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
     """
     try:
         doc: fitz.Document = fitz.open(doc_path)
+        page = doc[-1]
+        w, h = page.rect.width, page.rect.height
         p = Path(doc_path)
         toc_path = Path(toc_path)
         toc = []
-        if toc_path.suffix == ".txt":
+        if toc_path.suffix.lower() == ".txt":
             with open(toc_path, "r", encoding="utf-8") as f:
                 for line in f:
                     pno = 1
@@ -114,12 +116,12 @@ def add_toc_from_file(toc_path: str, doc_path: str, offset: int, output_path: st
                     level, title = res['level'], res['text']
                     # 参考：https://pymupdf.readthedocs.io/en/latest/document.html#Document.get_toc
                     toc.append([level, title, pno, {"kind":1, "zoom":1, "to": fitz.Point(0, 0)}]) # [level, title, page [, dest]]
-        elif toc_path.suffix == ".json":
+        elif toc_path.suffix.lower() == ".json":
             with open(toc_path, "r", encoding="utf-8") as f:
                 toc = json.load(f)
         else:
             logger.error("不支持的toc文件格式!")
-            utils.dump_json(cmd_output_path, "不支持的toc文件格式!")
+            utils.dump_json(cmd_output_path, {"status": "error", "message": "不支持的书签格式"})
             return
         # 校正层级
         levels = [v[0] for v in toc]
@@ -186,7 +188,7 @@ def extract_toc(doc_path: str, format: str = "txt", output_path: str = None):
                 except:
                     toc[i][-1] = 0
             with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(toc, f)
+                json.dump(toc, f, ensure_ascii=False)
         utils.dump_json(cmd_output_path, {"status": "success", "message": ""})
     except:
         logger.error(traceback.format_exc())
@@ -379,3 +381,13 @@ def find_title_by_rect_annot(doc_path: str, page_range: str = "all", output_path
                 f.writelines(f"{indent}{line[1]} {line[2]}\n")
         logger.error(traceback.format_exc())
         utils.dump_json(cmd_output_path, {"status": "error", "message": f"请在'{toc_output_path}'中查看目录识别结果！\n" + traceback.format_exc()})
+
+
+if __name__ == "__main__":
+    p = r"\\ws.kevin2li.top\hdd\中转站\《高分日语高分作文写作攻略｜新东方阿狸老师》-加书签目录.pdf"
+    doc = fitz.open(p)
+    page = doc[-1]
+    w, h = page.rect.width, page.rect.height
+    logger.debug(f"{w} {h}")
+    out = doc.get_toc(simple=False)
+    logger.debug(out)
