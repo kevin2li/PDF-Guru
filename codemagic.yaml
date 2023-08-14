@@ -47,7 +47,7 @@ workflows:
     instance_type: mac_mini
     max_build_duration: 60
     environment:
-      xcode: 15
+      xcode: 14.2
       cocoapods: default
       node: 18.17.0
     triggering:
