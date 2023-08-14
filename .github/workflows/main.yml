@@ -7,54 +7,54 @@ on:
 env:
   VERRSION: "1.0.12"
 jobs:
-  deploy-macos:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  # deploy-macos:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
 
-      - name: 安装 Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+  #     - name: 安装 Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18
 
-      - name: 安装 Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.20.5
+  #     - name: 安装 Go
+  #       uses: actions/setup-go@v4
+  #       with:
+  #         go-version: 1.20.5
 
-      - name: 安装 Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10.11
+  #     - name: 安装 Python
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: 3.10.11
 
-      - name: 安装依赖 && 编译
-        run: |
-          ROOT=$(pwd)
-          mkdir -p ${ROOT}/build/bin
-          go install github.com/wailsapp/wails/v2/cmd/wails@latest
-          go mod tidy
+  #     - name: 安装依赖 && 编译
+  #       run: |
+  #         ROOT=$(pwd)
+  #         mkdir -p ${ROOT}/build/bin
+  #         go install github.com/wailsapp/wails/v2/cmd/wails@latest
+  #         go mod tidy
 
-          cd ${ROOT}/frontend
-          npm install
+  #         cd ${ROOT}/frontend
+  #         npm install
 
-          cd ${ROOT}/thirdparty
-          pip install -r requirements.txt
-          pyinstaller -F -w pdf.py
-          cp dist/pdf ${ROOT}/build/bin/
-          cp ocr.py convert_external.py ${ROOT}/build/bin/
+  #         cd ${ROOT}/thirdparty
+  #         pip install -r requirements.txt
+  #         pyinstaller -F -w pdf.py
+  #         cp dist/pdf ${ROOT}/build/bin/
+  #         cp ocr.py convert_external.py ${ROOT}/build/bin/
           
-          cd $ROOT
-          brew install upx
-          wails build -upx -ldflags "-s -w"
+  #         cd $ROOT
+  #         brew install upx
+  #         wails build -upx -ldflags "-s -w"
 
-      - name: 上传Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: pdf-guru-darwin-amd64-${{ env.VERRSION }}
-          path: build/bin
+  #     - name: 上传Artifacts
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: pdf-guru-darwin-amd64-${{ env.VERRSION }}
+  #         path: build/bin
 
   deploy-windows:
     runs-on: windows-latest
