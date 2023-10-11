@@ -67,7 +67,8 @@
 
 - 二进制安装
 
-去[Releases](https://github.com/kevin2li/PDF-Guru/releases)版块下载对应平台的安装包安装即可。
+下载地址：
+飞书链接：https://ybu95w493r.feishu.cn/docx/Xu3NdUub9ojwA7xrI5NcqdApnQb?from=from_copylink   密码：4C%5$9t;
 
 - 编译安装
 
@@ -143,7 +144,7 @@ conda activate ocr
 
 # 安装paddlepaddle和paddleocr
 pip install paddlepaddle -i https://pypi.tuna.tsinghua.edu.cn/simple
-pip install "paddleocr>=2.0.1"
+pip install "paddleocr>=2.0.1" -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 3. 查看环境中python解释器路径
@@ -374,7 +375,7 @@ https://pandoc.org/installing.html
 
 ## FAQ
 
-1. macos显示应用程序“PDF Guru”无法打开  
+1. macOS显示应用程序“PDF Guru Anki”无法打开  
 
 如下：
 
@@ -385,11 +386,19 @@ https://pandoc.org/installing.html
 打开终端，切换到应用安装目录，输入以下命令：
 
 ```bash
-chmod +x pdf
-chmod +x "${PWD}/PDF Guru.app/Contents/MacOS/PDF Guru"
+cd <解压目录(可拖拽文件夹到终端填充路径)>
+chmod +x core/pdf.bin
+chmod +x "PDF Guru.app/Contents/MacOS/PDF Guru"
 ```
 
-2. windows下应用程序被杀毒软件误删
+2. macOS显示应用程序已损坏或“无法验证开发者”
+```bash
+sudo spctl  --master-disable
+```
+然后，打开【系统偏好设置】，选择【隐私与安全性】，在【安全性】下选择【任何来源】选项。
+![](https://minio.kevin2li.top/image-bed/blog/202310111833025.png)
+
+3. windows下应用程序被杀毒软件误删
 
 **解决方法**：
 
